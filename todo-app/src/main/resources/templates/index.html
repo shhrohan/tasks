@@ -44,7 +44,7 @@
         </nav>
 
         <!-- Main View -->
-        <div x-show="currentView === 'main'" x-transition class="main-view container-fluid">
+        <div x-show="currentView === 'main'" x-transition.opacity.duration.200ms class="main-view container-fluid">
             <!-- Statistics Section (Collapsible Accordion) -->
             <div class="stats-accordion mb-3 mb-lg-4">
                 <div class="glass-panel rounded overflow-hidden">
@@ -221,7 +221,8 @@
         </div>
 
         <!-- Completed View -->
-        <div x-show="currentView === 'completed'" x-transition class="completed-view container-fluid">
+        <div x-show="currentView === 'completed'" x-transition.opacity.duration.200ms
+            class="completed-view container-fluid">
             <div class="completed-header p-4 mb-4 glass-panel rounded">
                 <h2 class="h4 mb-0"><i class="fa-solid fa-check-double"></i> Completed Swimlanes</h2>
             </div>
