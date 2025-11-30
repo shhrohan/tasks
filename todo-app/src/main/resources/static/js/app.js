@@ -877,6 +877,18 @@ document.addEventListener('alpine:init', () => {
                     group: 'shared',
                     animation: 150,
                     ghostClass: 'dragging',
+                    onMove: (evt) => {
+                        const itemEl = evt.dragged;
+                        const targetColumn = evt.to;
+                        const newStatus = targetColumn.getAttribute('data-status');
+
+                        if (newStatus) {
+                            // Remove all status classes
+                            itemEl.classList.remove('status-todo', 'status-in_progress', 'status-done', 'status-blocked', 'status-deferred');
+                            // Add new status class
+                            itemEl.classList.add('status-' + newStatus.toLowerCase());
+                        }
+                    },
                     onEnd: (evt) => {
                         const itemEl = evt.item;
                         const newStatus = evt.to.getAttribute('data-status');
