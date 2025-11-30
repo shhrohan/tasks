@@ -246,53 +246,6 @@ body {
     border-color: rgba(245, 158, 11, 0.3);
 }
 
-/* 3D Flip Animation */
-.view-stack {
-    display: grid;
-    grid-template-areas: "stack";
-    perspective: 1000px;
-    overflow: hidden;
-    /* Prevent scrollbars during rotation */
-}
-
-.view-stack>* {
-    grid-area: stack;
-    backface-visibility: hidden;
-    transform-style: preserve-3d;
-    width: 100%;
-}
-
-/* Flip In (Active) */
-.flip-in-active {
-    transition: transform 1s ease-in-out, opacity 1s ease-in-out;
-    z-index: 2;
-}
-
-.flip-in-from {
-    transform: rotateX(-180deg);
-    opacity: 0;
-}
-
-.flip-in-to {
-    transform: rotateX(0deg);
-    opacity: 1;
-}
-
-/* Flip Out (Active) */
-.flip-out-active {
-    transition: transform 1s ease-in-out, opacity 1s ease-in-out;
-    z-index: 1;
-}
-
-.flip-out-from {
-    transform: rotateX(0deg);
-    opacity: 1;
-}
-
-.flip-out-to {
-    transform: rotateX(180deg);
-    opacity: 0;
-}
 
 /* Notification Toast */
 .notification {
