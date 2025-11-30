@@ -877,6 +877,8 @@ document.addEventListener('alpine:init', () => {
                     group: 'shared',
                     animation: 150,
                     ghostClass: 'dragging',
+                    forceFallback: true,
+                    fallbackClass: 'sortable-fallback',
                     onMove: (evt) => {
                         const itemEl = evt.dragged;
                         const targetColumn = evt.to;
