@@ -624,3 +624,29 @@ body {
         padding: 0.75rem;
     }
 }
+
+/* Task Card Status Tints (Dynamic Dragging) */
+.task-card.status-todo {
+    background: var(--todo-color) !important;
+    border-color: var(--todo-color) !important;
+}
+
+.task-card.status-in_progress {
+    background: var(--progress-color) !important;
+    border-color: var(--progress-color) !important;
+}
+
+.task-card.status-done {
+    background: var(--done-color) !important;
+    border-color: var(--done-color) !important;
+}
+
+.task-card.status-blocked {
+    background: var(--blocked-color) !important;
+    border-color: var(--blocked-color) !important;
+}
+
+.task-card.status-deferred {
+    background: var(--deferred-color) !important;
+    border-color: var(--deferred-color) !important;
+}
