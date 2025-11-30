@@ -269,12 +269,12 @@ body {
 }
 
 .flip-in-from {
-    transform: rotateY(-180deg);
+    transform: rotateX(-180deg);
     opacity: 0;
 }
 
 .flip-in-to {
-    transform: rotateY(0deg);
+    transform: rotateX(0deg);
     opacity: 1;
 }
 
@@ -285,12 +285,12 @@ body {
 }
 
 .flip-out-from {
-    transform: rotateY(0deg);
+    transform: rotateX(0deg);
     opacity: 1;
 }
 
 .flip-out-to {
-    transform: rotateY(180deg);
+    transform: rotateX(180deg);
     opacity: 0;
 }
 
