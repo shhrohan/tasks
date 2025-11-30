@@ -859,12 +859,8 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        toggleLaneCollapse(event) {
-            event.stopPropagation();
-            const row = event.currentTarget.closest('.swimlane-row');
-            if (row) {
-                row.classList.toggle('collapsed');
-            }
+        toggleLaneCollapse(lane) {
+            lane.collapsed = !lane.collapsed;
         },
 
         // =====================================================================
