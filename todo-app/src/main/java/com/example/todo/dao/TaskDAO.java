@@ -1,0 +1,34 @@
+package com.example.todo.dao;
+
+import com.example.todo.model.Task;
+import com.example.todo.repository.TaskRepository;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Optional;
+
+@Component
+public class TaskDAO {
+
+    private final TaskRepository taskRepository;
+
+    public TaskDAO(TaskRepository taskRepository) {
+        this.taskRepository = taskRepository;
+    }
+
+    public List<Task> findAll() {
+        return taskRepository.findAll();
+    }
+
+    public Optional<Task> findById(Long id) {
+        return taskRepository.findById(id);
+    }
+
+    public Task save(Task task) {
+        return taskRepository.save(task);
+    }
+
+    public void deleteById(Long id) {
+        taskRepository.deleteById(id);
+    }
+}
