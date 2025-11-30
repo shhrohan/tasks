@@ -138,19 +138,7 @@ body {
     transform: rotate(-90deg);
 }
 
-.swimlane-content {
-    transition: max-height 0.3s ease, opacity 0.3s ease;
-    max-height: 2000px;
-    /* Arbitrary large height */
-    opacity: 1;
-}
 
-.swimlane-row.collapsed .swimlane-content {
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-    padding: 0 !important;
-}
 
 .lane-column {
     min-height: 100px;
