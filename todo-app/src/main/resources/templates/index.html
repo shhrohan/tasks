@@ -278,254 +278,90 @@
                     </template>
                 </div>
             </div>
+            <h5 class="modal-title">Create Swimlane</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <form id="laneForm" @submit.prevent="handleLaneSubmit()">
+                <div class="mb-3">
+                    <label for="lane-name" class="form-label">Swimlane Name</label>
+                    <input type="text" class="form-control bg-dark text-white border-secondary"
+                        x-model="currentLane.name" id="lane-name" required placeholder="e.g. Feature A, Q4 Goals">
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer border-secondary">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" @click="handleLaneSubmit()">Create
+                Lane</button>
+        </div>
+    </div>
+    </div>
+    </div>
 
-
-            <!-- Task Offcanvas (Slide-out Pane) -->
-            <div class="offcanvas offcanvas-end glass-panel text-white task-offcanvas" tabindex="-1" id="taskOffcanvas"
-                aria-labelledby="taskOffcanvasLabel">
-                <div class="offcanvas-header border-bottom border-secondary">
-                    <h5 class="offcanvas-title" id="taskOffcanvasLabel" x-text="modalTitle"></h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"
+    <!-- Confirmation Modal (Bootstrap) -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-panel text-white">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">Confirm Action</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
                 </div>
-                <div class="offcanvas-body">
-                    <!-- View Mode -->
-                    <div x-show="isViewMode" x-transition>
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <h4 class="text-white mb-0" x-text="currentTask.name"></h4>
-                            <span class="badge border status-badge"
-                                :class="'status-' + currentTask.status.toLowerCase()"
-                                x-text="currentTask.status"></span>
-                        </div>
-
-                        <div class="mb-4 text-white-50 small">
-                            <i class="fa-solid fa-layer-group me-1"></i>
-                            <span x-text="currentTask.swimLaneName"></span>
-                        </div>
-
-                        <div class="mb-4" x-show="currentTask.tags.length > 0">
-                            <label class="text-secondary small text-uppercase fw-bold mb-2">Tags</label>
-                            <div class="d-flex flex-wrap gap-2">
-                                <template x-for="tag in currentTask.tags" :key="tag">
-                                    <span class="badge bg-dark border border-secondary rounded-1" x-text="tag"></span>
-                                </template>
-                            </div>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="text-secondary small text-uppercase fw-bold mb-2">Comments</label>
-                            <template x-if="currentTask.existingComments && currentTask.existingComments.length > 0">
-                                <div class="d-flex flex-column gap-3 mb-3">
-                                    <template x-for="comment in currentTask.existingComments" :key="comment.id">
-                                        <div class="d-flex flex-column gap-1">
-                                            <!-- View Mode for Comment -->
-                                            <div x-show="editingCommentId !== comment.id"
-                                                class="p-3 rounded bg-dark border border-secondary position-relative group">
-                                                <div class="d-flex justify-content-between align-items-start mb-1">
-                                                    <div class="d-flex gap-2 opacity-50 hover-opacity-100 ms-auto">
-                                                        <i class="fa-solid fa-pen small cursor-pointer text-primary"
-                                                            @click="startEditingComment(comment)" title="Edit"></i>
-                                                        <i class="fa-solid fa-trash small cursor-pointer text-danger"
-                                                            @click="deleteComment(comment.id)" title="Delete"></i>
-                                                    </div>
-                                                </div>
-                                                <div class="text-white fst-italic mb-2" style="white-space: pre-wrap;"
-                                                    x-text="comment.text"></div>
-                                                <div class="text-end">
-                                                    <span class="text-white-50 small" style="font-size: 0.75rem;"
-                                                        x-text="formatDate(comment.updatedAt)"></span>
-                                                </div>
-                                            </div>
-
-                                            <!-- Edit Mode for Comment -->
-                                            <div x-show="editingCommentId === comment.id"
-                                                class="p-2 rounded bg-dark border border-primary">
-                                                <textarea class="form-control bg-dark text-white border-0 mb-2"
-                                                    x-model="editingCommentText" rows="2"
-                                                    @keydown.enter.prevent="if(!$event.shiftKey) saveCommentEdit(comment)"></textarea>
-                                                <div class="d-flex justify-content-end gap-2">
-                                                    <button class="btn btn-sm btn-secondary"
-                                                        @click="cancelEditingComment()">Cancel</button>
-                                                    <button class="btn btn-sm btn-primary"
-                                                        @click="saveCommentEdit(comment)">Save</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </template>
-                                </div>
-                            </template>
-                            <template x-if="!currentTask.existingComments || currentTask.existingComments.length === 0">
-                                <p class="text-white-50 fst-italic mb-3">No comments yet.</p>
-                            </template>
-
-                            <!-- Add Comment Input (View Mode) -->
-                            <div class="d-flex gap-2">
-                                <textarea class="form-control bg-dark text-white border-secondary"
-                                    x-model="currentTask.comments" rows="1"
-                                    placeholder="Add a comment... (Shift+Enter for new line)"
-                                    @keydown.enter.prevent="if(!$event.shiftKey) addComment()"></textarea>
-                                <button class="btn btn-primary" @click="addComment()">
-                                    <i class="fa-solid fa-paper-plane"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Edit/Create Mode -->
-                    <form id="taskForm" @submit.prevent="handleTaskSubmit()" x-show="!isViewMode" x-transition>
-                        <div class="mb-3">
-                            <label for="task-name" class="form-label">Task Name</label>
-                            <input type="text" class="form-control bg-dark text-white border-secondary"
-                                x-model="currentTask.name" id="task-name" required placeholder="What needs to be done?">
-                        </div>
-                        <div class="mb-3">
-                            <label for="task-lane" class="form-label">Swimlane</label>
-                            <select class="form-select bg-dark text-white border-secondary" x-model="selectedSwimLaneId"
-                                id="task-lane" required>
-                                <option value="" disabled>-- Select a Swimlane --</option>
-                                <template x-for="lane in activeLanes" :key="lane.id">
-                                    <option :value="lane.id" x-text="lane.name"></option>
-                                </template>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="task-tags" class="form-label">Tags</label>
-                            <div class="border border-secondary rounded p-2 bg-dark">
-                                <div class="d-flex flex-wrap gap-2 mb-2">
-                                    <template x-for="(tag, index) in currentTask.tags" :key="index">
-                                        <span class="badge bg-primary d-flex align-items-center gap-2">
-                                            <span x-text="tag"></span>
-                                            <i class="fa-solid fa-times cursor-pointer" @click="removeTag(index)"></i>
-                                        </span>
-                                    </template>
-                                </div>
-                                <input type="text"
-                                    class="form-control bg-transparent border-0 text-white p-0 shadow-none"
-                                    x-model="newTag" @keydown.enter.prevent="addTag()"
-                                    placeholder="Type tag and press Enter...">
-                            </div>
-                        </div>
-                        <!-- Comments removed from Edit Mode -->
-                    </form>
+                <div class="modal-body">
+                    <p x-text="confirmMessage"></p>
                 </div>
-                <div class="offcanvas-footer p-3 border-top border-secondary">
-                    <!-- View Mode Footer -->
-                    <template x-if="isViewMode">
-                        <div class="d-flex w-100 gap-2">
-                            <button type="button" class="btn btn-outline-danger me-auto"
-                                @click="openConfirmModal('delete_task', currentTask.id, 'Delete this task?')">
-                                <i class="fa-solid fa-trash"></i> Delete
-                            </button>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">Close</button>
-                            <button type="button" class="btn btn-primary" @click="enableEditMode()">
-                                <i class="fa-solid fa-pen"></i> Edit
-                            </button>
-                        </div>
-                    </template>
-
-                    <!-- Edit/Create Mode Footer -->
-                    <template x-if="!isViewMode">
-                        <div class="d-flex w-100 gap-2 justify-content-end">
-                            <button type="button" class="btn btn-secondary" @click="cancelEdit()">Cancel</button>
-                            <button type="button" class="btn btn-primary" @click="handleTaskSubmit()">
-                                <span x-text="isEditMode ? 'Save Changes' : 'Create Task'"></span>
-                            </button>
-                        </div>
-                    </template>
-                </div>
-            </div>
-
-            <!-- Swimlane Modal (Bootstrap) -->
-            <div class="modal fade" id="laneModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content glass-panel text-white">
-                        <div class="modal-header border-secondary">
-                            <h5 class="modal-title">Create Swimlane</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <form id="laneForm" @submit.prevent="handleLaneSubmit()">
-                                <div class="mb-3">
-                                    <label for="lane-name" class="form-label">Swimlane Name</label>
-                                    <input type="text" class="form-control bg-dark text-white border-secondary"
-                                        x-model="currentLane.name" id="lane-name" required
-                                        placeholder="e.g. Feature A, Q4 Goals">
-                                </div>
-                            </form>
-                        </div>
-                        <div class="modal-footer border-secondary">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="button" class="btn btn-primary" @click="handleLaneSubmit()">Create
-                                Lane</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Confirmation Modal (Bootstrap) -->
-            <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content glass-panel text-white">
-                        <div class="modal-header border-secondary">
-                            <h5 class="modal-title">Confirm Action</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <p x-text="confirmMessage"></p>
-                        </div>
-                        <div class="modal-footer border-secondary">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-danger" @click="handleConfirm()">Confirm</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Unsaved Tag Confirmation Modal -->
-            <div class="modal fade" id="unsavedTagModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content glass-panel text-white">
-                        <div class="modal-header border-bottom border-secondary">
-                            <h5 class="modal-title text-warning-pulse">Unsaved Tag</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <p>You have a <span class="text-warning fw-bold">tag</span> that's not added. Do you want to
-                                go
-                                ahead?</p>
-                        </div>
-                        <div class="modal-footer border-top border-secondary">
-                            <button type="button" class="btn btn-outline-light" @click="cancelUnsavedTag()">Go
-                                Back</button>
-                            <button type="button" class="btn btn-primary" @click="confirmSaveWithUnsavedTag()">Yes, Go
-                                ahead</button>
-                        </div>
-                    </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" @click="handleConfirm()">Confirm</button>
                 </div>
             </div>
         </div>
+    </div>
+    <!-- Unsaved Tag Confirmation Modal -->
+    <div class="modal fade" id="unsavedTagModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-panel text-white">
+                <div class="modal-header border-bottom border-secondary">
+                    <h5 class="modal-title text-warning-pulse">Unsaved Tag</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>You have a <span class="text-warning fw-bold">tag</span> that's not added. Do you want to
+                        go
+                        ahead?</p>
+                </div>
+                <div class="modal-footer border-top border-secondary">
+                    <button type="button" class="btn btn-outline-light" @click="cancelUnsavedTag()">Go
+                        Back</button>
+                    <button type="button" class="btn btn-primary" @click="confirmSaveWithUnsavedTag()">Yes, Go
+                        ahead</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
 
 
 
 
 
 
-        <!-- Bootstrap JS -->
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        <!-- App JS -->
-        <script src="/js/app.js" defer></script>
-        <!-- Alpine.js Collapse Plugin -->
-        <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
-        <!-- Alpine.js -->
-        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-        <!-- Axios -->
-        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-        <!-- GSAP -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-        <!-- SortableJS -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- App JS -->
+    <script src="/js/app.js" defer></script>
+    <!-- Alpine.js Collapse Plugin -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Axios -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- SortableJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 </body>
 
 </html>
