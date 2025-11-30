@@ -13,6 +13,7 @@ document.addEventListener('alpine:init', () => {
         swimLanes: [],
         currentView: 'main', // 'main' or 'completed'
         showStats: false,
+        isLoading: false,
         columns: ['TODO', 'IN_PROGRESS', 'DONE', 'BLOCKED', 'DEFERRED'],
 
         // Modal/Offcanvas Instances (Bootstrap)
@@ -87,6 +88,24 @@ document.addEventListener('alpine:init', () => {
                 } else {
                     console.log('Axios is defined');
                 }
+
+                // Global Loading Interceptors
+                axios.interceptors.request.use(config => {
+                    this.isLoading = true;
+                    return config;
+                }, error => {
+                    this.isLoading = false;
+                    return Promise.reject(error);
+                });
+
+                axios.interceptors.response.use(response => {
+                    this.isLoading = false;
+                    return response;
+                }, error => {
+                    this.isLoading = false;
+                    return Promise.reject(error);
+                });
+
                 // Initialize Bootstrap Modals & Offcanvas
                 this.taskPane = new bootstrap.Offcanvas(document.getElementById('taskOffcanvas'));
                 this.laneModal = new bootstrap.Modal(document.getElementById('laneModal'));
