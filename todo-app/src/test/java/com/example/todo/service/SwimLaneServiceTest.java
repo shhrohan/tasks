@@ -68,4 +68,66 @@ class SwimLaneServiceTest {
         assertTrue(lane.getIsDeleted());
         verify(swimLaneDAO).save(lane);
     }
+
+    @Test
+    void getAllSwimLanes_ShouldReturnAllLanes() {
+        SwimLane lane = new SwimLane();
+        lane.setId(1L);
+        when(swimLaneDAO.findByIsDeletedFalse()).thenReturn(java.util.Arrays.asList(lane));
+
+        java.util.List<SwimLane> result = swimLaneService.getAllSwimLanes();
+
+        assertEquals(1, result.size());
+        assertEquals(lane, result.get(0));
+    }
+
+    @Test
+    void getActiveSwimLanes_ShouldReturnActiveLanes() {
+        SwimLane lane = new SwimLane();
+        lane.setId(1L);
+        when(swimLaneDAO.findByIsCompletedFalseAndIsDeletedFalse()).thenReturn(java.util.Arrays.asList(lane));
+
+        java.util.List<SwimLane> result = swimLaneService.getActiveSwimLanes();
+
+        assertEquals(1, result.size());
+        assertEquals(lane, result.get(0));
+    }
+
+    @Test
+    void getCompletedSwimLanes_ShouldReturnCompletedLanes() {
+        SwimLane lane = new SwimLane();
+        lane.setId(1L);
+        when(swimLaneDAO.findByIsCompletedTrueAndIsDeletedFalse()).thenReturn(java.util.Arrays.asList(lane));
+
+        java.util.List<SwimLane> result = swimLaneService.getCompletedSwimLanes();
+
+        assertEquals(1, result.size());
+        assertEquals(lane, result.get(0));
+    }
+
+    @Test
+    void uncompleteSwimLane_ShouldSetIsCompletedFalse() {
+        Long laneId = 1L;
+        SwimLane lane = new SwimLane();
+        lane.setId(laneId);
+        lane.setIsCompleted(true);
+
+        when(swimLaneDAO.findById(laneId)).thenReturn(Optional.of(lane));
+        when(swimLaneDAO.save(any(SwimLane.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SwimLane result = swimLaneService.uncompleteSwimLane(laneId);
+
+        assertFalse(result.getIsCompleted());
+        verify(swimLaneDAO).save(lane);
+    }
+
+    @Test
+    void hardDeleteSwimLane_ShouldCallDeleteById() {
+        Long laneId = 1L;
+        doNothing().when(swimLaneDAO).deleteById(laneId);
+
+        swimLaneService.hardDeleteSwimLane(laneId);
+
+        verify(swimLaneDAO).deleteById(laneId);
+    }
 }

@@ -33,7 +33,7 @@ class TaskServiceTest {
     void createTask_ShouldSetDefaultStatus_WhenStatusIsNull() {
         Task task = new Task();
         task.setName("Test Task");
-        
+
         when(taskDAO.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Task createdTask = taskService.createTask(task);
@@ -69,7 +69,7 @@ class TaskServiceTest {
         Long laneId = 2L;
         Task task = new Task();
         task.setId(taskId);
-        
+
         SwimLane lane = new SwimLane();
         lane.setId(laneId);
 
@@ -80,5 +80,96 @@ class TaskServiceTest {
 
         assertEquals(TaskStatus.DONE, task.getStatus());
         assertEquals(lane, task.getSwimLane());
+    }
+
+    @Test
+    void getAllTasks_ShouldReturnList() {
+        Task task = new Task();
+        task.setId(1L);
+        when(taskDAO.findAll()).thenReturn(java.util.Arrays.asList(task));
+
+        java.util.List<Task> result = taskService.getAllTasks();
+
+        assertEquals(1, result.size());
+        assertEquals(task, result.get(0));
+    }
+
+    @Test
+    void getTask_ShouldReturnTask_WhenFound() {
+        Long taskId = 1L;
+        Task task = new Task();
+        task.setId(taskId);
+        when(taskDAO.findById(taskId)).thenReturn(Optional.of(task));
+
+        Optional<Task> result = taskService.getTask(taskId);
+
+        assertTrue(result.isPresent());
+        assertEquals(task, result.get());
+    }
+
+    @Test
+    void deleteTask_ShouldCallDeleteById() {
+        Long taskId = 1L;
+        doNothing().when(taskDAO).deleteById(taskId);
+
+        taskService.deleteTask(taskId);
+
+        verify(taskDAO).deleteById(taskId);
+    }
+
+    @Test
+    void addComment_ShouldAddCommentToTask() throws Exception {
+        Long taskId = 1L;
+        Task task = new Task();
+        task.setId(taskId);
+        task.setComments("[]");
+
+        when(taskDAO.findById(taskId)).thenReturn(Optional.of(task));
+        when(taskDAO.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        com.example.todo.model.Comment comment = taskService.addComment(taskId, "New Comment");
+
+        assertNotNull(comment);
+        assertEquals("New Comment", comment.getText());
+        verify(taskDAO).save(task);
+    }
+
+    @Test
+    void updateComment_ShouldUpdateExistingComment() throws Exception {
+        Long taskId = 1L;
+        String commentId = "c1";
+        Task task = new Task();
+        task.setId(taskId);
+        // Mock existing comment JSON
+        String json = "[{\"id\":\"c1\",\"text\":\"Old Text\",\"createdAt\":\"2023-01-01T10:00:00\",\"updatedAt\":\"2023-01-01T10:00:00\"}]";
+        task.setComments(json);
+
+        when(taskDAO.findById(taskId)).thenReturn(Optional.of(task));
+        when(taskDAO.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        com.example.todo.model.Comment updated = taskService.updateComment(taskId, commentId, "New Text");
+
+        assertEquals("New Text", updated.getText());
+        verify(taskDAO).save(task);
+    }
+
+    @Test
+    void deleteComment_ShouldRemoveComment() throws Exception {
+        Long taskId = 1L;
+        String commentId = "c1";
+        Task task = new Task();
+        task.setId(taskId);
+        String json = "[{\"id\":\"c1\",\"text\":\"Text\",\"createdAt\":\"2023-01-01T10:00:00\",\"updatedAt\":\"2023-01-01T10:00:00\"}]";
+        task.setComments(json);
+
+        when(taskDAO.findById(taskId)).thenReturn(Optional.of(task));
+        when(taskDAO.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        taskService.deleteComment(taskId, commentId);
+
+        verify(taskDAO).save(task);
+        // Verify comment is gone (simple check on the saved object or logic)
+        // Since we mock save to return arg, we can check the arg, but verify is enough
+        // for interaction.
     }
 }

@@ -13,8 +13,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.Arrays;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -69,5 +71,56 @@ class SwimLaneControllerTest {
         mockMvc.perform(patch("/api/swimlanes/{id}/complete", laneId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.isCompleted").value(true));
+    }
+
+    @Test
+    void getActiveSwimLanes_ShouldReturnActiveLanes() throws Exception {
+        SwimLane lane = new SwimLane();
+        lane.setId(1L);
+        lane.setIsCompleted(false);
+
+        when(swimLaneService.getActiveSwimLanes()).thenReturn(Arrays.asList(lane));
+
+        mockMvc.perform(get("/api/swimlanes/active"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].isCompleted").value(false));
+    }
+
+    @Test
+    void getCompletedSwimLanes_ShouldReturnCompletedLanes() throws Exception {
+        SwimLane lane = new SwimLane();
+        lane.setId(1L);
+        lane.setIsCompleted(true);
+
+        when(swimLaneService.getCompletedSwimLanes()).thenReturn(Arrays.asList(lane));
+
+        mockMvc.perform(get("/api/swimlanes/completed"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].isCompleted").value(true));
+    }
+
+    @Test
+    void uncompleteSwimLane_ShouldReturnActiveLane() throws Exception {
+        Long laneId = 1L;
+        SwimLane lane = new SwimLane();
+        lane.setId(laneId);
+        lane.setIsCompleted(false);
+
+        when(swimLaneService.uncompleteSwimLane(laneId)).thenReturn(lane);
+
+        mockMvc.perform(patch("/api/swimlanes/{id}/uncomplete", laneId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isCompleted").value(false));
+    }
+
+    @Test
+    void deleteSwimLane_ShouldReturnOk() throws Exception {
+        Long laneId = 1L;
+        doNothing().when(swimLaneService).deleteSwimLane(laneId);
+
+        mockMvc.perform(delete("/api/swimlanes/{id}", laneId))
+                .andExpect(status().isOk());
+
+        verify(swimLaneService).deleteSwimLane(laneId);
     }
 }
