@@ -43,4 +43,46 @@ class SwimLaneDAOTest {
         assertEquals(lane, result);
         verify(swimLaneRepository).save(lane);
     }
+
+    @Test
+    void findByIsCompletedFalseAndIsDeletedFalse_ShouldDelegateToRepository() {
+        when(swimLaneRepository.findByIsCompletedFalseAndIsDeletedFalse()).thenReturn(Collections.emptyList());
+
+        List<SwimLane> result = swimLaneDAO.findByIsCompletedFalseAndIsDeletedFalse();
+
+        assertNotNull(result);
+        verify(swimLaneRepository).findByIsCompletedFalseAndIsDeletedFalse();
+    }
+
+    @Test
+    void findByIsCompletedTrueAndIsDeletedFalse_ShouldDelegateToRepository() {
+        when(swimLaneRepository.findByIsCompletedTrueAndIsDeletedFalse()).thenReturn(Collections.emptyList());
+
+        List<SwimLane> result = swimLaneDAO.findByIsCompletedTrueAndIsDeletedFalse();
+
+        assertNotNull(result);
+        verify(swimLaneRepository).findByIsCompletedTrueAndIsDeletedFalse();
+    }
+
+    @Test
+    void findById_ShouldDelegateToRepository() {
+        Long id = 1L;
+        SwimLane lane = new SwimLane();
+        when(swimLaneRepository.findById(id)).thenReturn(java.util.Optional.of(lane));
+
+        java.util.Optional<SwimLane> result = swimLaneDAO.findById(id);
+
+        assertTrue(result.isPresent());
+        verify(swimLaneRepository).findById(id);
+    }
+
+    @Test
+    void deleteById_ShouldDelegateToRepository() {
+        Long id = 1L;
+        doNothing().when(swimLaneRepository).deleteById(id);
+
+        swimLaneDAO.deleteById(id);
+
+        verify(swimLaneRepository).deleteById(id);
+    }
 }
