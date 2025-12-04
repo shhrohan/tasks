@@ -13,9 +13,11 @@ import lombok.extern.log4j.Log4j2;
 public class SwimLaneService {
 
     private final SwimLaneDAO swimLaneDAO;
+    private final AsyncWriteService asyncWriteService;
 
-    public SwimLaneService(SwimLaneDAO swimLaneDAO) {
+    public SwimLaneService(SwimLaneDAO swimLaneDAO, AsyncWriteService asyncWriteService) {
         this.swimLaneDAO = swimLaneDAO;
+        this.asyncWriteService = asyncWriteService;
     }
 
     public List<SwimLane> getAllSwimLanes() {
@@ -43,7 +45,9 @@ public class SwimLaneService {
                     return new RuntimeException("SwimLane not found");
                 });
         swimLane.setIsCompleted(true);
-        return swimLaneDAO.save(swimLane);
+        swimLane.setIsCompleted(true);
+        asyncWriteService.saveSwimLane(swimLane);
+        return swimLane;
     }
 
     public SwimLane uncompleteSwimLane(Long id) {
@@ -54,7 +58,9 @@ public class SwimLaneService {
                     return new RuntimeException("SwimLane not found");
                 });
         swimLane.setIsCompleted(false);
-        return swimLaneDAO.save(swimLane);
+        swimLane.setIsCompleted(false);
+        asyncWriteService.saveSwimLane(swimLane);
+        return swimLane;
     }
 
     public void deleteSwimLane(Long id) {
@@ -65,7 +71,8 @@ public class SwimLaneService {
                     return new RuntimeException("SwimLane not found");
                 });
         swimLane.setIsDeleted(true);
-        swimLaneDAO.save(swimLane);
+        swimLane.setIsDeleted(true);
+        asyncWriteService.saveSwimLane(swimLane);
     }
 
     public void hardDeleteSwimLane(Long id) {

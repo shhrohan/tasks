@@ -19,12 +19,14 @@ public class TaskService {
 
     private final TaskDAO taskDAO;
     private final SwimLaneDAO swimLaneDAO;
+    private final AsyncWriteService asyncWriteService;
 
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
-    public TaskService(TaskDAO taskDAO, SwimLaneDAO swimLaneDAO) {
+    public TaskService(TaskDAO taskDAO, SwimLaneDAO swimLaneDAO, AsyncWriteService asyncWriteService) {
         this.taskDAO = taskDAO;
         this.swimLaneDAO = swimLaneDAO;
+        this.asyncWriteService = asyncWriteService;
         this.objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
         this.objectMapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
@@ -47,7 +49,7 @@ public class TaskService {
     }
 
     public Task updateTask(Long id, Task updatedTask) {
-        log.debug("Updating task {} with data: {}", id, updatedTask);
+        log.debug("Delegating UPDATE for task {} to Async Service", id);
         return taskDAO.findById(id)
                 .map(existing -> {
                     existing.setName(updatedTask.getName());
@@ -62,7 +64,10 @@ public class TaskService {
                                 });
                         existing.setSwimLane(lane);
                     }
-                    return taskDAO.save(existing);
+                    // Fire and forget
+                    asyncWriteService.saveTask(existing);
+                    log.debug("Returning immediate response to UI for task {}", id);
+                    return existing;
                 })
                 .orElseThrow(() -> {
                     log.error("Task not found: {}", id);
@@ -71,20 +76,21 @@ public class TaskService {
     }
 
     public void deleteTask(Long id) {
-        log.debug("Deleting task {}", id);
-        taskDAO.deleteById(id);
+        log.debug("Delegating DELETE for task {} to Async Service", id);
+        asyncWriteService.deleteTask(id);
+        log.debug("Returning immediate response to UI for delete task {}", id);
     }
 
     @Transactional
     public Task moveTask(Long id, TaskStatus newStatus, Long swimLaneId) {
-        log.debug("Moving task {} to status {} in lane {}", id, newStatus, swimLaneId);
+        log.debug("Delegating MOVE for task {} to Async Service", id);
         Task task = taskDAO.findById(id)
                 .orElseThrow(() -> {
                     log.error("Task not found: {}", id);
                     return new IllegalArgumentException("Task not found: " + id);
                 });
         task.setStatus(newStatus);
-        
+
         if (swimLaneId != null) {
             SwimLane lane = swimLaneDAO.findById(swimLaneId)
                     .orElseThrow(() -> {
@@ -93,8 +99,10 @@ public class TaskService {
                     });
             task.setSwimLane(lane);
         }
-        
-        return task; // persisted by transaction
+
+        asyncWriteService.saveTask(task);
+        log.debug("Returning immediate response to UI for move task {}", id);
+        return task;
     }
 
     public com.example.todo.model.Comment addComment(Long taskId, String text) {
@@ -109,7 +117,8 @@ public class TaskService {
                     .build();
             comments.add(newComment);
             task.setComments(objectMapper.writeValueAsString(comments));
-            taskDAO.save(task);
+            task.setComments(objectMapper.writeValueAsString(comments));
+            asyncWriteService.saveTask(task);
             return newComment;
         } catch (Exception e) {
             throw new RuntimeException("Error adding comment", e);
@@ -124,12 +133,13 @@ public class TaskService {
                     .filter(c -> c.getId().equals(commentId))
                     .findFirst()
                     .orElseThrow(() -> new IllegalArgumentException("Comment not found"));
-            
+
             comment.setText(newText);
             comment.setUpdatedAt(java.time.LocalDateTime.now());
-            
+
             task.setComments(objectMapper.writeValueAsString(comments));
-            taskDAO.save(task);
+            task.setComments(objectMapper.writeValueAsString(comments));
+            asyncWriteService.saveTask(task);
             return comment;
         } catch (Exception e) {
             throw new RuntimeException("Error updating comment", e);
@@ -142,7 +152,8 @@ public class TaskService {
             List<com.example.todo.model.Comment> comments = parseComments(task.getComments());
             comments.removeIf(c -> c.getId().equals(commentId));
             task.setComments(objectMapper.writeValueAsString(comments));
-            taskDAO.save(task);
+            task.setComments(objectMapper.writeValueAsString(comments));
+            asyncWriteService.saveTask(task);
         } catch (Exception e) {
             throw new RuntimeException("Error deleting comment", e);
         }
@@ -156,20 +167,24 @@ public class TaskService {
             // Handle legacy string array if necessary, or assume migration is handled.
             // For robustness, check if it starts with [" (legacy) or [{" (new)
             if (json.trim().startsWith("[\"")) {
-                 // Legacy: List<String>
-                 List<String> oldComments = objectMapper.readValue(json, new com.fasterxml.jackson.core.type.TypeReference<List<String>>(){});
-                 List<com.example.todo.model.Comment> newComments = new java.util.ArrayList<>();
-                 for (String text : oldComments) {
-                     newComments.add(com.example.todo.model.Comment.builder()
-                             .id(java.util.UUID.randomUUID().toString())
-                             .text(text)
-                             .createdAt(java.time.LocalDateTime.now())
-                             .updatedAt(java.time.LocalDateTime.now())
-                             .build());
-                 }
-                 return newComments;
+                // Legacy: List<String>
+                List<String> oldComments = objectMapper.readValue(json,
+                        new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {
+                        });
+                List<com.example.todo.model.Comment> newComments = new java.util.ArrayList<>();
+                for (String text : oldComments) {
+                    newComments.add(com.example.todo.model.Comment.builder()
+                            .id(java.util.UUID.randomUUID().toString())
+                            .text(text)
+                            .createdAt(java.time.LocalDateTime.now())
+                            .updatedAt(java.time.LocalDateTime.now())
+                            .build());
+                }
+                return newComments;
             } else {
-                return objectMapper.readValue(json, new com.fasterxml.jackson.core.type.TypeReference<List<com.example.todo.model.Comment>>(){});
+                return objectMapper.readValue(json,
+                        new com.fasterxml.jackson.core.type.TypeReference<List<com.example.todo.model.Comment>>() {
+                        });
             }
         } catch (Exception e) {
             log.error("Error parsing comments: {}", e.getMessage());
