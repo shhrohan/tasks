@@ -15,6 +15,7 @@ public class TestSummaryExtension implements TestWatcher, BeforeAllCallback {
     private static final AtomicLong successTests = new AtomicLong(0);
     private static final AtomicLong failedTests = new AtomicLong(0);
     private static final AtomicLong abortedTests = new AtomicLong(0);
+    private static final long startTime = System.currentTimeMillis();
 
     @Override
     public void beforeAll(ExtensionContext context) {
@@ -47,6 +48,7 @@ public class TestSummaryExtension implements TestWatcher, BeforeAllCallback {
     private static class SummaryPrinter implements CloseableResource {
         @Override
         public void close() {
+            long duration = System.currentTimeMillis() - startTime;
             System.out.println("\n=======================================================");
             System.out.println("                 TEST EXECUTION SUMMARY");
             System.out.println("=======================================================");
@@ -54,6 +56,7 @@ public class TestSummaryExtension implements TestWatcher, BeforeAllCallback {
             System.out.println("Succeeded       : " + successTests.get());
             System.out.println("Failed          : " + failedTests.get());
             System.out.println("Aborted         : " + abortedTests.get());
+            System.out.println("Total Time      : " + duration + " ms");
             System.out.println("=======================================================\n");
         }
     }
