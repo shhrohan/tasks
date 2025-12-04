@@ -632,6 +632,13 @@ body {
     border-left: 4px solid var(--accent-color) !important;
 }
 
+/* List View Container */
+.list-view {
+    min-height: calc(100vh - 120px);
+    display: flex;
+    align-items: center;
+}
+
 /* Custom Scrollbar for List View */
 .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
