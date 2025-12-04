@@ -6,6 +6,3 @@ data/
 *.iml
 
 .gemini-clipboard
-apache-maven*
-
-.agent/
