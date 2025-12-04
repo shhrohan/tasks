@@ -1,6 +1,6 @@
 package com.example.todo.controller;
 
-import com.example.todo.BaseIntegrationTest;
+import com.example.todo.base.BaseIntegrationTest;
 import com.example.todo.model.SwimLane;
 import com.example.todo.repository.SwimLaneRepository;
 import org.junit.jupiter.api.Test;

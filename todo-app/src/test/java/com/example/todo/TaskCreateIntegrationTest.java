@@ -1,5 +1,6 @@
 package com.example.todo;
 
+import com.example.todo.base.BaseIntegrationTest;
 import com.example.todo.model.Task;
 import com.example.todo.model.TaskStatus;
 import org.junit.jupiter.api.Test;

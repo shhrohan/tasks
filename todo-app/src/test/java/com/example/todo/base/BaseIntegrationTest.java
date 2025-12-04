@@ -1,4 +1,4 @@
-package com.example.todo;
+package com.example.todo.base;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
