@@ -11,7 +11,7 @@ document.addEventListener('alpine:init', () => {
         // State
         tasks: [],
         swimLanes: [],
-        currentView: 'main', // 'main' or 'completed'
+        currentView: 'main', // 'main', 'list', 'completed'
         showStats: false,
         columns: ['TODO', 'IN_PROGRESS', 'DONE', 'BLOCKED', 'DEFERRED'],
 
@@ -77,6 +77,26 @@ document.addEventListener('alpine:init', () => {
 
         get completedLanes() {
             return this.swimLanes.filter(lane => lane.isCompleted && !lane.isDeleted);
+        },
+
+        get filteredTasks() {
+            let tasks = this.tasks.filter(t => !t.swimLane?.isDeleted && !t.swimLane?.isCompleted);
+
+            // Filter by search tags
+            if (this.searchTags.length > 0) {
+                tasks = tasks.filter(t => {
+                    if (!t.tags) return false;
+                    const taskTags = this.getTaskTags(t.tags);
+                    return this.searchTags.every(tag => taskTags.includes(tag));
+                });
+            }
+
+            // Sort by Swimlane then Name
+            return tasks.sort((a, b) => {
+                const laneA = a.swimLane?.name || '';
+                const laneB = b.swimLane?.name || '';
+                return laneA.localeCompare(laneB) || a.name.localeCompare(b.name);
+            });
         },
 
         // Initialize app
@@ -322,8 +342,37 @@ document.addEventListener('alpine:init', () => {
         },
 
         toggleView() {
-            this.currentView = this.currentView === 'main' ? 'completed' : 'main';
+            if (this.currentView === 'main') {
+                this.currentView = 'list';
+            } else if (this.currentView === 'list') {
+                this.currentView = 'completed';
+            } else {
+                this.currentView = 'main';
+            }
             this.$nextTick(() => this.animateElements());
+        },
+
+        selectTask(task) {
+            this.loadTaskDetails(task);
+        },
+
+        loadTaskDetails(taskData) {
+            // Always find the latest task state from the main array
+            const task = this.tasks.find(t => t.id == taskData.id) || taskData;
+
+            this.currentTask = {
+                id: task.id,
+                name: task.name,
+                tags: this.getTaskTags(task.tags),
+                comments: '', // Input for new comment
+                existingComments: this.getTaskComments(task.comments), // Helper to parse existing
+                status: task.status,
+                swimLaneName: task.swimLane?.name
+            };
+            this.newTag = '';
+            this.editingCommentId = null;
+            this.editingCommentText = '';
+            this.selectedSwimLaneId = task.swimLane?.id || null;
         },
 
         // --- Comment Management ---
@@ -654,25 +703,10 @@ document.addEventListener('alpine:init', () => {
         },
 
         openTaskModal(taskData) {
-            // Always find the latest task state from the main array
-            const task = this.tasks.find(t => t.id == taskData.id) || taskData;
-
+            this.loadTaskDetails(taskData);
             this.modalTitle = 'Task Details';
             this.isEditMode = true; // It is an existing task
             this.isViewMode = true; // Start in view mode
-            this.currentTask = {
-                id: task.id,
-                name: task.name,
-                tags: this.getTaskTags(task.tags),
-                comments: '', // Input for new comment
-                existingComments: this.getTaskComments(task.comments), // Helper to parse existing
-                status: task.status,
-                swimLaneName: task.swimLane?.name
-            };
-            this.newTag = '';
-            this.editingCommentId = null;
-            this.editingCommentText = '';
-            this.selectedSwimLaneId = task.swimLane?.id || null;
             this.taskPane.show();
         },
 
