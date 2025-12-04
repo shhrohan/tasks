@@ -1,44 +1,29 @@
 package com.example.todo.controller;
 
+import com.example.todo.BaseIntegrationTest;
 import com.example.todo.model.SwimLane;
-import com.example.todo.service.SwimLaneService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.example.todo.repository.SwimLaneRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Arrays;
+import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.verify;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(SwimLaneController.class)
-class SwimLaneControllerTest {
+class SwimLaneControllerTest extends BaseIntegrationTest {
 
     @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
-    private SwimLaneService swimLaneService;
-
-    @Autowired
-    private ObjectMapper objectMapper;
+    private SwimLaneRepository swimLaneRepository;
 
     @Test
     void getAllSwimLanes_ShouldReturnList() throws Exception {
         SwimLane lane = new SwimLane();
-        lane.setId(1L);
         lane.setName("Lane 1");
-
-        when(swimLaneService.getAllSwimLanes()).thenReturn(Arrays.asList(lane));
+        swimLaneRepository.save(lane);
 
         mockMvc.perform(get("/api/swimlanes"))
                 .andExpect(status().isOk())
@@ -50,77 +35,93 @@ class SwimLaneControllerTest {
         SwimLane lane = new SwimLane();
         lane.setName("New Lane");
 
-        when(swimLaneService.createSwimLane(any(SwimLane.class))).thenReturn(lane);
-
         mockMvc.perform(post("/api/swimlanes")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(lane)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("New Lane"));
+
+        List<SwimLane> lanes = swimLaneRepository.findAll();
+        assertEquals(1, lanes.size());
+        assertEquals("New Lane", lanes.get(0).getName());
     }
 
     @Test
     void completeSwimLane_ShouldReturnCompletedLane() throws Exception {
-        Long laneId = 1L;
         SwimLane lane = new SwimLane();
-        lane.setId(laneId);
-        lane.setIsCompleted(true);
+        lane.setName("To Complete");
+        lane.setIsCompleted(false);
+        lane = swimLaneRepository.save(lane);
 
-        when(swimLaneService.completeSwimLane(laneId)).thenReturn(lane);
-
-        mockMvc.perform(patch("/api/swimlanes/{id}/complete", laneId))
+        mockMvc.perform(patch("/api/swimlanes/{id}/complete", lane.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.isCompleted").value(true));
+
+        SwimLane updatedLane = swimLaneRepository.findById(lane.getId()).orElseThrow();
+        assertTrue(updatedLane.getIsCompleted());
     }
 
     @Test
     void getActiveSwimLanes_ShouldReturnActiveLanes() throws Exception {
-        SwimLane lane = new SwimLane();
-        lane.setId(1L);
-        lane.setIsCompleted(false);
+        SwimLane activeLane = new SwimLane();
+        activeLane.setName("Active");
+        activeLane.setIsCompleted(false);
+        swimLaneRepository.save(activeLane);
 
-        when(swimLaneService.getActiveSwimLanes()).thenReturn(Arrays.asList(lane));
+        SwimLane completedLane = new SwimLane();
+        completedLane.setName("Completed");
+        completedLane.setIsCompleted(true);
+        swimLaneRepository.save(completedLane);
 
         mockMvc.perform(get("/api/swimlanes/active"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].isCompleted").value(false));
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].name").value("Active"));
     }
 
     @Test
     void getCompletedSwimLanes_ShouldReturnCompletedLanes() throws Exception {
-        SwimLane lane = new SwimLane();
-        lane.setId(1L);
-        lane.setIsCompleted(true);
+        SwimLane activeLane = new SwimLane();
+        activeLane.setName("Active");
+        activeLane.setIsCompleted(false);
+        swimLaneRepository.save(activeLane);
 
-        when(swimLaneService.getCompletedSwimLanes()).thenReturn(Arrays.asList(lane));
+        SwimLane completedLane = new SwimLane();
+        completedLane.setName("Completed");
+        completedLane.setIsCompleted(true);
+        swimLaneRepository.save(completedLane);
 
         mockMvc.perform(get("/api/swimlanes/completed"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].isCompleted").value(true));
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].name").value("Completed"));
     }
 
     @Test
     void uncompleteSwimLane_ShouldReturnActiveLane() throws Exception {
-        Long laneId = 1L;
         SwimLane lane = new SwimLane();
-        lane.setId(laneId);
-        lane.setIsCompleted(false);
+        lane.setName("To Uncomplete");
+        lane.setIsCompleted(true);
+        lane = swimLaneRepository.save(lane);
 
-        when(swimLaneService.uncompleteSwimLane(laneId)).thenReturn(lane);
-
-        mockMvc.perform(patch("/api/swimlanes/{id}/uncomplete", laneId))
+        mockMvc.perform(patch("/api/swimlanes/{id}/uncomplete", lane.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.isCompleted").value(false));
+
+        SwimLane updatedLane = swimLaneRepository.findById(lane.getId()).orElseThrow();
+        assertFalse(updatedLane.getIsCompleted());
     }
 
     @Test
     void deleteSwimLane_ShouldReturnOk() throws Exception {
-        Long laneId = 1L;
-        doNothing().when(swimLaneService).deleteSwimLane(laneId);
+        SwimLane lane = new SwimLane();
+        lane.setName("To Delete");
+        lane = swimLaneRepository.save(lane);
 
-        mockMvc.perform(delete("/api/swimlanes/{id}", laneId))
+        mockMvc.perform(delete("/api/swimlanes/{id}", lane.getId()))
                 .andExpect(status().isOk());
 
-        verify(swimLaneService).deleteSwimLane(laneId);
+        SwimLane deletedLane = swimLaneRepository.findById(lane.getId()).orElseThrow();
+        assertTrue(deletedLane.getIsDeleted());
     }
 }

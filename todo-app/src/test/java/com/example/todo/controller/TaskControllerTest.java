@@ -1,185 +1,191 @@
 package com.example.todo.controller;
 
+import com.example.todo.BaseIntegrationTest;
+import com.example.todo.model.SwimLane;
 import com.example.todo.model.Task;
 import com.example.todo.model.TaskStatus;
-import com.example.todo.service.TaskService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.example.todo.repository.SwimLaneRepository;
+import com.example.todo.repository.TaskRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Arrays;
-import java.util.Optional;
+import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.verify;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(TaskController.class)
-class TaskControllerTest {
+class TaskControllerTest extends BaseIntegrationTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private TaskRepository taskRepository;
 
-    @MockBean
-    private TaskService taskService;
+        @Autowired
+        private SwimLaneRepository swimLaneRepository;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+        @Test
+        void getAllTasks_ShouldReturnTaskList() throws Exception {
+                Task task1 = new Task();
+                task1.setName("Task 1");
+                task1.setStatus(TaskStatus.TODO);
+                taskRepository.save(task1);
 
-    @Test
-    void getAllTasks_ShouldReturnTaskList() throws Exception {
-        Task task1 = new Task();
-        task1.setId(1L);
-        task1.setName("Task 1");
+                mockMvc.perform(get("/api/tasks"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$[0].name").value("Task 1"));
+        }
 
-        when(taskService.getAllTasks()).thenReturn(Arrays.asList(task1));
+        @Test
+        void createTask_ShouldReturnCreatedTask() throws Exception {
+                Task task = new Task();
+                task.setName("New Task");
 
-        mockMvc.perform(get("/api/tasks"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Task 1"));
-    }
+                mockMvc.perform(post("/api/tasks")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(task)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.name").value("New Task"));
 
-    @Test
-    void createTask_ShouldReturnCreatedTask() throws Exception {
-        Task task = new Task();
-        task.setName("New Task");
+                List<Task> tasks = taskRepository.findAll();
+                assertEquals(1, tasks.size());
+                assertEquals("New Task", tasks.get(0).getName());
+        }
 
-        when(taskService.createTask(any(Task.class))).thenReturn(task);
+        @Test
+        void updateTask_ShouldReturnUpdatedTask() throws Exception {
+                Task task = new Task();
+                task.setName("Old Task");
+                task.setStatus(TaskStatus.TODO);
+                task = taskRepository.save(task);
 
-        mockMvc.perform(post("/api/tasks")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(task)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("New Task"));
-    }
+                Task updatedInfo = new Task();
+                updatedInfo.setName("Updated Task");
+                updatedInfo.setStatus(TaskStatus.IN_PROGRESS);
 
-    @Test
-    void updateTask_ShouldReturnUpdatedTask() throws Exception {
-        Long taskId = 1L;
-        Task task = new Task();
-        task.setName("Updated Task");
+                mockMvc.perform(put("/api/tasks/{id}", task.getId())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(updatedInfo)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.name").value("Updated Task"));
 
-        when(taskService.updateTask(eq(taskId), any(Task.class))).thenReturn(task);
+                Task updatedTask = taskRepository.findById(task.getId()).orElseThrow();
+                assertEquals("Updated Task", updatedTask.getName());
+        }
 
-        mockMvc.perform(put("/api/tasks/{id}", taskId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(task)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Updated Task"));
-    }
+        @Test
+        void getTask_ShouldReturnTask_WhenFound() throws Exception {
+                Task task = new Task();
+                task.setName("Existing Task");
+                task.setStatus(TaskStatus.TODO);
+                task = taskRepository.save(task);
 
-    @Test
-    void getTask_ShouldReturnTask_WhenFound() throws Exception {
-        Long taskId = 1L;
-        Task task = new Task();
-        task.setId(taskId);
-        task.setName("Existing Task");
+                mockMvc.perform(get("/api/tasks/{id}", task.getId()))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.name").value("Existing Task"));
+        }
 
-        when(taskService.getTask(taskId)).thenReturn(Optional.of(task));
+        @Test
+        void getTask_ShouldReturnNotFound_WhenNotFound() throws Exception {
+                mockMvc.perform(get("/api/tasks/{id}", 999L))
+                                .andExpect(status().isNotFound());
+        }
 
-        mockMvc.perform(get("/api/tasks/{id}", taskId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Existing Task"));
-    }
+        @Test
+        void deleteTask_ShouldReturnNoContent() throws Exception {
+                Task task = new Task();
+                task.setName("Delete Me");
+                task.setStatus(TaskStatus.TODO);
+                task = taskRepository.save(task);
 
-    @Test
-    void getTask_ShouldReturnNotFound_WhenNotFound() throws Exception {
-        Long taskId = 99L;
-        when(taskService.getTask(taskId)).thenReturn(Optional.empty());
+                mockMvc.perform(delete("/api/tasks/{id}", task.getId()))
+                                .andExpect(status().isNoContent());
 
-        mockMvc.perform(get("/api/tasks/{id}", taskId))
-                .andExpect(status().isNotFound());
-    }
+                assertFalse(taskRepository.existsById(task.getId()));
+        }
 
-    @Test
-    void deleteTask_ShouldReturnNoContent() throws Exception {
-        Long taskId = 1L;
-        doNothing().when(taskService).deleteTask(taskId);
+        @Test
+        void moveTask_ShouldReturnMovedTask() throws Exception {
+                SwimLane lane = new SwimLane();
+                lane.setName("Lane 1");
+                lane = swimLaneRepository.save(lane);
 
-        mockMvc.perform(delete("/api/tasks/{id}", taskId))
-                .andExpect(status().isNoContent());
+                Task task = new Task();
+                task.setName("Move Me");
+                task.setStatus(TaskStatus.TODO);
+                task = taskRepository.save(task);
 
-        verify(taskService).deleteTask(taskId);
-    }
+                mockMvc.perform(patch("/api/tasks/{id}/move", task.getId())
+                                .param("status", "DONE")
+                                .param("swimLaneId", lane.getId().toString()))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.status").value("DONE"));
 
-    @Test
-    void moveTask_ShouldReturnMovedTask() throws Exception {
-        Long taskId = 1L;
-        Long laneId = 2L;
-        Task task = new Task();
-        task.setId(taskId);
-        task.setStatus(TaskStatus.DONE);
+                Task movedTask = taskRepository.findById(task.getId()).orElseThrow();
+                assertEquals(TaskStatus.DONE, movedTask.getStatus());
+                assertEquals(lane.getId(), movedTask.getSwimLane().getId());
+        }
 
-        when(taskService.moveTask(taskId, TaskStatus.DONE, laneId)).thenReturn(task);
+        @Test
+        void moveTask_ShouldReturnNotFound_WhenExceptionOccurs() throws Exception {
+                mockMvc.perform(patch("/api/tasks/{id}/move", 999L)
+                                .param("status", "DONE"))
+                                .andExpect(status().isNotFound());
+        }
 
-        mockMvc.perform(patch("/api/tasks/{id}/move", taskId)
-                .param("status", "DONE")
-                .param("swimLaneId", laneId.toString()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("DONE"));
-    }
+        @Test
+        void addComment_ShouldReturnComment() throws Exception {
+                Task task = new Task();
+                task.setName("Comment Task");
+                task.setStatus(TaskStatus.TODO);
+                task = taskRepository.save(task);
 
-    @Test
-    void moveTask_ShouldReturnNotFound_WhenExceptionOccurs() throws Exception {
-        Long taskId = 1L;
-        when(taskService.moveTask(any(), any(), any())).thenThrow(new IllegalArgumentException("Not found"));
+                String commentText = "New Comment";
 
-        mockMvc.perform(patch("/api/tasks/{id}/move", taskId)
-                .param("status", "DONE"))
-                .andExpect(status().isNotFound());
-    }
+                mockMvc.perform(post("/api/tasks/{id}/comments", task.getId())
+                                .content(commentText))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.text").value(commentText));
 
-    @Test
-    void addComment_ShouldReturnComment() throws Exception {
-        Long taskId = 1L;
-        String commentText = "New Comment";
-        com.example.todo.model.Comment comment = com.example.todo.model.Comment.builder()
-                .id("c1")
-                .text(commentText)
-                .build();
+                Task commentedTask = taskRepository.findById(task.getId()).orElseThrow();
+                assertTrue(commentedTask.getComments().contains(commentText));
+        }
 
-        when(taskService.addComment(eq(taskId), anyString())).thenReturn(comment);
+        @Test
+        void updateComment_ShouldReturnUpdatedComment() throws Exception {
+                Task task = new Task();
+                task.setName("Update Comment Task");
+                task.setStatus(TaskStatus.TODO);
+                // Add initial comment
+                String initialJson = "[{\"id\":\"c1\",\"text\":\"Old Text\",\"createdAt\":\"2023-01-01T10:00:00\",\"updatedAt\":\"2023-01-01T10:00:00\"}]";
+                task.setComments(initialJson);
+                task = taskRepository.save(task);
 
-        mockMvc.perform(post("/api/tasks/{id}/comments", taskId)
-                .content(commentText))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.text").value(commentText));
-    }
+                String newText = "Updated Comment";
 
-    @Test
-    void updateComment_ShouldReturnUpdatedComment() throws Exception {
-        Long taskId = 1L;
-        String commentId = "c1";
-        String newText = "Updated Comment";
-        com.example.todo.model.Comment comment = com.example.todo.model.Comment.builder()
-                .id(commentId)
-                .text(newText)
-                .build();
+                mockMvc.perform(put("/api/tasks/{id}/comments/{commentId}", task.getId(), "c1")
+                                .content(newText))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.text").value(newText));
 
-        when(taskService.updateComment(eq(taskId), eq(commentId), anyString())).thenReturn(comment);
+                Task updatedTask = taskRepository.findById(task.getId()).orElseThrow();
+                assertTrue(updatedTask.getComments().contains(newText));
+        }
 
-        mockMvc.perform(put("/api/tasks/{id}/comments/{commentId}", taskId, commentId)
-                .content(newText))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.text").value(newText));
-    }
+        @Test
+        void deleteComment_ShouldReturnNoContent() throws Exception {
+                Task task = new Task();
+                task.setName("Delete Comment Task");
+                task.setStatus(TaskStatus.TODO);
+                String initialJson = "[{\"id\":\"c1\",\"text\":\"Delete Me\",\"createdAt\":\"2023-01-01T10:00:00\",\"updatedAt\":\"2023-01-01T10:00:00\"}]";
+                task.setComments(initialJson);
+                task = taskRepository.save(task);
 
-    @Test
-    void deleteComment_ShouldReturnNoContent() throws Exception {
-        Long taskId = 1L;
-        String commentId = "c1";
-        doNothing().when(taskService).deleteComment(taskId, commentId);
+                mockMvc.perform(delete("/api/tasks/{id}/comments/{commentId}", task.getId(), "c1"))
+                                .andExpect(status().isNoContent());
 
-        mockMvc.perform(delete("/api/tasks/{id}/comments/{commentId}", taskId, commentId))
-                .andExpect(status().isNoContent());
-    }
+                Task deletedCommentTask = taskRepository.findById(task.getId()).orElseThrow();
+                assertEquals("[]", deletedCommentTask.getComments());
+        }
 }
