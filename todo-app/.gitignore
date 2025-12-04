@@ -8,5 +8,4 @@ data/
 .gemini-clipboard
 apache-maven*
 
-# Ignore all dot directories
-.*/
+.agent/
