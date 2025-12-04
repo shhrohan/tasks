@@ -31,13 +31,19 @@
                 </a>
                 <div class="d-flex gap-2">
                     <div class="btn-group" role="group" aria-label="View Switcher">
-                        <button type="button" class="btn btn-outline-light" :class="{ 'active': currentView === 'main' }" @click="currentView = 'main'; $nextTick(() => animateElements())">
+                        <button type="button" class="btn btn-outline-light"
+                            :class="{ 'active': currentView === 'main' }"
+                            @click="currentView = 'main'; $nextTick(() => animateElements())">
                             <i class="fa-solid fa-cubes-stacked"></i> Board
                         </button>
-                        <button type="button" class="btn btn-outline-light" :class="{ 'active': currentView === 'list' }" @click="currentView = 'list'; $nextTick(() => animateElements())">
+                        <button type="button" class="btn btn-outline-light"
+                            :class="{ 'active': currentView === 'list' }"
+                            @click="currentView = 'list'; $nextTick(() => animateElements())">
                             <i class="fa-solid fa-list"></i> List
                         </button>
-                        <button type="button" class="btn btn-outline-light" :class="{ 'active': currentView === 'completed' }" @click="currentView = 'completed'; $nextTick(() => animateElements())">
+                        <button type="button" class="btn btn-outline-light"
+                            :class="{ 'active': currentView === 'completed' }"
+                            @click="currentView = 'completed'; $nextTick(() => animateElements())">
                             <i class="fa-solid fa-check-circle"></i> Completed
                         </button>
                     </div>
@@ -237,8 +243,8 @@
                 x-transition:enter-start="flip-in-from" x-transition:enter-end="flip-in-to"
                 x-transition:leave="flip-out-active" x-transition:leave-start="flip-out-from"
                 x-transition:leave-end="flip-out-to" class="list-view container-fluid">
-                
-                <div class="row g-4 h-100">
+
+                <div class="row g-4 h-100 w-100">
                     <!-- Master List -->
                     <div class="col-lg-4">
                         <div class="glass-panel rounded h-100 d-flex flex-column">
@@ -261,17 +267,21 @@
                                 </template>
                                 <div class="list-group list-group-flush">
                                     <template x-for="task in filteredTasks" :key="task.id">
-                                        <button type="button" 
+                                        <button type="button"
                                             class="list-group-item list-group-item-action bg-transparent text-white border-bottom border-secondary mb-2 rounded"
                                             :class="{'active-task': currentTask && currentTask.id === task.id}"
                                             @click="selectTask(task)">
                                             <div class="d-flex w-100 justify-content-between align-items-center mb-1">
                                                 <h6 class="mb-0 text-truncate" x-text="task.name"></h6>
-                                                <span class="badge border" :class="'status-' + task.status.toLowerCase()" x-text="task.status"></span>
+                                                <span class="badge border"
+                                                    :class="'status-' + task.status.toLowerCase()"
+                                                    x-text="task.status"></span>
                                             </div>
-                                            <div class="d-flex justify-content-between align-items-center small text-white-50">
+                                            <div
+                                                class="d-flex justify-content-between align-items-center small text-white-50">
                                                 <span x-text="task.swimLane?.name"></span>
-                                                <span><i class="fa-regular fa-comment"></i> <span x-text="getTaskCommentCount(task.comments)"></span></span>
+                                                <span><i class="fa-regular fa-comment"></i> <span
+                                                        x-text="getTaskCommentCount(task.comments)"></span></span>
                                             </div>
                                         </button>
                                     </template>
@@ -284,16 +294,18 @@
                     <div class="col-lg-8">
                         <div class="glass-panel rounded h-100 p-4">
                             <template x-if="!currentTask || !currentTask.id">
-                                <div class="d-flex flex-column align-items-center justify-content-center h-100 text-white-50">
+                                <div
+                                    class="d-flex flex-column align-items-center justify-content-center h-100 text-white-50">
                                     <i class="fa-regular fa-hand-pointer fa-3x mb-3"></i>
                                     <h5>Select a task to view details</h5>
                                 </div>
                             </template>
-                            
+
                             <template x-if="currentTask && currentTask.id">
                                 <div class="h-100 d-flex flex-column">
                                     <!-- Header -->
-                                    <div class="d-flex justify-content-between align-items-start mb-4 border-bottom border-secondary pb-3">
+                                    <div
+                                        class="d-flex justify-content-between align-items-start mb-4 border-bottom border-secondary pb-3">
                                         <div>
                                             <h2 class="h3 mb-2" x-text="currentTask.name"></h2>
                                             <div class="d-flex align-items-center gap-3">
@@ -324,34 +336,44 @@
                                             <label class="text-secondary small text-uppercase fw-bold mb-2">Tags</label>
                                             <div class="d-flex flex-wrap gap-2">
                                                 <template x-for="tag in currentTask.tags" :key="tag">
-                                                    <span class="badge bg-dark border border-secondary rounded-1" x-text="tag"></span>
+                                                    <span class="badge bg-dark border border-secondary rounded-1"
+                                                        x-text="tag"></span>
                                                 </template>
                                             </div>
                                         </div>
 
                                         <!-- Comments -->
                                         <div class="mb-4">
-                                            <label class="text-secondary small text-uppercase fw-bold mb-2">Comments</label>
-                                            <template x-if="currentTask.existingComments && currentTask.existingComments.length > 0">
+                                            <label
+                                                class="text-secondary small text-uppercase fw-bold mb-2">Comments</label>
+                                            <template
+                                                x-if="currentTask.existingComments && currentTask.existingComments.length > 0">
                                                 <div class="d-flex flex-column gap-3 mb-3">
-                                                    <template x-for="comment in currentTask.existingComments" :key="comment.id">
+                                                    <template x-for="comment in currentTask.existingComments"
+                                                        :key="comment.id">
                                                         <div class="p-3 rounded bg-dark border border-secondary">
-                                                            <div class="d-flex justify-content-between align-items-start mb-1">
-                                                                <div class="text-white fst-italic" style="white-space: pre-wrap;" x-text="comment.text"></div>
+                                                            <div
+                                                                class="d-flex justify-content-between align-items-start mb-1">
+                                                                <div class="text-white fst-italic"
+                                                                    style="white-space: pre-wrap;"
+                                                                    x-text="comment.text"></div>
                                                                 <div class="d-flex gap-2 ms-3">
                                                                     <i class="fa-solid fa-trash small cursor-pointer text-danger opacity-50 hover-opacity-100"
-                                                                        @click="deleteComment(comment.id)" title="Delete"></i>
+                                                                        @click="deleteComment(comment.id)"
+                                                                        title="Delete"></i>
                                                                 </div>
                                                             </div>
                                                             <div class="text-end">
-                                                                <span class="text-white-50 small" style="font-size: 0.75rem;"
+                                                                <span class="text-white-50 small"
+                                                                    style="font-size: 0.75rem;"
                                                                     x-text="formatDate(comment.updatedAt)"></span>
                                                             </div>
                                                         </div>
                                                     </template>
                                                 </div>
                                             </template>
-                                            <template x-if="!currentTask.existingComments || currentTask.existingComments.length === 0">
+                                            <template
+                                                x-if="!currentTask.existingComments || currentTask.existingComments.length === 0">
                                                 <p class="text-white-50 fst-italic mb-3">No comments yet.</p>
                                             </template>
 
