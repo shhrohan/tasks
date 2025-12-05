@@ -49,7 +49,7 @@ public class TaskService {
     }
 
     public Task updateTask(Long id, Task updatedTask) {
-        log.info("Delegating UPDATE for task {} to Async Service [Thread: {}]", id, Thread.currentThread().getName());
+        log.info("Delegating UPDATE for task {} to Async Service", id);
         return taskDAO.findById(id)
                 .map(existing -> {
                     existing.setName(updatedTask.getName());
@@ -66,8 +66,7 @@ public class TaskService {
                     }
                     // Fire and forget
                     asyncWriteService.saveTask(existing);
-                    log.info("Returning immediate response to UI for task {} [Thread: {}]", id,
-                            Thread.currentThread().getName());
+                    log.info("Returning immediate response to UI for task {}", id);
                     return existing;
                 })
                 .orElseThrow(() -> {
@@ -77,15 +76,14 @@ public class TaskService {
     }
 
     public void deleteTask(Long id) {
-        log.info("Delegating DELETE for task {} to Async Service [Thread: {}]", id, Thread.currentThread().getName());
+        log.info("Delegating DELETE for task {} to Async Service", id);
         asyncWriteService.deleteTask(id);
-        log.info("Returning immediate response to UI for delete task {} [Thread: {}]", id,
-                Thread.currentThread().getName());
+        log.info("Returning immediate response to UI for delete task {}", id);
     }
 
     @Transactional
     public Task moveTask(Long id, TaskStatus newStatus, Long swimLaneId) {
-        log.info("Delegating MOVE for task {} to Async Service [Thread: {}]", id, Thread.currentThread().getName());
+        log.info("Delegating MOVE for task {} to Async Service", id);
 
         // Optimization: Skip DB fetch. Construct dummy object for UI response.
         Task dummyTask = new Task();
@@ -99,8 +97,7 @@ public class TaskService {
         }
 
         asyncWriteService.moveTask(id, newStatus, swimLaneId);
-        log.info("Returning immediate response to UI for move task {} [Thread: {}]", id,
-                Thread.currentThread().getName());
+        log.info("Returning immediate response to UI for move task {}", id);
         return dummyTask;
     }
 

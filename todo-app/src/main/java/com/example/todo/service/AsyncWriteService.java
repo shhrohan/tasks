@@ -26,68 +26,49 @@ public class AsyncWriteService {
     @Async("asyncWriteExecutor")
     @Transactional
     public void saveTask(Task task) {
-        log.info("AsyncDB: Start processing SAVE for Task ID {} [Thread: {}]...", task.getId(),
-                Thread.currentThread().getName());
+        log.info("AsyncDB: Start processing SAVE for Task ID {}...", task.getId());
         simulateLatency();
         Task savedTask = taskDAO.save(task);
-        log.info("AsyncDB: Completed SAVE for Task ID {} [Thread: {}]", task.getId(), Thread.currentThread().getName());
-        sseService.broadcast("task-updated", savedTask);
-    }
-
-    @Async("asyncWriteExecutor")
-    @Transactional
-    public void moveTask(Long id, com.example.todo.model.TaskStatus status, Long laneId) {
-        log.info("AsyncDB: [DEBUG] Start processing MOVE for Task ID {} to Status {} Lane {} [Thread: {}]...", id,
-                status, laneId, Thread.currentThread().getName());
-        simulateLatency();
-        taskDAO.updatePosition(id, status, laneId);
-
-        // Fetch updated task to broadcast full state
-        taskDAO.findById(id).ifPresent(task -> {
-            log.info("AsyncDB: [DEBUG] Task found after update: ID={}, Name={}, Status={}, Lane={}",
+        log.info("AsyncDB: Completed SAVE for Task ID {}", task.getId());
                     task.getId(), task.getName(), task.getStatus(),
                     task.getSwimLane() != null ? task.getSwimLane().getId() : "null");
             sseService.broadcast("task-updated", task);
         });
 
-        log.info("AsyncDB: Completed MOVE for Task ID {} [Thread: {}]", id, Thread.currentThread().getName());
+        log.info("AsyncDB: Completed MOVE for Task ID {}", id);
     }
 
     @Async("asyncWriteExecutor")
     @Transactional
     public void deleteTask(Long id) {
-        log.info("AsyncDB: Start processing DELETE for Task ID {} [Thread: {}]...", id,
-                Thread.currentThread().getName());
+        log.info("AsyncDB: Start processing DELETE for Task ID {}...", id);
         simulateLatency();
         taskDAO.deleteById(id);
-        log.info("AsyncDB: Completed DELETE for Task ID {} [Thread: {}]", id, Thread.currentThread().getName());
+        log.info("AsyncDB: Completed DELETE for Task ID {}", id);
         sseService.broadcast("task-deleted", id);
     }
 
     @Async("asyncWriteExecutor")
     @Transactional
     public void saveSwimLane(SwimLane lane) {
-        log.info("AsyncDB: Start processing SAVE for SwimLane ID {} [Thread: {}]...", lane.getId(),
-                Thread.currentThread().getName());
+        log.info("AsyncDB: Start processing SAVE for SwimLane ID {}...", lane.getId());
         simulateLatency();
         SwimLane savedLane = swimLaneDAO.save(lane);
-        log.info("AsyncDB: Completed SAVE for SwimLane ID {} [Thread: {}]", lane.getId(),
-                Thread.currentThread().getName());
+        log.info("AsyncDB: Completed SAVE for SwimLane ID {}", lane.getId());
         sseService.broadcast("lane-updated", savedLane);
     }
 
     @Async("asyncWriteExecutor")
     @Transactional
     public void deleteSwimLane(Long id) {
-        log.info("AsyncDB: Start processing DELETE for SwimLane ID {} [Thread: {}]...", id,
-                Thread.currentThread().getName());
+        log.info("AsyncDB: Start processing DELETE for SwimLane ID {}...", id);
         simulateLatency();
         swimLaneDAO.deleteById(id); // Note: Service calls this with ID, but original code might have been object.
         // Checking original code: deleteSwimLane(Long id) calls
         // swimLaneDAO.deleteById(id).
         // Wait, previous view showed deleteSwimLane(Long id).
         // Let's stick to the signature in the file.
-        log.info("AsyncDB: Completed DELETE for SwimLane ID {} [Thread: {}]", id, Thread.currentThread().getName());
+        log.info("AsyncDB: Completed DELETE for SwimLane ID {}", id);
         sseService.broadcast("lane-updated", SwimLane.builder().id(id).isDeleted(true).build()); // Broadcast deletion
     }
 

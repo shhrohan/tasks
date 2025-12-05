@@ -46,8 +46,7 @@ public class SwimLaneService {
                 });
         swimLane.setIsCompleted(true);
         swimLane.setIsCompleted(true);
-        log.info("Delegating COMPLETE for swimlane {} to Async Service [Thread: {}]", id,
-                Thread.currentThread().getName());
+        log.info("Delegating COMPLETE for swimlane {} to Async Service", id);
         asyncWriteService.saveSwimLane(swimLane);
         return swimLane;
     }
@@ -61,8 +60,7 @@ public class SwimLaneService {
                 });
         swimLane.setIsCompleted(false);
         swimLane.setIsCompleted(false);
-        log.info("Delegating UNCOMPLETE for swimlane {} to Async Service [Thread: {}]", id,
-                Thread.currentThread().getName());
+        log.info("Delegating UNCOMPLETE for swimlane {} to Async Service", id);
         asyncWriteService.saveSwimLane(swimLane);
         return swimLane;
     }
@@ -76,8 +74,7 @@ public class SwimLaneService {
                 });
         swimLane.setIsDeleted(true);
         swimLane.setIsDeleted(true);
-        log.info("Delegating DELETE for swimlane {} to Async Service [Thread: {}]", id,
-                Thread.currentThread().getName());
+        log.info("Delegating DELETE for swimlane {} to Async Service", id);
         asyncWriteService.saveSwimLane(swimLane);
     }
 
