@@ -193,8 +193,21 @@ document.addEventListener('alpine:init', () => {
         handleSseTaskUpdate(updatedTask) {
             const index = this.tasks.findIndex(t => t.id === updatedTask.id);
             if (index !== -1) {
-                // Update existing
-                this.tasks[index] = updatedTask;
+                // Update existing - SMART MERGE to avoid redraws
+                const localTask = this.tasks[index];
+
+                // Only update properties, keep the object reference
+                Object.keys(updatedTask).forEach(key => {
+                    // Special handling for swimLane to avoid object replacement if ID matches
+                    if (key === 'swimLane' && localTask.swimLane && updatedTask.swimLane) {
+                        if (localTask.swimLane.id !== updatedTask.swimLane.id) {
+                            localTask.swimLane = updatedTask.swimLane;
+                        }
+                    } else {
+                        localTask[key] = updatedTask[key];
+                    }
+                });
+
                 // If this is the current task in modal, update it too
                 if (this.currentTask && this.currentTask.id === updatedTask.id) {
                     this.refreshTaskData(updatedTask);
@@ -203,9 +216,11 @@ document.addEventListener('alpine:init', () => {
                 // Add new (if it belongs to an active lane)
                 this.tasks.push(updatedTask);
             }
-            this.$nextTick(() => {
-                this.setupSortables();
-            });
+            // Only re-setup sortables if we actually added a new task or changed lanes
+            // For simple updates, we don't need to destroy/recreate sortables
+            // this.$nextTick(() => {
+            //     this.setupSortables();
+            // });
         },
 
         handleSseTaskDelete(id) {
