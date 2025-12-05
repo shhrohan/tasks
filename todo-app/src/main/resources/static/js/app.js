@@ -150,7 +150,7 @@ document.addEventListener('alpine:init', () => {
                                 const lanes = Array.from(boardContainer.querySelectorAll('.swimlane-row'));
                                 const orderedIds = lanes.map(lane => parseInt(lane.dataset.laneId));
 
-                                axios.patch(`${this.API_URL}/swimlanes/reorder`, orderedIds)
+                                axios.patch(`${this.SWIMLANE_URL}/reorder`, orderedIds)
                                     .then(() => {
                                         console.log('Swimlane order updated');
                                         // Update local data order without re-fetching
