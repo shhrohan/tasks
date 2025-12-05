@@ -172,6 +172,11 @@ document.addEventListener('alpine:init', () => {
 
                     this.tasks = [...this.tasks, ...uniqueNewTasks];
 
+                    // Smart Expansion: Only expand if tasks found (and current view allows)
+                    if (newTasks.length > 0) {
+                        lane.collapsed = false;
+                    }
+
                 } catch (error) {
                     console.error(`Error fetching tasks for lane ${lane.id}:`, error);
                     this.showNotification(`Failed to load tasks for ${lane.name}`, 'error');
@@ -186,7 +191,10 @@ document.addEventListener('alpine:init', () => {
         async fetchSwimLanes() {
             try {
                 const response = await axios.get(this.SWIMLANE_URL);
-                this.swimLanes = response.data;
+                this.swimLanes = response.data.map(lane => ({
+                    ...lane,
+                    collapsed: true // Default to collapsed
+                }));
             } catch (error) {
                 console.error('Error fetching swim lanes:', error);
             }

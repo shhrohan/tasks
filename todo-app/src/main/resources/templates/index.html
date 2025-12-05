@@ -193,6 +193,10 @@
                                     <span class="h5 mb-0" x-text="lane.name"></span>
                                     <span class="badge bg-secondary rounded-pill"
                                         x-text="getSwimLaneTaskCount(lane.id)"></span>
+                                    <div x-show="loadingLanes[lane.id]"
+                                        class="spinner-border spinner-border-sm text-primary ms-2" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
                                 </div>
                                 <div class="swimlane-actions d-flex gap-2">
                                     <button
@@ -207,15 +211,7 @@
                                 </div>
                             </div>
 
-                            <div x-show="loadingLanes[lane.id]"
-                                class="d-flex justify-content-center align-items-center p-5">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
-                            </div>
-
-                            <div class="swimlane-content row g-3 px-3 pb-3 pt-0"
-                                x-show="!lane.collapsed && !loadingLanes[lane.id]" x-collapse>
+                            <div class="swimlane-content row g-3 px-3 pb-3 pt-0" x-show="!lane.collapsed" x-collapse>
                                 <!-- Action Column -->
                                 <div
                                     class="col-12 col-lg-2 d-flex align-items-center justify-content-center border-end border-secondary">
