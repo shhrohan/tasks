@@ -162,11 +162,13 @@ document.addEventListener('alpine:init', () => {
 
             eventSource.onopen = () => {
                 console.log('%c SSE Connected successfully to /api/sse/stream', 'background: #222; color: #bada55');
+                this.showNotification('Connected', 'success');
             };
 
             eventSource.addEventListener('task-updated', (e) => {
                 const task = JSON.parse(e.data);
                 console.log('SSE: task-updated', task);
+                this.showNotification('Changes saved', 'success');
                 this.handleSseTaskUpdate(task);
             });
 
