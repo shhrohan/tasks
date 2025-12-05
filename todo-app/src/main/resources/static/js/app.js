@@ -116,12 +116,20 @@ document.addEventListener('alpine:init', () => {
                 this.confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
                 // this.statsModal removed
 
-                await Promise.all([this.fetchSwimLanes(), this.fetchTasks()]);
+                // Load swimlanes first and update UI incrementally
+                await this.fetchSwimLanes();
+                this.$nextTick(() => {
+                    this.setupSortables();
+                });
+                // Then load tasks and update UI incrementally
+                await this.fetchTasks();
+                this.$nextTick(() => {
+                    this.setupSortables();
+                });
 
                 this.initSSE();
 
                 this.$nextTick(() => {
-                    this.setupSortables();
                     this.animateElements();
                 });
             } catch (error) {
