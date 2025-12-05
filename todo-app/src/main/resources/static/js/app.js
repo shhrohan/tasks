@@ -128,6 +128,20 @@ document.addEventListener('alpine:init', () => {
                     console.log('Axios is defined');
                 }
 
+                // Global Axios Interceptor for Logging
+                axios.interceptors.request.use(request => {
+                    console.log(`[API Request] ${request.method.toUpperCase()} ${request.url}`);
+                    return request;
+                });
+
+                axios.interceptors.response.use(response => {
+                    console.log(`[API Response] ${response.config.method.toUpperCase()} ${response.config.url} - ${response.status}`);
+                    return response;
+                }, error => {
+                    console.error('[API Error]', error);
+                    return Promise.reject(error);
+                });
+
                 // Initialize Bootstrap Modals & Offcanvas
                 this.taskPane = new bootstrap.Offcanvas(document.getElementById('taskOffcanvas'));
                 this.laneModal = new bootstrap.Modal(document.getElementById('laneModal'));
