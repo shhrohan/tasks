@@ -228,52 +228,49 @@
                                         </button>
                                     </div>
                                 </div>
+                            </div>
 
-                                <div class="swimlane-content row g-3 px-3 pb-3 pt-0" x-show="!lane.collapsed"
-                                    x-collapse>
-                                    <!-- Action Column -->
-                                    <div
-                                        class="col-12 col-lg-2 d-flex align-items-center justify-content-center border-end border-secondary">
-                                        <button @click="openCreateTaskModal(lane.id)"
-                                            class="btn btn-primary w-100 w-lg-auto px-lg-4">
-                                            <i class="fa-solid fa-plus"></i> Add Task
-                                        </button>
-                                    </div>
+                            <div class="swimlane-content row g-3 px-3 pb-3 pt-0" x-show="!lane.collapsed" x-collapse>
+                                <!-- Action Column -->
+                                <div
+                                    class="col-12 col-lg-2 d-flex align-items-center justify-content-center border-end border-secondary">
+                                    <button @click="openCreateTaskModal(lane.id)"
+                                        class="btn btn-primary w-100 w-lg-auto px-lg-4">
+                                        <i class="fa-solid fa-plus"></i> Add Task
+                                    </button>
+                                </div>
 
-                                    <!-- Status Columns -->
-                                    <template x-for="status in columns" :key="status">
-                                        <div class="col-12 col-lg lane-column" :id="'lane-' + lane.id + '-' + status"
-                                            :data-status="status" :data-lane-id="lane.id">
-                                            <template x-for="task in getLaneTasksByStatus(lane.id, status)"
-                                                :key="task.id">
-                                                <div class="card task-card mb-2" :data-id="task.id"
-                                                    :data-status="task.status" :data-lane-id="task.swimLane?.id"
-                                                    @click="openTaskModal(task)">
-                                                    <div class="card-body p-2 d-flex flex-column h-100">
-                                                        <h6 class="card-title mb-2" x-text="task.name"></h6>
+                                <!-- Status Columns -->
+                                <template x-for="status in columns" :key="status">
+                                    <div class="col-12 col-lg lane-column" :id="'lane-' + lane.id + '-' + status"
+                                        :data-status="status" :data-lane-id="lane.id">
+                                        <template x-for="task in getLaneTasksByStatus(lane.id, status)" :key="task.id">
+                                            <div class="card task-card mb-2" :data-id="task.id"
+                                                :data-status="task.status" :data-lane-id="task.swimLane?.id"
+                                                @click="openTaskModal(task)">
+                                                <div class="card-body p-2 d-flex flex-column h-100">
+                                                    <h6 class="card-title mb-2" x-text="task.name"></h6>
 
-                                                        <div
-                                                            class="mt-auto d-flex justify-content-between align-items-end">
-                                                            <div class="text-white-50 small">
-                                                                <span><i class="fa-regular fa-comment"></i> <span
-                                                                        x-text="getTaskCommentCount(task.comments)"></span></span>
-                                                            </div>
-                                                            <div class="task-tags text-end">
-                                                                <template x-for="tag in getTaskTags(task.tags)"
-                                                                    :key="tag">
-                                                                    <span
-                                                                        class="badge bg-dark border border-secondary rounded-1 ms-1"
-                                                                        x-text="tag"></span>
-                                                                </template>
-                                                            </div>
+                                                    <div class="mt-auto d-flex justify-content-between align-items-end">
+                                                        <div class="text-white-50 small">
+                                                            <span><i class="fa-regular fa-comment"></i> <span
+                                                                    x-text="getTaskCommentCount(task.comments)"></span></span>
+                                                        </div>
+                                                        <div class="task-tags text-end">
+                                                            <template x-for="tag in getTaskTags(task.tags)" :key="tag">
+                                                                <span
+                                                                    class="badge bg-dark border border-secondary rounded-1 ms-1"
+                                                                    x-text="tag"></span>
+                                                            </template>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </template>
-                                        </div>
-                                    </template>
-                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
                             </div>
+                        </div>
                     </template>
                 </div>
             </div>
