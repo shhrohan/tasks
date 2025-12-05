@@ -47,6 +47,12 @@
                             <i class="fa-solid fa-check-circle"></i> Completed
                         </button>
                     </div>
+                    <button @click="showDoneTasks = !showDoneTasks" class="btn btn-outline-light"
+                        :class="{ 'active': !showDoneTasks }"
+                        :title="showDoneTasks ? 'Hide Done Tasks' : 'Show Done Tasks'">
+                        <i class="fa-solid" :class="showDoneTasks ? 'fa-eye' : 'fa-eye-slash'"></i>
+                        <span class="d-none d-md-inline ms-1" x-text="showDoneTasks ? 'Hide Done' : 'Show Done'"></span>
+                    </button>
                     <button @click="openCreateLaneModal()" class="btn btn-outline-light">
                         <i class="fa-solid fa-road"></i> New Swimlane
                     </button>
@@ -207,7 +213,8 @@
                                 <template x-for="status in columns" :key="status">
                                     <div class="col-12 col-lg lane-column" :id="'lane-' + lane.id + '-' + status"
                                         :data-status="status" :data-lane-id="lane.id">
-                                        <template x-for="task in getLaneTasksByStatus(lane.id, status)" :key="task.id">
+                                        <template x-for="task in getLaneTasksByStatus(lane.id, status)"
+                                            :key="task.id + '-' + task.status + '-' + (task.swimLane ? task.swimLane.id : 'none')">
                                             <div class="card task-card mb-2" :data-id="task.id"
                                                 :data-status="task.status" :data-lane-id="task.swimLane?.id"
                                                 @click="openTaskModal(task)">
@@ -274,7 +281,7 @@
                                             <div class="d-flex w-100 justify-content-between align-items-center mb-1">
                                                 <h6 class="mb-0 text-truncate" x-text="task.name"></h6>
                                                 <span class="badge border"
-                                                    :class="'status-' + task.status.toLowerCase()"
+                                                    :class="task.status ? 'status-' + task.status.toLowerCase() : ''"
                                                     x-text="task.status"></span>
                                             </div>
                                             <div
@@ -310,7 +317,7 @@
                                             <h2 class="h3 mb-2" x-text="currentTask.name"></h2>
                                             <div class="d-flex align-items-center gap-3">
                                                 <span class="badge border status-badge"
-                                                    :class="'status-' + currentTask.status.toLowerCase()"
+                                                    :class="currentTask && currentTask.status ? 'status-' + currentTask.status.toLowerCase() : ''"
                                                     x-text="currentTask.status"></span>
                                                 <span class="text-white-50 small">
                                                     <i class="fa-solid fa-layer-group me-1"></i>
@@ -460,7 +467,7 @@
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <h4 class="text-white mb-0" x-text="currentTask.name"></h4>
                             <span class="badge border status-badge"
-                                :class="'status-' + currentTask.status.toLowerCase()"
+                                :class="currentTask && currentTask.status ? 'status-' + currentTask.status.toLowerCase() : ''"
                                 x-text="currentTask.status"></span>
                         </div>
 

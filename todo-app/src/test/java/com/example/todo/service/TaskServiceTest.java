@@ -26,6 +26,9 @@ class TaskServiceTest {
     @Mock
     private SwimLaneDAO swimLaneDAO;
 
+    @Mock
+    private AsyncWriteService asyncWriteService;
+
     @InjectMocks
     private TaskService taskService;
 
@@ -54,32 +57,27 @@ class TaskServiceTest {
         updatedInfo.setStatus(TaskStatus.IN_PROGRESS);
 
         when(taskDAO.findById(taskId)).thenReturn(Optional.of(existingTask));
-        when(taskDAO.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Task result = taskService.updateTask(taskId, updatedInfo);
 
         assertEquals("New Name", result.getName());
         assertEquals(TaskStatus.IN_PROGRESS, result.getStatus());
-        verify(taskDAO).save(existingTask);
+        // Verify async service is called instead of DAO save
+        verify(asyncWriteService).saveTask(existingTask);
+        verify(taskDAO, never()).save(existingTask);
     }
 
     @Test
     void moveTask_ShouldUpdateStatusAndLane() {
         Long taskId = 1L;
         Long laneId = 2L;
-        Task task = new Task();
-        task.setId(taskId);
 
-        SwimLane lane = new SwimLane();
-        lane.setId(laneId);
+        Task result = taskService.moveTask(taskId, TaskStatus.DONE, laneId);
 
-        when(taskDAO.findById(taskId)).thenReturn(Optional.of(task));
-        when(swimLaneDAO.findById(laneId)).thenReturn(Optional.of(lane));
-
-        taskService.moveTask(taskId, TaskStatus.DONE, laneId);
-
-        assertEquals(TaskStatus.DONE, task.getStatus());
-        assertEquals(lane, task.getSwimLane());
+        assertEquals(TaskStatus.DONE, result.getStatus());
+        assertEquals(laneId, result.getSwimLane().getId());
+        verify(asyncWriteService).moveTask(taskId, TaskStatus.DONE, laneId);
+        verify(taskDAO, never()).findById(taskId);
     }
 
     @Test
@@ -110,11 +108,10 @@ class TaskServiceTest {
     @Test
     void deleteTask_ShouldCallDeleteById() {
         Long taskId = 1L;
-        doNothing().when(taskDAO).deleteById(taskId);
-
         taskService.deleteTask(taskId);
 
-        verify(taskDAO).deleteById(taskId);
+        verify(asyncWriteService).deleteTask(taskId);
+        verify(taskDAO, never()).deleteById(taskId);
     }
 
     @Test
@@ -125,13 +122,13 @@ class TaskServiceTest {
         task.setComments("[]");
 
         when(taskDAO.findById(taskId)).thenReturn(Optional.of(task));
-        when(taskDAO.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         com.example.todo.model.Comment comment = taskService.addComment(taskId, "New Comment");
 
         assertNotNull(comment);
         assertEquals("New Comment", comment.getText());
-        verify(taskDAO).save(task);
+        verify(asyncWriteService).saveTask(task);
+        verify(taskDAO, never()).save(task);
     }
 
     @Test
@@ -145,12 +142,12 @@ class TaskServiceTest {
         task.setComments(json);
 
         when(taskDAO.findById(taskId)).thenReturn(Optional.of(task));
-        when(taskDAO.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         com.example.todo.model.Comment updated = taskService.updateComment(taskId, commentId, "New Text");
 
         assertEquals("New Text", updated.getText());
-        verify(taskDAO).save(task);
+        verify(asyncWriteService).saveTask(task);
+        verify(taskDAO, never()).save(task);
     }
 
     @Test
@@ -163,11 +160,11 @@ class TaskServiceTest {
         task.setComments(json);
 
         when(taskDAO.findById(taskId)).thenReturn(Optional.of(task));
-        when(taskDAO.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         taskService.deleteComment(taskId, commentId);
 
-        verify(taskDAO).save(task);
+        verify(asyncWriteService).saveTask(task);
+        verify(taskDAO, never()).save(task);
         // Verify comment is gone (simple check on the saved object or logic)
         // Since we mock save to return arg, we can check the arg, but verify is enough
         // for interaction.

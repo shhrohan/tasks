@@ -13,6 +13,7 @@ document.addEventListener('alpine:init', () => {
         swimLanes: [],
         currentView: 'main', // 'main', 'list', 'completed'
         showStats: false,
+        showDoneTasks: true,
         columns: ['TODO', 'IN_PROGRESS', 'DONE', 'BLOCKED', 'DEFERRED'],
 
         // Modal/Offcanvas Instances (Bootstrap)
@@ -116,6 +117,8 @@ document.addEventListener('alpine:init', () => {
 
                 await Promise.all([this.fetchSwimLanes(), this.fetchTasks()]);
 
+                this.initSSE();
+
                 this.$nextTick(() => {
                     this.setupSortables();
                     this.animateElements();
@@ -146,6 +149,79 @@ document.addEventListener('alpine:init', () => {
             } catch (error) {
                 console.error('Error fetching swim lanes:', error);
             }
+        },
+
+        // =====================================================================
+        // SSE Methods
+        // =====================================================================
+
+        initSSE() {
+            console.log('Initializing SSE connection...');
+            const eventSource = new EventSource('/api/sse/stream');
+
+            eventSource.onopen = () => {
+                console.log('%c SSE Connected successfully to /api/sse/stream', 'background: #222; color: #bada55');
+            };
+
+            eventSource.addEventListener('task-updated', (e) => {
+                const task = JSON.parse(e.data);
+                console.log('SSE: task-updated', task);
+                this.handleSseTaskUpdate(task);
+            });
+
+            eventSource.addEventListener('task-deleted', (e) => {
+                const id = JSON.parse(e.data);
+                console.log('SSE: task-deleted', id);
+                this.handleSseTaskDelete(id);
+            });
+
+            eventSource.addEventListener('lane-updated', (e) => {
+                const lane = JSON.parse(e.data);
+                console.log('SSE: lane-updated', lane);
+                this.handleSseLaneUpdate(lane);
+            });
+
+            eventSource.onerror = (e) => {
+                console.error('SSE Error:', e);
+                eventSource.close();
+                // Reconnect after 5 seconds
+                setTimeout(() => this.initSSE(), 5000);
+            };
+        },
+
+        handleSseTaskUpdate(updatedTask) {
+            const index = this.tasks.findIndex(t => t.id === updatedTask.id);
+            if (index !== -1) {
+                // Update existing
+                this.tasks[index] = updatedTask;
+                // If this is the current task in modal, update it too
+                if (this.currentTask && this.currentTask.id === updatedTask.id) {
+                    this.refreshTaskData(updatedTask);
+                }
+            } else {
+                // Add new (if it belongs to an active lane)
+                this.tasks.push(updatedTask);
+            }
+            this.$nextTick(() => {
+                this.setupSortables();
+            });
+        },
+
+        handleSseTaskDelete(id) {
+            this.tasks = this.tasks.filter(t => t.id !== id);
+            if (this.currentTask && this.currentTask.id === id) {
+                this.taskPane.hide();
+            }
+        },
+
+        handleSseLaneUpdate(updatedLane) {
+            const index = this.swimLanes.findIndex(l => l.id === updatedLane.id);
+            if (index !== -1) {
+                this.swimLanes[index] = updatedLane;
+            } else {
+                this.swimLanes.push(updatedLane);
+            }
+            this.$nextTick(() => this.setupSortables());
         },
 
         async createSwimLane(name) {
@@ -233,10 +309,13 @@ document.addEventListener('alpine:init', () => {
             const originalSwimLane = task ? task.swimLane : null;
 
             if (task) {
+                console.log(`[DEBUG] Optimistic Move: Task ${id} -> Status: ${newStatus}, Lane: ${newSwimLaneId}`);
+                console.log('[DEBUG] Task before update:', JSON.parse(JSON.stringify(task)));
                 task.status = newStatus;
                 if (newSwimLaneId) {
                     task.swimLane = this.swimLanes.find(l => l.id === newSwimLaneId);
                 }
+                console.log('[DEBUG] Task after update:', JSON.parse(JSON.stringify(task)));
             }
 
             try {
@@ -826,6 +905,9 @@ document.addEventListener('alpine:init', () => {
         },
 
         getLaneTasksByStatus(laneId, status) {
+            if (status === 'DONE' && !this.showDoneTasks) {
+                return [];
+            }
             return this.tasks.filter(t => {
                 const matchesStatus = t.status === status && t.swimLane?.id === laneId;
                 if (!matchesStatus) return false;
@@ -920,8 +1002,10 @@ document.addEventListener('alpine:init', () => {
                         const oldLaneId = itemEl.getAttribute('data-lane-id');
 
                         if (newStatus !== oldStatus || newLaneId !== oldLaneId) {
-                            itemEl.setAttribute('data-status', newStatus);
-                            itemEl.setAttribute('data-lane-id', newLaneId);
+                            // Revert the DOM change so Alpine can handle the move via data binding
+                            // This ensures the 'task' scope remains valid and prevents flickering/text loss
+                            evt.from.appendChild(itemEl);
+
                             this.moveTask(taskId, newStatus, newLaneId);
                         }
                     }

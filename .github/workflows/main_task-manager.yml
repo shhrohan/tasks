@@ -23,9 +23,10 @@ jobs:
         with:
           java-version: '21'
           distribution: 'microsoft'
+          cache: 'maven'
 
-      - name: Build with Maven
-        run: mvn clean install -f todo-app/pom.xml
+      - name: Build and Test with Maven
+        run: mvn clean package -f todo-app/pom.xml
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -60,4 +61,3 @@ jobs:
           app-name: 'task-manager'
           slot-name: 'Production'
           package: '*.jar'
-          

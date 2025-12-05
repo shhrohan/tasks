@@ -50,7 +50,10 @@ body {
 
 /* App Header */
 .app-header {
-    background: rgba(255, 255, 255, 0.05);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: rgba(15, 23, 42, 0.8); /* Slightly more opaque for better readability */
     backdrop-filter: blur(10px);
     border-bottom: var(--glass-border);
     transform: translateZ(20px);

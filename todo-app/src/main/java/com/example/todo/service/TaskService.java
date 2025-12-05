@@ -49,7 +49,7 @@ public class TaskService {
     }
 
     public Task updateTask(Long id, Task updatedTask) {
-        log.debug("Delegating UPDATE for task {} to Async Service", id);
+        log.info("Delegating UPDATE for task {} to Async Service [Thread: {}]", id, Thread.currentThread().getName());
         return taskDAO.findById(id)
                 .map(existing -> {
                     existing.setName(updatedTask.getName());
@@ -66,7 +66,8 @@ public class TaskService {
                     }
                     // Fire and forget
                     asyncWriteService.saveTask(existing);
-                    log.debug("Returning immediate response to UI for task {}", id);
+                    log.info("Returning immediate response to UI for task {} [Thread: {}]", id,
+                            Thread.currentThread().getName());
                     return existing;
                 })
                 .orElseThrow(() -> {
@@ -76,33 +77,31 @@ public class TaskService {
     }
 
     public void deleteTask(Long id) {
-        log.debug("Delegating DELETE for task {} to Async Service", id);
+        log.info("Delegating DELETE for task {} to Async Service [Thread: {}]", id, Thread.currentThread().getName());
         asyncWriteService.deleteTask(id);
-        log.debug("Returning immediate response to UI for delete task {}", id);
+        log.info("Returning immediate response to UI for delete task {} [Thread: {}]", id,
+                Thread.currentThread().getName());
     }
 
     @Transactional
     public Task moveTask(Long id, TaskStatus newStatus, Long swimLaneId) {
-        log.debug("Delegating MOVE for task {} to Async Service", id);
-        Task task = taskDAO.findById(id)
-                .orElseThrow(() -> {
-                    log.error("Task not found: {}", id);
-                    return new IllegalArgumentException("Task not found: " + id);
-                });
-        task.setStatus(newStatus);
+        log.info("Delegating MOVE for task {} to Async Service [Thread: {}]", id, Thread.currentThread().getName());
+
+        // Optimization: Skip DB fetch. Construct dummy object for UI response.
+        Task dummyTask = new Task();
+        dummyTask.setId(id);
+        dummyTask.setStatus(newStatus);
 
         if (swimLaneId != null) {
-            SwimLane lane = swimLaneDAO.findById(swimLaneId)
-                    .orElseThrow(() -> {
-                        log.error("SwimLane not found: {}", swimLaneId);
-                        return new IllegalArgumentException("SwimLane not found: " + swimLaneId);
-                    });
-            task.setSwimLane(lane);
+            SwimLane lane = new SwimLane();
+            lane.setId(swimLaneId);
+            dummyTask.setSwimLane(lane);
         }
 
-        asyncWriteService.saveTask(task);
-        log.debug("Returning immediate response to UI for move task {}", id);
-        return task;
+        asyncWriteService.moveTask(id, newStatus, swimLaneId);
+        log.info("Returning immediate response to UI for move task {} [Thread: {}]", id,
+                Thread.currentThread().getName());
+        return dummyTask;
     }
 
     public com.example.todo.model.Comment addComment(Long taskId, String text) {

@@ -20,6 +20,9 @@ class SwimLaneServiceTest {
     @Mock
     private SwimLaneDAO swimLaneDAO;
 
+    @Mock
+    private AsyncWriteService asyncWriteService;
+
     @InjectMocks
     private SwimLaneService swimLaneService;
 
@@ -45,12 +48,12 @@ class SwimLaneServiceTest {
         lane.setIsCompleted(false);
 
         when(swimLaneDAO.findById(laneId)).thenReturn(Optional.of(lane));
-        when(swimLaneDAO.save(any(SwimLane.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         SwimLane result = swimLaneService.completeSwimLane(laneId);
 
         assertTrue(result.getIsCompleted());
-        verify(swimLaneDAO).save(lane);
+        verify(asyncWriteService).saveSwimLane(lane);
+        verify(swimLaneDAO, never()).save(lane);
     }
 
     @Test
@@ -61,12 +64,11 @@ class SwimLaneServiceTest {
         lane.setIsDeleted(false);
 
         when(swimLaneDAO.findById(laneId)).thenReturn(Optional.of(lane));
-        when(swimLaneDAO.save(any(SwimLane.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
         swimLaneService.deleteSwimLane(laneId);
 
         assertTrue(lane.getIsDeleted());
-        verify(swimLaneDAO).save(lane);
+        verify(asyncWriteService).saveSwimLane(lane);
+        verify(swimLaneDAO, never()).save(lane);
     }
 
     @Test
@@ -113,12 +115,12 @@ class SwimLaneServiceTest {
         lane.setIsCompleted(true);
 
         when(swimLaneDAO.findById(laneId)).thenReturn(Optional.of(lane));
-        when(swimLaneDAO.save(any(SwimLane.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         SwimLane result = swimLaneService.uncompleteSwimLane(laneId);
 
         assertFalse(result.getIsCompleted());
-        verify(swimLaneDAO).save(lane);
+        verify(asyncWriteService).saveSwimLane(lane);
+        verify(swimLaneDAO, never()).save(lane);
     }
 
     @Test
