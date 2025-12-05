@@ -201,18 +201,20 @@
                                 </div>
                                 <div class="d-flex align-items-center gap-3">
                                     <!-- Stats Section -->
-                                    <div class="swimlane-stats d-none d-md-flex flex-column align-items-end me-2"
-                                        x-data="{ stats: getSwimLaneStats(lane.id) }">
+                                    <div class="swimlane-stats d-none d-md-flex flex-column align-items-end me-2">
                                         <div class="d-flex align-items-center gap-2 small text-muted mb-1">
-                                            <span class="fw-bold text-white" x-text="stats.percent + '%'"></span>
+                                            <span class="fw-bold text-white"
+                                                x-text="getSwimLaneStats(lane.id).percent + '%'"></span>
                                             <span>&bull;</span>
-                                            <span x-text="stats.done + '/' + stats.total + ' Done'"></span>
+                                            <span
+                                                x-text="getSwimLaneStats(lane.id).done + '/' + getSwimLaneStats(lane.id).total + ' Done'"></span>
                                         </div>
                                         <div class="progress w-100"
                                             style="height: 6px; width: 120px !important; background: rgba(255,255,255,0.1);">
                                             <div class="progress-bar bg-success" role="progressbar"
-                                                :style="'width: ' + stats.percent + '%'" :aria-valuenow="stats.percent"
-                                                aria-valuemin="0" aria-valuemax="100"></div>
+                                                :style="'width: ' + getSwimLaneStats(lane.id).percent + '%'"
+                                                :aria-valuenow="getSwimLaneStats(lane.id).percent" aria-valuemin="0"
+                                                aria-valuemax="100"></div>
                                         </div>
                                     </div>
                                     <div class="swimlane-actions d-flex gap-2">
