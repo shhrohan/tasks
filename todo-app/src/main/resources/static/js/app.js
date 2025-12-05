@@ -102,6 +102,23 @@ document.addEventListener('alpine:init', () => {
             });
         },
 
+
+        getSwimLaneStats(laneId) {
+            const laneTasks = this.tasks.filter(t => t.swimLane && t.swimLane.id === laneId);
+            const total = laneTasks.length;
+            if (total === 0) return { total: 0, done: 0, percent: 0, todo: 0 };
+
+            const done = laneTasks.filter(t => t.status === 'DONE').length;
+            const todo = laneTasks.filter(t => t.status === 'TODO' || t.status === 'IN_PROGRESS').length;
+
+            return {
+                total,
+                done,
+                todo,
+                percent: Math.round((done / total) * 100)
+            };
+        },
+
         // Initialize app
         async init() {
             try {
