@@ -12,76 +12,100 @@ This is a full-stack, single-page web application for managing tasks and to-do i
 *   **Mobile Optimized**: Responsive layout with vertical stacking and touch-friendly targets.
 *   **Glassmorphism UI**: Modern, translucent design aesthetic.
 
-### Key Technologies
+## Technology Stack
 
-*   **Backend:**
-    *   Java 21
-    *   Spring Boot 3.3.0
-    *   Spring Web
-    *   Spring Data JPA
-    *   Maven
-    *   Log4j2 (Logging)
-*   **Frontend:**
-    *   Thymeleaf
-    *   Alpine.js
-    *   Bootstrap 5 (UI Components & Modals)
-    *   Axios
-    *   GSAP (for animations)
-    *   Sortable.js (for drag-and-drop)
-    *   Highcharts 3D (Interactive Charts)
-*   **Database:**
-    *   H2 (embedded, file-based)
+### Backend
+*   **Java 21**
+*   **Spring Boot 3.3.0** (Web, Data JPA)
+*   **PostgreSQL**: Primary database (configured in `application.properties`).
+*   **Maven**: Build tool.
+*   **Log4j2**: Logging framework.
 
-### Architecture
+### Frontend
+*   **Alpine.js (v3.x)**: Lightweight reactive framework for declarative UI.
+*   **Bootstrap 5**: UI Components, Grid, and Modals.
+*   **Axios**: HTTP client for API communication.
+*   **GSAP (v3.12.2)**: Professional animation library.
+*   **Sortable.js**: Drag-and-drop list management.
+*   **Highcharts 3D**: Interactive Charts.
+*   **Thymeleaf**: Server-side template engine (initial load).
 
-The application follows a layered Spring Boot architecture:
+## Architecture
 
-*   **Controller Layer**: Exposes REST endpoints (`TaskController`, `SwimLaneController`).
-*   **Service Layer**: Contains business logic (`TaskService`, `SwimLaneService`).
-*   **DAO Layer**: Handles data access, decoupling services from repositories (`TaskDAO`, `SwimLaneDAO`).
-*   **Repository Layer**: Spring Data JPA interfaces.
-*   **Frontend**: A single `index.html` file dynamically rendered by Thymeleaf. Interactions are handled by Alpine.js, communicating with the backend via REST.
-*   **Logging**: Configured with Log4j2 (`log4j2.xml`) to capture application and Hibernate SQL logs.
-*   **Data Persistence**: H2 database file (`data/todo-db.mv.db`).
+The application follows a standard layered Spring Boot architecture:
+
+1.  **Controller Layer**: REST endpoints (`TaskController`, `SwimLaneController`).
+2.  **Service Layer**: Business logic (`TaskService`, `SwimLaneService`).
+3.  **DAO Layer**: Data Access Objects (`TaskDAO`, `SwimLaneDAO`).
+4.  **Repository Layer**: Spring Data JPA interfaces (`TaskRepository`, `SwimLaneRepository`).
+5.  **Database**: PostgreSQL running on port 5432 (default).
+
+## Data Model
+
+### SwimLane
+*   `id` (Long): Primary Key.
+*   `name` (String): Name of the swimlane (e.g., "Feature A").
+*   `isCompleted` (Boolean): Status of the swimlane.
+*   `isDeleted` (Boolean): Soft delete flag.
+
+### Task
+*   `id` (Long): Primary Key.
+*   `name` (String): Task description.
+*   `status` (Enum): `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`, `DEFERRED`.
+*   `comments` (String/JSON): JSON array of comment objects.
+*   `tags` (String/JSON): JSON array of tag strings.
+*   `swimLane` (SwimLane): Many-to-One relationship.
+
+## API Reference
+
+### SwimLanes (`/api/swimlanes`)
+*   `GET /`: Get all swimlanes.
+*   `GET /active`: Get active swimlanes.
+*   `GET /completed`: Get completed swimlanes.
+*   `POST /`: Create a new swimlane (`{name}`).
+*   `PATCH /{id}/complete`: Mark swimlane as complete.
+*   `PATCH /{id}/uncomplete`: Reactivate swimlane.
+*   `DELETE /{id}`: Soft delete swimlane.
+
+### Tasks (`/api/tasks`)
+*   `GET /`: Get all tasks.
+*   `GET /{id}`: Get specific task.
+*   `POST /`: Create a new task.
+*   `PUT /{id}`: Update task details.
+*   `DELETE /{id}`: Delete task.
+*   `PATCH /{id}/move`: Move task (params: `status`, `swimLaneId`).
+*   `POST /{id}/comments`: Add comment.
+*   `PUT /{id}/comments/{commentId}`: Update comment.
+*   `DELETE /{id}/comments/{commentId}`: Delete comment.
+
+## Frontend Architecture
+
+The frontend was rewritten from Vanilla JS to **Alpine.js** to improve maintainability and performance.
+
+*   **Reactive State**: `todoApp` Alpine component manages `tasks`, `swimLanes`, and `currentView`.
+*   **Declarative UI**: HTML uses `x-for`, `x-if`, and `x-model` instead of manual DOM manipulation.
+*   **Optimized Animations**: GSAP handles complex animations (ripples, transitions) instead of CSS/JS hybrids.
+*   **Component Structure**:
+    *   `app.js`: Contains the Alpine data object and API logic.
+    *   `index.html`: Contains the template and Alpine directives.
 
 ## Building and Running
 
 ### Prerequisites
-
 *   Java 21
 *   Maven
+*   PostgreSQL (running on localhost:5432, db: `todo_db`, user: `postgres`, pass: `Database@123`)
 
 ### Running the Application
-
-To run the application, use the following Maven command from the `todo-app` directory:
-
 ```bash
 mvn spring-boot:run
 ```
-
-The application will be available at [http://localhost:8080](http://localhost:8080).
+The application will be available at **[http://localhost:8081](http://localhost:8081)** (Note: Port 8081).
 
 ### Running Tests
-
-The project includes unit tests for Controllers, Services, and DAOs. To run all tests:
-
 ```bash
 mvn test
 ```
-
-## Development Conventions
-
-*   **Backend**:
-    *   Follows Controller -> Service -> DAO -> Repository pattern.
-    *   Use `TaskDAO` and `SwimLaneDAO` for all data access.
-    *   Lombok is used for boilerplate reduction.
-    *   Log4j2 is used for logging (avoid `System.out`).
-*   **Frontend**:
-    *   Single Alpine.js component (`todoApp`) manages UI state.
-    *   Bootstrap 5 is used for layout and modals.
-    *   **Mobile First**: CSS is optimized for mobile devices (vertical stacking, touch targets).
-    *   Status headers are injected via CSS on mobile views.
-    *   **Statistics**: Implemented as a collapsible accordion (no modal) for better UX.
 
 ## CRITICAL WORKFLOW RULES
 
