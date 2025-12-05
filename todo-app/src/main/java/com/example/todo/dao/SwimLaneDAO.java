@@ -16,16 +16,20 @@ public class SwimLaneDAO {
         this.swimLaneRepository = swimLaneRepository;
     }
 
-    public List<SwimLane> findByIsDeletedFalse() {
-        return swimLaneRepository.findByIsDeletedFalse();
+    public List<SwimLane> findByIsDeletedFalseOrderByPositionAsc() {
+        return swimLaneRepository.findByIsDeletedFalseOrderByPositionAsc();
     }
 
-    public List<SwimLane> findByIsCompletedFalseAndIsDeletedFalse() {
-        return swimLaneRepository.findByIsCompletedFalseAndIsDeletedFalse();
+    public List<SwimLane> findByIsCompletedFalseAndIsDeletedFalseOrderByPositionAsc() {
+        return swimLaneRepository.findByIsCompletedFalseAndIsDeletedFalseOrderByPositionAsc();
     }
 
-    public List<SwimLane> findByIsCompletedTrueAndIsDeletedFalse() {
-        return swimLaneRepository.findByIsCompletedTrueAndIsDeletedFalse();
+    public List<SwimLane> findByIsCompletedTrueAndIsDeletedFalseOrderByPositionAsc() {
+        return swimLaneRepository.findByIsCompletedTrueAndIsDeletedFalseOrderByPositionAsc();
+    }
+
+    public Integer findMaxPosition() {
+        return swimLaneRepository.findMaxPosition();
     }
 
     public Optional<SwimLane> findById(Long id) {

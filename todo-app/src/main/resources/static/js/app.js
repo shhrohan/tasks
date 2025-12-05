@@ -138,6 +138,32 @@ document.addEventListener('alpine:init', () => {
                 await this.fetchSwimLanes();
 
                 // Initialize loading state for all lanes to ensure reactivity
+                // Swimlane Reordering
+                const boardContainer = document.querySelector('.board-container');
+                if (boardContainer) {
+                    new Sortable(boardContainer, {
+                        animation: 150,
+                        handle: '.swimlane-title', // Drag by header title area
+                        draggable: '.swimlane-row',
+                        onEnd: (evt) => {
+                            const lanes = Array.from(boardContainer.querySelectorAll('.swimlane-row'));
+                            const orderedIds = lanes.map(lane => parseInt(lane.dataset.laneId));
+
+                            axios.patch(`${this.API_URL}/swimlanes/reorder`, orderedIds)
+                                .then(() => {
+                                    console.log('Swimlane order updated');
+                                    // Update local data order without re-fetching
+                                    // This is tricky with active/completed filters, but visual order is already correct via DOM
+                                })
+                                .catch(error => {
+                                    console.error('Error reordering swimlanes:', error);
+                                    this.showNotification('Failed to save swimlane order', 'error');
+                                });
+                        }
+                    });
+                }
+
+                // Task Reordering (Existing)
                 this.activeLanes.forEach(lane => {
                     this.loadingLanes[lane.id] = false;
                 });

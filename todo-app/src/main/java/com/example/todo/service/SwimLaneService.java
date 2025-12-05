@@ -21,18 +21,21 @@ public class SwimLaneService {
     }
 
     public List<SwimLane> getAllSwimLanes() {
-        return swimLaneDAO.findByIsDeletedFalse();
+        return swimLaneDAO.findByIsDeletedFalseOrderByPositionAsc();
     }
 
     public List<SwimLane> getActiveSwimLanes() {
-        return swimLaneDAO.findByIsCompletedFalseAndIsDeletedFalse();
+        return swimLaneDAO.findByIsCompletedFalseAndIsDeletedFalseOrderByPositionAsc();
     }
 
     public List<SwimLane> getCompletedSwimLanes() {
-        return swimLaneDAO.findByIsCompletedTrueAndIsDeletedFalse();
+        return swimLaneDAO.findByIsCompletedTrueAndIsDeletedFalseOrderByPositionAsc();
     }
 
     public SwimLane createSwimLane(SwimLane swimLane) {
+        // Set position to max + 1
+        Integer maxPos = swimLaneDAO.findMaxPosition();
+        swimLane.setPosition(maxPos == null ? 0 : maxPos + 1);
         log.debug("Saving new swimlane: {}", swimLane);
         return swimLaneDAO.save(swimLane);
     }
@@ -80,5 +83,16 @@ public class SwimLaneService {
 
     public void hardDeleteSwimLane(Long id) {
         swimLaneDAO.deleteById(id);
+    }
+
+    public void reorderSwimLanes(List<Long> orderedIds) {
+        for (int i = 0; i < orderedIds.size(); i++) {
+            Long id = orderedIds.get(i);
+            SwimLane lane = swimLaneDAO.findById(id).orElse(null);
+            if (lane != null) {
+                lane.setPosition(i);
+                swimLaneDAO.save(lane);
+            }
+        }
     }
 }

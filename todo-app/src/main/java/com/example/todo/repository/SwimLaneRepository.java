@@ -8,7 +8,10 @@ import java.util.List;
 
 @Repository
 public interface SwimLaneRepository extends JpaRepository<SwimLane, Long> {
-    List<SwimLane> findByIsCompletedFalseAndIsDeletedFalse();
-    List<SwimLane> findByIsCompletedTrueAndIsDeletedFalse();
-    List<SwimLane> findByIsDeletedFalse();
+    List<SwimLane> findByIsCompletedFalseAndIsDeletedFalseOrderByPositionAsc();
+    List<SwimLane> findByIsCompletedTrueAndIsDeletedFalseOrderByPositionAsc();
+    List<SwimLane> findByIsDeletedFalseOrderByPositionAsc();
+    
+    @org.springframework.data.jpa.repository.Query("SELECT MAX(s.position) FROM SwimLane s")
+    Integer findMaxPosition();
 }

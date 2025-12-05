@@ -53,6 +53,12 @@ public class SwimLaneController {
         return swimLaneService.uncompleteSwimLane(id);
     }
 
+    @PatchMapping("/reorder")
+    public void reorderSwimLanes(@RequestBody List<Long> orderedIds) {
+        log.info("Reordering swimlanes: {}", orderedIds);
+        swimLaneService.reorderSwimLanes(orderedIds);
+    }
+
     @DeleteMapping("/{id}")
     public void deleteSwimLane(@PathVariable Long id) {
         log.info("Deleting swimlane with id: {}", id);

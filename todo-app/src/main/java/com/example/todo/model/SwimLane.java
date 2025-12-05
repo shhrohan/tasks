@@ -25,4 +25,7 @@ public class SwimLane {
     @Column(nullable = false)
     @Builder.Default
     private Boolean isDeleted = false;
+
+    @Column(name = "position_order")
+    private Integer position;
 }
