@@ -25,12 +25,12 @@ class SwimLaneDAOTest {
 
     @Test
     void findByIsDeletedFalse_ShouldDelegateToRepository() {
-        when(swimLaneRepository.findByIsDeletedFalse()).thenReturn(Collections.emptyList());
+        when(swimLaneRepository.findByIsDeletedFalseOrderByPositionAsc()).thenReturn(Collections.emptyList());
 
-        List<SwimLane> result = swimLaneDAO.findByIsDeletedFalse();
+        List<SwimLane> result = swimLaneDAO.findByIsDeletedFalseOrderByPositionAsc();
 
         assertNotNull(result);
-        verify(swimLaneRepository).findByIsDeletedFalse();
+        verify(swimLaneRepository).findByIsDeletedFalseOrderByPositionAsc();
     }
 
     @Test
@@ -46,22 +46,22 @@ class SwimLaneDAOTest {
 
     @Test
     void findByIsCompletedFalseAndIsDeletedFalse_ShouldDelegateToRepository() {
-        when(swimLaneRepository.findByIsCompletedFalseAndIsDeletedFalse()).thenReturn(Collections.emptyList());
+        when(swimLaneRepository.findByIsCompletedFalseAndIsDeletedFalseOrderByPositionAsc()).thenReturn(Collections.emptyList());
 
-        List<SwimLane> result = swimLaneDAO.findByIsCompletedFalseAndIsDeletedFalse();
+        List<SwimLane> result = swimLaneDAO.findByIsCompletedFalseAndIsDeletedFalseOrderByPositionAsc();
 
         assertNotNull(result);
-        verify(swimLaneRepository).findByIsCompletedFalseAndIsDeletedFalse();
+        verify(swimLaneRepository).findByIsCompletedFalseAndIsDeletedFalseOrderByPositionAsc();
     }
 
     @Test
     void findByIsCompletedTrueAndIsDeletedFalse_ShouldDelegateToRepository() {
-        when(swimLaneRepository.findByIsCompletedTrueAndIsDeletedFalse()).thenReturn(Collections.emptyList());
+        when(swimLaneRepository.findByIsCompletedTrueAndIsDeletedFalseOrderByPositionAsc()).thenReturn(Collections.emptyList());
 
-        List<SwimLane> result = swimLaneDAO.findByIsCompletedTrueAndIsDeletedFalse();
+        List<SwimLane> result = swimLaneDAO.findByIsCompletedTrueAndIsDeletedFalseOrderByPositionAsc();
 
         assertNotNull(result);
-        verify(swimLaneRepository).findByIsCompletedTrueAndIsDeletedFalse();
+        verify(swimLaneRepository).findByIsCompletedTrueAndIsDeletedFalseOrderByPositionAsc();
     }
 
     @Test

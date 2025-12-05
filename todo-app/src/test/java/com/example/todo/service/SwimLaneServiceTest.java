@@ -75,7 +75,7 @@ class SwimLaneServiceTest {
     void getAllSwimLanes_ShouldReturnAllLanes() {
         SwimLane lane = new SwimLane();
         lane.setId(1L);
-        when(swimLaneDAO.findByIsDeletedFalse()).thenReturn(java.util.Arrays.asList(lane));
+        when(swimLaneDAO.findByIsDeletedFalseOrderByPositionAsc()).thenReturn(java.util.Arrays.asList(lane));
 
         java.util.List<SwimLane> result = swimLaneService.getAllSwimLanes();
 
@@ -87,7 +87,7 @@ class SwimLaneServiceTest {
     void getActiveSwimLanes_ShouldReturnActiveLanes() {
         SwimLane lane = new SwimLane();
         lane.setId(1L);
-        when(swimLaneDAO.findByIsCompletedFalseAndIsDeletedFalse()).thenReturn(java.util.Arrays.asList(lane));
+        when(swimLaneDAO.findByIsCompletedFalseAndIsDeletedFalseOrderByPositionAsc()).thenReturn(java.util.Arrays.asList(lane));
 
         java.util.List<SwimLane> result = swimLaneService.getActiveSwimLanes();
 
@@ -99,7 +99,7 @@ class SwimLaneServiceTest {
     void getCompletedSwimLanes_ShouldReturnCompletedLanes() {
         SwimLane lane = new SwimLane();
         lane.setId(1L);
-        when(swimLaneDAO.findByIsCompletedTrueAndIsDeletedFalse()).thenReturn(java.util.Arrays.asList(lane));
+        when(swimLaneDAO.findByIsCompletedTrueAndIsDeletedFalseOrderByPositionAsc()).thenReturn(java.util.Arrays.asList(lane));
 
         java.util.List<SwimLane> result = swimLaneService.getCompletedSwimLanes();
 
