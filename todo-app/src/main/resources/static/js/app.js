@@ -19,7 +19,7 @@ document.addEventListener('alpine:init', () => {
         loadingLanes: {}, // Track loading state per swimlane
 
         // Modal/Offcanvas Instances (Bootstrap)
-        taskPane: null,
+        taskPane: null, // Removed bootstrap instance
         laneModal: null,
         confirmModal: null,
         confirmModal: null,
@@ -30,6 +30,7 @@ document.addEventListener('alpine:init', () => {
         swimlaneChart: null,
 
         // Modal State
+        isTaskOpen: false, // Custom slide-out state
         modalTitle: 'Create Task',
         isEditMode: false,
         isViewMode: false,
@@ -142,8 +143,8 @@ document.addEventListener('alpine:init', () => {
                     return Promise.reject(error);
                 });
 
-                // Initialize Bootstrap Modals & Offcanvas
-                this.taskPane = new bootstrap.Offcanvas(document.getElementById('taskOffcanvas'));
+                // Initialize Bootstrap Modals (Offcanvas removed)
+                // this.taskPane = ... (Removed)
                 this.laneModal = new bootstrap.Modal(document.getElementById('laneModal'));
                 this.confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
                 // this.statsModal removed
@@ -897,13 +898,15 @@ document.addEventListener('alpine:init', () => {
             this.editingCommentId = null;
             this.editingCommentText = '';
             this.selectedSwimLaneId = swimLaneId;
-            this.taskPane.show();
+            // this.taskPane.show();
+            this.isTaskOpen = true;
         },
 
         refreshTaskData(taskData) {
             // Only update if the pane is open and showing THIS task
-            const offcanvasEl = document.getElementById('taskOffcanvas');
-            const isShown = offcanvasEl && offcanvasEl.classList.contains('show');
+            // const offcanvasEl = document.getElementById('taskOffcanvas');
+            // const isShown = offcanvasEl && offcanvasEl.classList.contains('show');
+            const isShown = this.isTaskOpen;
 
             if (isShown && this.currentTask && this.currentTask.id == taskData.id) {
                 // Update currentTask with new data without re-opening/resetting UI state
@@ -918,12 +921,20 @@ document.addEventListener('alpine:init', () => {
             this.modalTitle = 'Task Details';
             this.isEditMode = true; // It is an existing task
             this.isViewMode = true; // Start in view mode
-            this.taskPane.show();
+
+            // Debug log
+            console.log(`[Debug] openTaskModal called for task ${taskData.id}.`);
+            // this.taskPane.show();
+            this.isTaskOpen = true;
         },
 
         enableEditMode() {
             this.isViewMode = false;
             this.modalTitle = 'Edit Task';
+        },
+
+        closeTaskPane() {
+            this.isTaskOpen = false;
         },
 
         cancelEdit() {
@@ -933,7 +944,7 @@ document.addEventListener('alpine:init', () => {
                 this.modalTitle = 'Task Details';
             } else {
                 // Close if creating new task
-                this.taskPane.hide();
+                this.isTaskOpen = false;
             }
         },
 

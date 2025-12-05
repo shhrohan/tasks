@@ -486,15 +486,28 @@
                     </template>
                 </div>
             </div>
-            <!-- Task Offcanvas (Slide-out Pane) -->
-            <div class="offcanvas offcanvas-end glass-panel text-white task-offcanvas" tabindex="-1" id="taskOffcanvas"
-                aria-labelledby="taskOffcanvasLabel" data-bs-scroll="true" data-bs-focus="false">
-                <div class="offcanvas-header border-bottom border-secondary">
-                    <h5 class="offcanvas-title" id="taskOffcanvasLabel" x-text="modalTitle"></h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"
+            <!-- Custom Task Drawer (Alpine.js) -->
+            <!-- Backdrop -->
+            <div class="offcanvas-backdrop-custom" x-show="isTaskOpen" x-transition:enter="fade-enter-active"
+                x-transition:enter-start="fade-enter-from" x-transition:enter-end="fade-enter-to"
+                x-transition:leave="fade-leave-active" x-transition:leave-start="fade-leave-from"
+                x-transition:leave-end="fade-leave-to" @click="closeTaskPane()" style="display: none;"></div>
+
+            <!-- Slide Panel -->
+            <div class="custom-offcanvas glass-panel text-white" x-show="isTaskOpen"
+                x-transition:enter="slide-enter-active" x-transition:enter-start="slide-enter-from"
+                x-transition:enter-end="slide-enter-to" x-transition:leave="slide-leave-active"
+                x-transition:leave-start="slide-leave-from" x-transition:leave-end="slide-leave-to"
+                style="display: none;">
+
+                <div
+                    class="offcanvas-header border-bottom border-secondary p-3 d-flex justify-content-between align-items-center">
+                    <h5 class="offcanvas-title mb-0" x-text="modalTitle"></h5>
+                    <button type="button" class="btn-close btn-close-white" @click="closeTaskPane()"
                         aria-label="Close"></button>
                 </div>
-                <div class="offcanvas-body">
+
+                <div class="offcanvas-body p-3 overflow-auto custom-scrollbar flex-grow-1">
                     <!-- View Mode -->
                     <div x-show="isViewMode" x-transition>
                         <div class="d-flex justify-content-between align-items-start mb-3">
@@ -614,7 +627,7 @@
                         <!-- Comments removed from Edit Mode -->
                     </form>
                 </div>
-                <div class="offcanvas-footer p-3 border-top border-secondary">
+                <div class="offcanvas-footer p-3 border-top border-secondary mt-auto">
                     <!-- View Mode Footer -->
                     <template x-if="isViewMode">
                         <div class="d-flex w-100 gap-2">
@@ -622,7 +635,7 @@
                                 @click="openConfirmModal('delete_task', currentTask.id, 'Delete this task?')">
                                 <i class="fa-solid fa-trash"></i> Delete
                             </button>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">Close</button>
+                            <button type="button" class="btn btn-secondary" @click="closeTaskPane()">Close</button>
                             <button type="button" class="btn btn-primary" @click="enableEditMode()">
                                 <i class="fa-solid fa-pen"></i> Edit
                             </button>
