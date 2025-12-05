@@ -5,7 +5,7 @@
 // Debug Alpine presence
 console.log('App.js loading. Alpine available?', !!window.Alpine);
 
-Alpine.data('todoApp', () => {
+function todoApp() {
     console.log('todoApp factory running');
     return {
         // API Configuration
@@ -1222,4 +1222,11 @@ Alpine.data('todoApp', () => {
                 }, 300);
             }, 3000);
         }
-    }));
+    };
+}
+
+// Expose and register
+window.todoApp = todoApp;
+if (window.Alpine) {
+    Alpine.data('todoApp', todoApp);
+}
