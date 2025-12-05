@@ -35,4 +35,8 @@ public class TaskDAO {
     public void updatePosition(Long id, com.example.todo.model.TaskStatus status, Long laneId) {
         taskRepository.updatePosition(id, status, laneId);
     }
+
+    public List<Task> findBySwimLaneId(Long swimLaneId) {
+        return taskRepository.findBySwimLaneId(swimLaneId);
+    }
 }

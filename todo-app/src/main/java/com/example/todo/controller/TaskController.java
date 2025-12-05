@@ -28,6 +28,12 @@ public class TaskController {
         return taskService.getAllTasks();
     }
 
+    @GetMapping("/swimlane/{swimLaneId}")
+    public List<Task> getTasksBySwimLane(@PathVariable Long swimLaneId) {
+        log.info("Fetching tasks for swimlane: {}", swimLaneId);
+        return taskService.getTasksBySwimLaneId(swimLaneId);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Task> getTask(@PathVariable Long id) {
         Optional<Task> task = taskService.getTask(id);

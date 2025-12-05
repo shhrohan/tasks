@@ -35,6 +35,11 @@ public class TaskService {
         return taskDAO.findAll();
     }
 
+    @Transactional(readOnly = true)
+    public List<Task> getTasksBySwimLaneId(Long swimLaneId) {
+        return taskDAO.findBySwimLaneId(swimLaneId);
+    }
+
     public Optional<Task> getTask(Long id) {
         return taskDAO.findById(id);
     }

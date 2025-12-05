@@ -11,4 +11,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     void updatePosition(@org.springframework.data.repository.query.Param("id") Long id,
             @org.springframework.data.repository.query.Param("status") com.example.todo.model.TaskStatus status,
             @org.springframework.data.repository.query.Param("laneId") Long laneId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT t FROM Task t WHERE t.swimLane.id = :swimLaneId")
+    java.util.List<Task> findBySwimLaneId(@org.springframework.data.repository.query.Param("swimLaneId") Long swimLaneId);
 }

@@ -16,6 +16,7 @@ document.addEventListener('alpine:init', () => {
         showDoneTasks: true,
         showSaveIndicator: false,
         columns: ['TODO', 'IN_PROGRESS', 'DONE', 'BLOCKED', 'DEFERRED'],
+        loadingLanes: {}, // Track loading state per swimlane
 
         // Modal/Offcanvas Instances (Bootstrap)
         taskPane: null,
@@ -143,12 +144,33 @@ document.addEventListener('alpine:init', () => {
         // =====================================================================
 
         async fetchTasks() {
-            try {
-                const response = await axios.get(this.API_URL);
-                this.tasks = response.data;
-            } catch (error) {
-                console.error('Error fetching tasks:', error);
-            }
+            // Clear existing tasks to ensure clean slate, or handle differential updates?
+            // User wants individual loading. Let's clear and rebuild.
+            this.tasks = [];
+
+            // We need active lanes to fetch tasks for.
+            // Ensure swimlanes are loaded first (init does this).
+
+            const fetchPromises = this.activeLanes.map(async (lane) => {
+                try {
+                    this.loadingLanes[lane.id] = true;
+                    // Force reactivity if needed, though simple assignment usually works for objects in Alpine if defined
+
+                    const response = await axios.get(`${this.API_URL}/swimlane/${lane.id}`);
+                    const newTasks = response.data;
+
+                    // Add to tasks array
+                    this.tasks.push(...newTasks);
+
+                } catch (error) {
+                    console.error(`Error fetching tasks for lane ${lane.id}:`, error);
+                    this.showNotification(`Failed to load tasks for ${lane.name}`, 'error');
+                } finally {
+                    this.loadingLanes[lane.id] = false;
+                }
+            });
+
+            await Promise.all(fetchPromises);
         },
 
         async fetchSwimLanes() {
