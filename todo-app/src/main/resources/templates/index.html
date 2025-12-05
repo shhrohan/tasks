@@ -186,9 +186,9 @@
 
                     <template x-for="lane in visibleLanes" :key="lane.id">
                         <div class="row mb-3 mb-lg-4 swimlane-row" :data-lane-id="lane.id">
-                            <div class="swimlane-header p-3 d-flex justify-content-between align-items-center">
-                                <div class="swimlane-title d-flex align-items-center gap-2"
-                                    @click="toggleLaneCollapse(lane)" role="button">
+                            <div class="swimlane-header p-3 d-flex justify-content-between align-items-center cursor-pointer"
+                                @click="toggleLaneCollapse(lane)">
+                                <div class="swimlane-title d-flex align-items-center gap-2">
                                     <i class="fa-solid fa-chevron-down swimlane-toggle"></i>
                                     <span class="h5 mb-0" x-text="lane.name"></span>
                                     <span class="badge bg-secondary rounded-pill"
@@ -200,11 +200,12 @@
                                 </div>
                                 <div class="swimlane-actions d-flex gap-2">
                                     <button
-                                        @click="openConfirmModal('complete_lane', lane.id, 'Mark this swimlane as completed?')"
+                                        @click.stop="openConfirmModal('complete_lane', lane.id, 'Mark this swimlane as completed?')"
                                         class="btn btn-sm btn-outline-success">
                                         <i class="fa-solid fa-check"></i> Complete
                                     </button>
-                                    <button @click="openConfirmModal('delete_lane', lane.id, 'Delete this swimlane?')"
+                                    <button
+                                        @click.stop="openConfirmModal('delete_lane', lane.id, 'Delete this swimlane?')"
                                         class="btn btn-sm btn-outline-danger">
                                         <i class="fa-solid fa-trash"></i> Delete
                                     </button>
