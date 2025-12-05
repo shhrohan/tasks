@@ -159,8 +159,12 @@ document.addEventListener('alpine:init', () => {
                     const response = await axios.get(`${this.API_URL}/swimlane/${lane.id}`);
                     const newTasks = response.data;
 
-                    // Add to tasks array
-                    this.tasks.push(...newTasks);
+                    // Add to tasks array safely
+                    // We filter out any existing tasks with same ID just in case (though shouldn't happen with fresh load)
+                    const existingIds = new Set(this.tasks.map(t => t.id));
+                    const uniqueNewTasks = newTasks.filter(t => !existingIds.has(t.id));
+
+                    this.tasks = [...this.tasks, ...uniqueNewTasks];
 
                 } catch (error) {
                     console.error(`Error fetching tasks for lane ${lane.id}:`, error);
