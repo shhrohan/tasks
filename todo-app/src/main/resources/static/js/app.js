@@ -14,6 +14,7 @@ document.addEventListener('alpine:init', () => {
         currentView: 'main', // 'main', 'list', 'completed'
         showStats: false,
         showDoneTasks: true,
+        showSaveIndicator: false,
         columns: ['TODO', 'IN_PROGRESS', 'DONE', 'BLOCKED', 'DEFERRED'],
 
         // Modal/Offcanvas Instances (Bootstrap)
@@ -322,40 +323,14 @@ document.addEventListener('alpine:init', () => {
                 let url = `${this.API_URL}/${id}/move?status=${newStatus}`;
                 if (newSwimLaneId) url += `&swimLaneId=${newSwimLaneId}`;
 
-                const response = await axios.patch(url);
+                await axios.patch(url);
 
-                // Update with authoritative data from backend
-                const index = this.tasks.findIndex(t => t.id == id);
-                if (index !== -1) {
-                    const serverTask = response.data;
-                    const localTask = this.tasks[index];
+                // PURE OPTIMISTIC UI:
+                // We assume the backend succeeded and matches our local state.
+                // We DO NOT update the local task with the response to avoid redraws.
+                // Just show the save indicator.
+                this.triggerSaveIndicator();
 
-                    // SMART MERGE: Only update if critical fields differ or for background fields
-                    // This prevents Alpine from destroying the DOM element if the status/lane matches
-                    if (localTask.status !== serverTask.status ||
-                        localTask.swimLane?.id !== serverTask.swimLane?.id) {
-                        // Backend rejected our move or changed something critical - Full Replace
-                        this.tasks[index] = serverTask;
-                    } else {
-                        // Soft Update: Keep the object reference, update properties
-                        // We iterate keys to ensure we catch everything without replacing the object
-                        Object.keys(serverTask).forEach(key => {
-                            if (key !== 'status' && key !== 'swimLane') {
-                                localTask[key] = serverTask[key];
-                            }
-                        });
-                        // Explicitly ensure nested objects are updated if needed, but for swimLane we checked ID
-                        // If we need to update swimLane name (rare), we can do it:
-                        if (localTask.swimLane && serverTask.swimLane) {
-                            localTask.swimLane.name = serverTask.swimLane.name;
-                        }
-                    }
-
-                    // If the task pane is open for this task, update it too
-                    if (this.currentTask && this.currentTask.id == id) {
-                        this.refreshTaskData(serverTask);
-                    }
-                }
             } catch (error) {
                 console.error('Error moving task:', error);
                 // Revert on error
@@ -1071,6 +1046,13 @@ document.addEventListener('alpine:init', () => {
         // =====================================================================
         // Notifications
         // =====================================================================
+
+        triggerSaveIndicator() {
+            this.showSaveIndicator = true;
+            setTimeout(() => {
+                this.showSaveIndicator = false;
+            }, 2000);
+        },
 
         showNotification(message, type = 'success') {
             const notification = document.createElement('div');
