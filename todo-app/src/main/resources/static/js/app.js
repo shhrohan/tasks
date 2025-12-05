@@ -119,6 +119,12 @@ document.addEventListener('alpine:init', () => {
 
                 // Load swimlanes first and update UI incrementally
                 await this.fetchSwimLanes();
+
+                // Initialize loading state for all lanes to ensure reactivity
+                this.activeLanes.forEach(lane => {
+                    this.loadingLanes[lane.id] = false;
+                });
+
                 this.$nextTick(() => {
                     this.setupSortables();
                 });
