@@ -314,7 +314,7 @@ document.addEventListener('alpine:init', () => {
                 console.log('[DEBUG] Task before update:', JSON.parse(JSON.stringify(task)));
                 task.status = newStatus;
                 if (newSwimLaneId) {
-                    task.swimLane = this.swimLanes.find(l => l.id === newSwimLaneId);
+                    task.swimLane = this.swimLanes.find(l => l.id == newSwimLaneId);
                 }
                 console.log('[DEBUG] Task after update:', JSON.parse(JSON.stringify(task)));
             }
