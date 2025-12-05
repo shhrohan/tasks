@@ -170,19 +170,45 @@ function todoApp() {
                             handle: '.swimlane-title', // Drag by header title area
                             draggable: '.swimlane-row',
                             onEnd: (evt) => {
-                                const lanes = Array.from(boardContainer.querySelectorAll('.swimlane-row'));
-                                const orderedIds = lanes.map(lane => parseInt(lane.dataset.laneId));
+                                // 1. Calculate new order from DOM *before* we destroy it
+                                const itemEl = evt.item;
+                                const newIndex = evt.newIndex;
+                                const oldIndex = evt.oldIndex;
 
-                                axios.patch(`${this.SWIMLANE_URL}/reorder`, orderedIds)
+                                // 2. Update the internal data model to reflect the move
+                                const laneToMove = this.activeLanes.splice(oldIndex, 1)[0];
+                                this.activeLanes.splice(newIndex, 0, laneToMove);
+                                const newSortedLanes = [...this.activeLanes]; // Clone for safety
+
+                                // 3. Notify Backend immediately (Optimistic)
+                                const orderedIdsForApi = newSortedLanes.map(l => l.id);
+                                axios.patch(`${this.SWIMLANE_URL}/reorder`, orderedIdsForApi)
                                     .then(() => {
                                         console.log('Swimlane order updated');
-                                        // Update local data order without re-fetching
-                                        // This is tricky with active/completed filters, but visual order is already correct via DOM
+                                        this.showNotification('Swimlane order saved', 'success');
                                     })
                                     .catch(error => {
                                         console.error('Error reordering swimlanes:', error);
                                         this.showNotification('Failed to save swimlane order', 'error');
                                     });
+
+                                // 4. NUCLEAR OPTION: Force Alpine to tear down and rebuild the DOM.
+                                // This guarantees we aren't fighting Sortable's DOM manipulations or detached nodes.
+                                console.log('[Sortable] Performing Flash Reset of DOM...');
+
+                                // Step A: Clear the list (teardown)
+                                this.activeLanes = [];
+
+                                // Step B: Restore the list (rebuild)
+                                this.$nextTick(() => {
+                                    this.activeLanes = newSortedLanes;
+
+                                    // Step C: Re-initialize Sortable on the fresh DOM (rebind)
+                                    this.$nextTick(() => {
+                                        console.log('[Sortable] Re-initializing after Flash Reset');
+                                        this.setupSortables();
+                                    });
+                                });
                             }
                         });
                     }
@@ -193,9 +219,6 @@ function todoApp() {
                     this.loadingLanes[lane.id] = false;
                 });
 
-                this.$nextTick(() => {
-                    this.setupSortables();
-                });
                 // Then load tasks and update UI incrementally
                 await this.fetchTasks();
                 this.$nextTick(() => {
@@ -1100,16 +1123,27 @@ function todoApp() {
         // =====================================================================
 
         setupSortables() {
+            console.log('[Sortable] Setting up sortables...');
             document.querySelectorAll('.lane-column').forEach(column => {
+                const laneId = column.getAttribute('data-lane-id');
+                const status = column.getAttribute('data-status');
+
                 if (column.sortableInstance) {
+                    console.log(`[Sortable] Destroying existing instance for Lane ${laneId} - ${status}`);
                     column.sortableInstance.destroy();
                 }
 
+                console.log(`[Sortable] Creating new instance for Lane ${laneId} - ${status}`);
                 column.sortableInstance = new Sortable(column, {
                     group: 'shared',
                     animation: 150,
                     ghostClass: 'dragging',
                     onEnd: (evt) => {
+                        console.log('[Sortable] Task drag ended', {
+                            item: evt.item,
+                            from: evt.from,
+                            to: evt.to
+                        });
                         const itemEl = evt.item;
                         const newStatus = evt.to.getAttribute('data-status');
                         const newLaneId = evt.to.getAttribute('data-lane-id');
@@ -1127,6 +1161,7 @@ function todoApp() {
                     }
                 });
             });
+            console.log('[Sortable] Setup complete.');
         },
 
         // =====================================================================

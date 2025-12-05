@@ -40,6 +40,14 @@ public class SwimLaneDAO {
         return swimLaneRepository.save(swimLane);
     }
 
+    public List<SwimLane> saveAll(List<SwimLane> swimLanes) {
+        return swimLaneRepository.saveAll(swimLanes);
+    }
+
+    public List<SwimLane> findAllById(List<Long> ids) {
+        return swimLaneRepository.findAllById(ids);
+    }
+
     public void deleteById(Long id) {
         swimLaneRepository.deleteById(id);
     }

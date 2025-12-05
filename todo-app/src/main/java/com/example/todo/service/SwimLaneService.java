@@ -86,13 +86,18 @@ public class SwimLaneService {
     }
 
     public void reorderSwimLanes(List<Long> orderedIds) {
+        List<SwimLane> lanes = swimLaneDAO.findAllById(orderedIds);
+        // Create a map for O(1) lookup
+        java.util.Map<Long, SwimLane> laneMap = lanes.stream()
+            .collect(java.util.stream.Collectors.toMap(SwimLane::getId, java.util.function.Function.identity()));
+
         for (int i = 0; i < orderedIds.size(); i++) {
             Long id = orderedIds.get(i);
-            SwimLane lane = swimLaneDAO.findById(id).orElse(null);
+            SwimLane lane = laneMap.get(id);
             if (lane != null) {
                 lane.setPosition(i);
-                swimLaneDAO.save(lane);
             }
         }
+        swimLaneDAO.saveAll(lanes);
     }
 }

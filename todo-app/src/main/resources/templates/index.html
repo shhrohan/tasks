@@ -509,149 +509,103 @@
                 </div>
 
                 <!-- Body -->
-                <div class="flex-grow-1 overflow-auto custom-scrollbar p-4" x-if="selectedTask">
-                    <!-- Title & Status -->
-                    <div class="mb-4">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h3 class="text-white fw-bold mb-0" x-text="selectedTask.name"></h3>
-                            <span class="badge border status-badge ms-2"
-                                :class="selectedTask.status ? 'status-' + selectedTask.status.toLowerCase() : ''"
-                                x-text="selectedTask.status"></span>
+                <template x-if="selectedTask">
+                    <div class="flex-grow-1 overflow-auto custom-scrollbar p-4">
+                        <!-- Title & Status -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h3 class="text-white fw-bold mb-0" x-text="selectedTask?.name"></h3>
+                                <span class="badge border status-badge ms-2"
+                                    :class="selectedTask?.status ? 'status-' + selectedTask.status.toLowerCase() : ''"
+                                    x-text="selectedTask?.status"></span>
+                            </div>
+                            <div class="text-white-50 small">
+                                <i class="fa-solid fa-layer-group me-1"></i>
+                                <span x-text="selectedTask?.swimLaneName"></span>
+                            </div>
                         </div>
-                        <div class="text-white-50 small">
-                            <i class="fa-solid fa-layer-group me-1"></i>
-                            <span x-text="selectedTask.swimLaneName"></span>
-                        </div>
-                    </div>
 
-                    <!-- Tags -->
-                    <div class="mb-4">
-                        <label class="text-secondary small text-uppercase fw-bold mb-2">Tags</label>
-                        <div class="d-flex flex-wrap gap-2">
-                            <template x-for="tag in selectedTask.tags" :key="tag">
-                                <span class="badge bg-dark border border-secondary rounded-1 p-2" x-text="tag"></span>
-                            </template>
-                            <span x-show="!selectedTask.tags || selectedTask.tags.length === 0"
-                                class="text-white-50 small fst-italic">No tags</span>
+                        <!-- Tags -->
+                        <div class="mb-4">
+                            <label class="text-secondary small text-uppercase fw-bold mb-2">Tags</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                <template x-for="tag in selectedTask?.tags" :key="tag">
+                                    <span class="badge bg-dark border border-secondary rounded-1 p-2"
+                                        x-text="tag"></span>
+                                </template>
+                                <span x-show="!selectedTask?.tags || selectedTask.tags.length === 0"
+                                    class="text-white-50 small fst-italic">No tags</span>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Comments -->
-                    <div class="mb-4">
-                        <label class="text-secondary small text-uppercase fw-bold mb-2">Comments</label>
-                        <div class="d-flex flex-column gap-3">
-                            <template x-for="comment in selectedTask.existingComments" :key="comment.id">
-                                <div class="p-3 rounded bg-dark border border-secondary">
-                                    <div class="text-white" style="white-space: pre-wrap;" x-text="comment.text"></div>
-                                    <div class="text-end mt-2">
-                                        <span class="text-white-50 small" style="font-size: 0.75rem;"
-                                            x-text="formatDate(comment.updatedAt)"></span>
+                        <!-- Comments -->
+                        <div class="mb-4">
+                            <label class="text-secondary small text-uppercase fw-bold mb-2">Comments</label>
+                            <div class="d-flex flex-column gap-3">
+                                <template x-for="comment in selectedTask?.existingComments" :key="comment.id">
+                                    <div class="p-3 rounded bg-dark border border-secondary">
+                                        <div class="text-white" style="white-space: pre-wrap;" x-text="comment.text">
+                                        </div>
+                                        <div class="text-end mt-2">
+                                            <span class="text-white-50 small" style="font-size: 0.75rem;"
+                                                x-text="formatDate(comment.updatedAt)"></span>
+                                        </div>
                                     </div>
+                                </template>
+                                <div x-show="!selectedTask?.existingComments || selectedTask.existingComments.length === 0"
+                                    class="text-white-50 small fst-italic">
+                                    No comments yet.
                                 </div>
-                            </template>
-                            <div x-show="!selectedTask.existingComments || selectedTask.existingComments.length === 0"
-                                class="text-white-50 small fst-italic">
-                                No comments yet.
                             </div>
                         </div>
                     </div>
-                </div>
+                </template>
 
                 <!-- Footer Actions -->
-                <div class="p-4 border-top border-secondary bg-black bg-opacity-25 d-flex justify-content-end gap-2">
-                    <button class="btn btn-outline-danger"
-                        @click="if(confirm('Delete task?')) { deleteTask(selectedTask.id); closeTask(); }">
-                        <i class="fa-solid fa-trash me-2"></i>Delete
-                    </button>
-                    <button class="btn btn-primary"
-                        @click="showNotification('Edit feature coming in next update', 'info')">
-                        <i class="fa-solid fa-pen me-2"></i>Edit
-                    </button>
-                </div>
-            </div>
-            <div class="mb-3">
-                <label for="task-lane" class="form-label">Swimlane</label>
-                <select class="form-select bg-dark text-white border-secondary" x-model="selectedSwimLaneId"
-                    id="task-lane" required>
-                    <option value="" disabled>-- Select a Swimlane --</option>
-                    <template x-for="lane in activeLanes" :key="lane.id">
-                        <option :value="lane.id" x-text="lane.name"></option>
-                    </template>
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="task-tags" class="form-label">Tags</label>
-                <div class="border border-secondary rounded p-2 bg-dark">
-                    <div class="d-flex flex-wrap gap-2 mb-2">
-                        <template x-for="(tag, index) in currentTask.tags" :key="index">
-                            <span class="badge bg-primary d-flex align-items-center gap-2">
-                                <span x-text="tag"></span>
-                                <i class="fa-solid fa-times cursor-pointer" @click="removeTag(index)"></i>
-                            </span>
-                        </template>
+                <template x-if="selectedTask">
+                    <div
+                        class="p-4 border-top border-secondary bg-black bg-opacity-25 d-flex justify-content-end gap-2">
+                        <button class="btn btn-outline-danger"
+                            @click="if(confirm('Delete task?')) { deleteTask(selectedTask.id); closeTask(); }">
+                            <i class="fa-solid fa-trash me-2"></i>Delete
+                        </button>
+                        <button class="btn btn-primary"
+                            @click="showNotification('Edit feature coming in next update', 'info')">
+                            <i class="fa-solid fa-pen me-2"></i>Edit
+                        </button>
                     </div>
-                    <input type="text" class="form-control bg-transparent border-0 text-white p-0 shadow-none"
-                        x-model="newTag" @keydown.enter.prevent="addTag()" placeholder="Type tag and press Enter...">
-                </div>
+                </template>
             </div>
-            <!-- Comments removed from Edit Mode -->
-            </form>
-        </div>
-        <div class="offcanvas-footer p-3 border-top border-secondary mt-auto">
-            <!-- View Mode Footer -->
-            <template x-if="isViewMode">
-                <div class="d-flex w-100 gap-2">
-                    <button type="button" class="btn btn-outline-danger me-auto"
-                        @click="openConfirmModal('delete_task', currentTask.id, 'Delete this task?')">
-                        <i class="fa-solid fa-trash"></i> Delete
-                    </button>
-                    <button type="button" class="btn btn-secondary" @click="closeTaskPane()">Close</button>
-                    <button type="button" class="btn btn-primary" @click="enableEditMode()">
-                        <i class="fa-solid fa-pen"></i> Edit
-                    </button>
-                </div>
-            </template>
 
-            <!-- Edit/Create Mode Footer -->
-            <template x-if="!isViewMode">
-                <div class="d-flex w-100 gap-2 justify-content-end">
-                    <button type="button" class="btn btn-secondary" @click="cancelEdit()">Cancel</button>
-                    <button type="button" class="btn btn-primary" @click="handleTaskSubmit()">
-                        <span x-text="isEditMode ? 'Save Changes' : 'Create Task'"></span>
-                    </button>
-                </div>
-            </template>
-        </div>
-    </div>
 
-    <!-- Swimlane Modal (Bootstrap) -->
-    <div class="modal fade" id="laneModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content glass-panel text-white">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title">Create Swimlane</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="laneForm" @submit.prevent="handleLaneSubmit()">
-                        <div class="mb-3">
-                            <label for="lane-name" class="form-label">Swimlane Name</label>
-                            <input type="text" class="form-control bg-dark text-white border-secondary"
-                                x-model="currentLane.name" id="lane-name" required
-                                placeholder="e.g. Feature A, Q4 Goals">
+            <!-- Swimlane Modal (Bootstrap) -->
+            <div class="modal fade" id="laneModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content glass-panel text-white">
+                        <div class="modal-header border-secondary">
+                            <h5 class="modal-title">Create Swimlane</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                         </div>
-                    </form>
-                </div>
-                <div class="modal-footer border-secondary">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" @click="handleLaneSubmit()">Create
-                        Lane</button>
+                        <div class="modal-body">
+                            <form id="laneForm" @submit.prevent="handleLaneSubmit()">
+                                <div class="mb-3">
+                                    <label for="lane-name" class="form-label">Swimlane Name</label>
+                                    <input type="text" class="form-control bg-dark text-white border-secondary"
+                                        x-model="currentLane.name" id="lane-name" required
+                                        placeholder="e.g. Feature A, Q4 Goals">
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer border-secondary">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary" @click="handleLaneSubmit()">Create
+                                Lane</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    </div>
     </div>
 
     <!-- Confirmation Modal (Bootstrap) -->
@@ -714,7 +668,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 
     <!-- Application Logic (Loads after deps, before Alpine) -->
-    <script src="js/app.js?v=fixOrder3"></script>
+    <script src="js/app.v8.js"></script>
 
     <!-- Alpine.js Collapse Plugin -->
     <script src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
