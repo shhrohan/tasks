@@ -30,6 +30,21 @@ public class AsyncWriteService {
         simulateLatency();
         Task savedTask = taskDAO.save(task);
         log.info("AsyncDB: Completed SAVE for Task ID {}", task.getId());
+
+        sseService.broadcast("task-updated", savedTask);
+    }
+
+    @Async("asyncWriteExecutor")
+    @Transactional
+    public void moveTask(Long id, com.example.todo.model.TaskStatus status, Long laneId) {
+        log.info("AsyncDB: [DEBUG] Start processing MOVE for Task ID {} to Status {} Lane {}...", id,
+                status, laneId);
+        simulateLatency();
+        taskDAO.updatePosition(id, status, laneId);
+
+        // Fetch updated task to broadcast full state
+        taskDAO.findById(id).ifPresent(task -> {
+            log.info("AsyncDB: [DEBUG] Task found after update: ID={}, Name={}, Status={}, Lane={}",
                     task.getId(), task.getName(), task.getStatus(),
                     task.getSwimLane() != null ? task.getSwimLane().getId() : "null");
             sseService.broadcast("task-updated", task);
