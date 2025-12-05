@@ -185,7 +185,8 @@
                     </template>
 
                     <template x-for="lane in visibleLanes" :key="lane.id">
-                        <div class="row mb-3 mb-lg-4 swimlane-row" :data-lane-id="lane.id">
+                        <div class="row mb-3 mb-lg-4 swimlane-row" :class="{'collapsed': lane.collapsed}"
+                            :data-lane-id="lane.id">
                             <div class="swimlane-header p-3 d-flex justify-content-between align-items-center cursor-pointer"
                                 @click="toggleLaneCollapse(lane)">
                                 <div class="swimlane-title d-flex align-items-center gap-2">
