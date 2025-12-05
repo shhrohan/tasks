@@ -129,6 +129,10 @@ document.addEventListener('alpine:init', () => {
                     console.log('Axios is defined');
                 }
 
+                // Debug: Expose scope
+                window.todoAppScope = this;
+                console.log('Alpine scope exposed as window.todoAppScope', this);
+
                 // Global Axios Interceptor for Logging
                 axios.interceptors.request.use(request => {
                     console.log(`[API Request] ${request.method.toUpperCase()} ${request.url}`);
@@ -906,12 +910,11 @@ document.addEventListener('alpine:init', () => {
         },
 
         openTaskModal(taskData) {
+            console.log('[Debug] openTaskModal CALLED', taskData);
             this.loadTaskDetails(taskData);
             this.modalTitle = 'Task Details';
-            this.isEditMode = true; // It is an existing task
-            this.isViewMode = true; // Start in view mode
-
-            // this.taskPane.show();
+            this.isEditMode = true;
+            this.isViewMode = true;
             this.isTaskOpen = true;
         },
 
