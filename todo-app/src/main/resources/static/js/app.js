@@ -1096,19 +1096,22 @@ document.addEventListener('alpine:init', () => {
 
             document.body.appendChild(notification);
 
-            gsap.fromTo(notification,
-                { opacity: 0, y: 20 },
-                { opacity: 1, y: 0, duration: 0.3, ease: 'back.out' }
-            );
+            // Trigger reflow to enable transition
+            notification.offsetHeight;
 
-            gsap.to(notification, {
-                opacity: 0,
-                y: 20,
-                duration: 0.3,
-                delay: 3,
-                ease: 'power2.in',
-                onComplete: () => notification.remove()
-            });
+            // Add show class to animate in
+            notification.classList.add('show');
+
+            // Remove after delay
+            setTimeout(() => {
+                notification.classList.remove('show');
+                // Wait for transition to finish before removing from DOM
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
         }
     }));
 });
