@@ -2,6 +2,9 @@
 // TODO APP - Rewritten with Alpine.js, Axios, GSAP, and Bootstrap 5
 // ============================================================================
 
+// Debug Alpine presence
+console.log('App.js loading. Alpine available?', !!window.Alpine);
+
 Alpine.data('todoApp', () => ({
     // API Configuration
     API_URL: '/api/tasks',
