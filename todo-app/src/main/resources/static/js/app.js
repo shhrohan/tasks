@@ -901,319 +901,322 @@ document.addEventListener('alpine:init', () => {
                 // Update currentTask with new data without re-opening/resetting UI state
                 this.currentTask.status = taskData.status;
                 this.currentTask.swimLaneName = taskData.swimLane?.name;
-                openTaskModal(taskData) {
-                    this.loadTaskDetails(taskData);
-                    this.modalTitle = 'Task Details';
-                    this.isEditMode = true;
-                    this.isViewMode = true;
-                    this.isTaskOpen = true;
-                },
+            }
+        },
 
-                enableEditMode() {
-                    this.isViewMode = false;
-                    this.modalTitle = 'Edit Task';
-                },
+        openTaskModal(taskData) {
+            this.loadTaskDetails(taskData);
+            this.modalTitle = 'Task Details';
+            this.isEditMode = true;
+            this.isViewMode = true;
+            this.isTaskOpen = true;
+        },
 
-                closeTaskPane() {
-                    this.isTaskOpen = false;
-                },
+        enableEditMode() {
+            this.isViewMode = false;
+            this.modalTitle = 'Edit Task';
+        },
 
-                cancelEdit() {
-                    if (this.isEditMode) {
-                        // Return to view mode if editing existing task
-                        this.isViewMode = true;
-                        this.modalTitle = 'Task Details';
-                    } else {
-                        // Close if creating new task
-                        this.isTaskOpen = false;
-                    }
-                },
+        closeTaskPane() {
+            this.isTaskOpen = false;
+        },
 
-                handleTaskSubmit() {
-                    if (!this.selectedSwimLaneId) {
-                        this.showNotification('Please select a swimlane', 'warning');
-                        return;
-                    }
-                    if (!this.currentTask.name) {
-                        this.showNotification('Task name is required', 'warning');
-                        return;
-                    }
+        cancelEdit() {
+            if (this.isEditMode) {
+                // Return to view mode if editing existing task
+                this.isViewMode = true;
+                this.modalTitle = 'Task Details';
+            } else {
+                // Close if creating new task
+                this.isTaskOpen = false;
+            }
+        },
 
-                    // Check for unsaved tag
-                    // Check for unsaved tag
-                    if (this.newTag.trim()) {
-                        // Add receding effect to task offcanvas
-                        const taskOffcanvas = document.getElementById('taskOffcanvas');
-                        if (taskOffcanvas) taskOffcanvas.classList.add('modal-receding');
+        handleTaskSubmit() {
+            if (!this.selectedSwimLaneId) {
+                this.showNotification('Please select a swimlane', 'warning');
+                return;
+            }
+            if (!this.currentTask.name) {
+                this.showNotification('Task name is required', 'warning');
+                return;
+            }
 
-                        const modal = new bootstrap.Modal(document.getElementById('unsavedTagModal'));
-                        modal.show();
-                        return;
-                    }
+            // Check for unsaved tag
+            // Check for unsaved tag
+            if (this.newTag.trim()) {
+                // Add receding effect to task offcanvas
+                const taskOffcanvas = document.getElementById('taskOffcanvas');
+                if (taskOffcanvas) taskOffcanvas.classList.add('modal-receding');
 
-                    const tags = this.currentTask.tags;
+                const modal = new bootstrap.Modal(document.getElementById('unsavedTagModal'));
+                modal.show();
+                return;
+            }
 
-                    const taskData = {
-                        name: this.currentTask.name,
-                        tags: JSON.stringify(tags),
-                        comments: JSON.stringify(this.currentTask.existingComments || []),
-                        swimLane: { id: this.selectedSwimLaneId }
-                    };
+            const tags = this.currentTask.tags;
 
-                    if (this.isEditMode) {
-                        const existing = this.tasks.find(t => t.id === this.currentTask.id);
-                        taskData.status = existing.status;
-                        this.updateTask(this.currentTask.id, taskData);
-                    } else {
-                        taskData.status = 'TODO';
-                        this.createTask(taskData);
-                    }
-                },
+            const taskData = {
+                name: this.currentTask.name,
+                tags: JSON.stringify(tags),
+                comments: JSON.stringify(this.currentTask.existingComments || []),
+                swimLane: { id: this.selectedSwimLaneId }
+            };
+
+            if (this.isEditMode) {
+                const existing = this.tasks.find(t => t.id === this.currentTask.id);
+                taskData.status = existing.status;
+                this.updateTask(this.currentTask.id, taskData);
+            } else {
+                taskData.status = 'TODO';
+                this.createTask(taskData);
+            }
+        },
 
 
 
-                handleLaneSubmit() {
-                    if (!this.currentLane.name.trim()) {
-                        this.showNotification('Lane name cannot be empty', 'warning');
-                        return;
-                    }
-                    this.createSwimLane(this.currentLane.name);
-                },
+        handleLaneSubmit() {
+            if (!this.currentLane.name.trim()) {
+                this.showNotification('Lane name cannot be empty', 'warning');
+                return;
+            }
+            this.createSwimLane(this.currentLane.name);
+        },
 
-                handleDeleteTask() {
-                    // Deprecated in favor of openConfirmModal, but kept for safety
-                    if (this.currentTask.id && confirm('Delete this task?')) {
-                        this.deleteTask(this.currentTask.id);
-                    }
-                },
+        handleDeleteTask() {
+            // Deprecated in favor of openConfirmModal, but kept for safety
+            if (this.currentTask.id && confirm('Delete this task?')) {
+                this.deleteTask(this.currentTask.id);
+            }
+        },
 
-                openConfirmModal(type, id, message) {
-                    this.confirmType = type;
-                    this.confirmId = id;
-                    this.confirmMessage = message;
-                    this.confirmModal.show();
-                },
+        openConfirmModal(type, id, message) {
+            this.confirmType = type;
+            this.confirmId = id;
+            this.confirmMessage = message;
+            this.confirmModal.show();
+        },
 
-                handleConfirm() {
-                    console.log('handleConfirm called', this.confirmType, this.confirmId);
-                    try {
-                        switch (this.confirmType) {
-                            case 'complete_lane':
-                                this.completeSwimLane(this.confirmId);
-                                break;
-                            case 'delete_lane':
-                                this.deleteSwimLane(this.confirmId);
-                                break;
-                            case 'reactivate_lane':
-                                this.uncompleteSwimLane(this.confirmId);
-                                break;
-                            case 'delete_task':
-                                this.deleteTask(this.confirmId);
-                                break;
+        handleConfirm() {
+            console.log('handleConfirm called', this.confirmType, this.confirmId);
+            try {
+                switch (this.confirmType) {
+                    case 'complete_lane':
+                        this.completeSwimLane(this.confirmId);
+                        break;
+                    case 'delete_lane':
+                        this.deleteSwimLane(this.confirmId);
+                        break;
+                    case 'reactivate_lane':
+                        this.uncompleteSwimLane(this.confirmId);
+                        break;
+                    case 'delete_task':
+                        this.deleteTask(this.confirmId);
+                        break;
+                }
+            } catch (error) {
+                console.error('Error in handleConfirm:', error);
+            } finally {
+                if (this.confirmModal) {
+                    this.confirmModal.hide();
+                }
+            }
+        },
+
+        // =====================================================================
+        // UI Helper Methods
+        // =====================================================================
+
+        getSwimLaneTaskCount(laneId) {
+            return this.tasks.filter(t => t.swimLane?.id === laneId).length;
+        },
+
+        getLaneTasksByStatus(laneId, status) {
+            if (status === 'DONE' && !this.showDoneTasks) {
+                return [];
+            }
+            return this.tasks.filter(t => {
+                const matchesStatus = t.status === status && t.swimLane?.id === laneId;
+                if (!matchesStatus) return false;
+                return this.isTaskVisible(t);
+            });
+        },
+
+        isTaskVisible(task) {
+            // 1. Check Search Tags (Pills) - AND Logic
+            if (this.searchTags.length > 0) {
+                const taskTags = this.getTaskTags(task.tags);
+                const hasAllTags = this.searchTags.every(searchTag =>
+                    taskTags.some(tag => tag.toLowerCase() === searchTag.toLowerCase())
+                );
+                if (!hasAllTags) return false;
+            }
+
+            // 2. Check Input Text (Live Typing) - Partial Match
+            const inputText = this.newSearchTag.trim().toLowerCase();
+            if (inputText) {
+                const taskTags = this.getTaskTags(task.tags);
+                // Match against tags OR task name? User said "filter as user types", usually implies tags since it's a tag search box.
+                // But context is "Tag Search". Let's match against TAGS.
+                const hasPartialTag = taskTags.some(tag => tag.toLowerCase().includes(inputText));
+                if (!hasPartialTag) return false;
+            }
+
+            return true;
+        },
+
+        getCompletedLaneTaskSummary(laneId) {
+            const laneTasks = this.tasks.filter(t => t.swimLane?.id === laneId);
+            return laneTasks.reduce((acc, task) => {
+                acc[task.status] = (acc[task.status] || 0) + 1;
+                return acc;
+            }, {});
+        },
+
+        parseTags(tagsJson) {
+            try {
+                const tags = JSON.parse(tagsJson || '[]');
+                return Array.isArray(tags) ? tags.join(', ') : '';
+            } catch (e) {
+                return '';
+            }
+        },
+
+        getTaskTags(tagsJson) {
+            try {
+                const tags = JSON.parse(tagsJson || '[]');
+                return Array.isArray(tags) ? tags : [];
+            } catch (e) {
+                return [];
+            }
+        },
+
+
+
+        getTaskCommentCount(commentsJson) {
+            try {
+                const comments = JSON.parse(commentsJson || '[]');
+                return Array.isArray(comments) ? comments.length : 0;
+            } catch (e) {
+                return 0;
+            }
+        },
+
+        toggleLaneCollapse(lane) {
+            lane.collapsed = !lane.collapsed;
+        },
+
+        // =====================================================================
+        // Sortable Setup
+        // =====================================================================
+
+        setupSortables() {
+            document.querySelectorAll('.lane-column').forEach(column => {
+                if (column.sortableInstance) {
+                    column.sortableInstance.destroy();
+                }
+
+                column.sortableInstance = new Sortable(column, {
+                    group: 'shared',
+                    animation: 150,
+                    ghostClass: 'dragging',
+                    onEnd: (evt) => {
+                        const itemEl = evt.item;
+                        const newStatus = evt.to.getAttribute('data-status');
+                        const newLaneId = evt.to.getAttribute('data-lane-id');
+                        const taskId = itemEl.getAttribute('data-id');
+                        const oldStatus = itemEl.getAttribute('data-status');
+                        const oldLaneId = itemEl.getAttribute('data-lane-id');
+
+                        if (newStatus !== oldStatus || newLaneId !== oldLaneId) {
+                            // Revert the DOM change so Alpine can handle the move via data binding
+                            // This ensures the 'task' scope remains valid and prevents flickering/text loss
+                            evt.from.appendChild(itemEl);
+
+                            this.moveTask(taskId, newStatus, newLaneId);
                         }
-                    } catch (error) {
-                        console.error('Error in handleConfirm:', error);
-                    } finally {
-                        if (this.confirmModal) {
-                            this.confirmModal.hide();
-                        }
                     }
-                },
+                });
+            });
+        },
 
-                // =====================================================================
-                // UI Helper Methods
-                // =====================================================================
+        // =====================================================================
+        // Animations
+        // =====================================================================
 
-                getSwimLaneTaskCount(laneId) {
-                    return this.tasks.filter(t => t.swimLane?.id === laneId).length;
-                },
-
-                getLaneTasksByStatus(laneId, status) {
-                    if (status === 'DONE' && !this.showDoneTasks) {
-                        return [];
-                    }
-                    return this.tasks.filter(t => {
-                        const matchesStatus = t.status === status && t.swimLane?.id === laneId;
-                        if (!matchesStatus) return false;
-                        return this.isTaskVisible(t);
+        animateElements() {
+            this.$nextTick(() => {
+                // Animate swimlane rows
+                // Animate swimlane rows
+                const rows = document.querySelectorAll('.swimlane-row');
+                if (rows.length > 0) {
+                    gsap.to(rows, {
+                        duration: 0.5,
+                        opacity: 1,
+                        y: 0,
+                        stagger: 0.1,
+                        ease: 'power2.out'
                     });
-                },
+                }
 
-                isTaskVisible(task) {
-                    // 1. Check Search Tags (Pills) - AND Logic
-                    if (this.searchTags.length > 0) {
-                        const taskTags = this.getTaskTags(task.tags);
-                        const hasAllTags = this.searchTags.every(searchTag =>
-                            taskTags.some(tag => tag.toLowerCase() === searchTag.toLowerCase())
-                        );
-                        if (!hasAllTags) return false;
-                    }
-
-                    // 2. Check Input Text (Live Typing) - Partial Match
-                    const inputText = this.newSearchTag.trim().toLowerCase();
-                    if (inputText) {
-                        const taskTags = this.getTaskTags(task.tags);
-                        // Match against tags OR task name? User said "filter as user types", usually implies tags since it's a tag search box.
-                        // But context is "Tag Search". Let's match against TAGS.
-                        const hasPartialTag = taskTags.some(tag => tag.toLowerCase().includes(inputText));
-                        if (!hasPartialTag) return false;
-                    }
-
-                    return true;
-                },
-
-                getCompletedLaneTaskSummary(laneId) {
-                    const laneTasks = this.tasks.filter(t => t.swimLane?.id === laneId);
-                    return laneTasks.reduce((acc, task) => {
-                        acc[task.status] = (acc[task.status] || 0) + 1;
-                        return acc;
-                    }, {});
-                },
-
-                parseTags(tagsJson) {
-                    try {
-                        const tags = JSON.parse(tagsJson || '[]');
-                        return Array.isArray(tags) ? tags.join(', ') : '';
-                    } catch (e) {
-                        return '';
-                    }
-                },
-
-                getTaskTags(tagsJson) {
-                    try {
-                        const tags = JSON.parse(tagsJson || '[]');
-                        return Array.isArray(tags) ? tags : [];
-                    } catch (e) {
-                        return [];
-                    }
-                },
-
-
-
-                getTaskCommentCount(commentsJson) {
-                    try {
-                        const comments = JSON.parse(commentsJson || '[]');
-                        return Array.isArray(comments) ? comments.length : 0;
-                    } catch (e) {
-                        return 0;
-                    }
-                },
-
-                toggleLaneCollapse(lane) {
-                    lane.collapsed = !lane.collapsed;
-                },
-
-                // =====================================================================
-                // Sortable Setup
-                // =====================================================================
-
-                setupSortables() {
-                    document.querySelectorAll('.lane-column').forEach(column => {
-                        if (column.sortableInstance) {
-                            column.sortableInstance.destroy();
-                        }
-
-                        column.sortableInstance = new Sortable(column, {
-                            group: 'shared',
-                            animation: 150,
-                            ghostClass: 'dragging',
-                            onEnd: (evt) => {
-                                const itemEl = evt.item;
-                                const newStatus = evt.to.getAttribute('data-status');
-                                const newLaneId = evt.to.getAttribute('data-lane-id');
-                                const taskId = itemEl.getAttribute('data-id');
-                                const oldStatus = itemEl.getAttribute('data-status');
-                                const oldLaneId = itemEl.getAttribute('data-lane-id');
-
-                                if (newStatus !== oldStatus || newLaneId !== oldLaneId) {
-                                    // Revert the DOM change so Alpine can handle the move via data binding
-                                    // This ensures the 'task' scope remains valid and prevents flickering/text loss
-                                    evt.from.appendChild(itemEl);
-
-                                    this.moveTask(taskId, newStatus, newLaneId);
-                                }
-                            }
-                        });
+                // Animate task cards
+                const cards = document.querySelectorAll('.task-card');
+                if (cards.length > 0) {
+                    gsap.to(cards, {
+                        duration: 0.4,
+                        opacity: 1,
+                        scale: 1,
+                        stagger: 0.02,
+                        ease: 'back.out'
                     });
-                },
+                }
+            });
+        },
 
-                // =====================================================================
-                // Animations
-                // =====================================================================
+        // =====================================================================
+        // Notifications
+        // =====================================================================
 
-                animateElements() {
-                    this.$nextTick(() => {
-                        // Animate swimlane rows
-                        // Animate swimlane rows
-                        const rows = document.querySelectorAll('.swimlane-row');
-                        if (rows.length > 0) {
-                            gsap.to(rows, {
-                                duration: 0.5,
-                                opacity: 1,
-                                y: 0,
-                                stagger: 0.1,
-                                ease: 'power2.out'
-                            });
-                        }
+        triggerSaveIndicator() {
+            this.showSaveIndicator = true;
+            setTimeout(() => {
+                this.showSaveIndicator = false;
+            }, 2000);
+        },
 
-                        // Animate task cards
-                        const cards = document.querySelectorAll('.task-card');
-                        if (cards.length > 0) {
-                            gsap.to(cards, {
-                                duration: 0.4,
-                                opacity: 1,
-                                scale: 1,
-                                stagger: 0.02,
-                                ease: 'back.out'
-                            });
-                        }
-                    });
-                },
+        showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
 
-                // =====================================================================
-                // Notifications
-                // =====================================================================
+            const iconMap = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                warning: 'fa-exclamation-triangle'
+            };
 
-                triggerSaveIndicator() {
-                    this.showSaveIndicator = true;
-                    setTimeout(() => {
-                        this.showSaveIndicator = false;
-                    }, 2000);
-                },
-
-                showNotification(message, type = 'success') {
-                    const notification = document.createElement('div');
-                    notification.className = `notification notification-${type}`;
-
-                    const iconMap = {
-                        success: 'fa-check-circle',
-                        error: 'fa-exclamation-circle',
-                        warning: 'fa-exclamation-triangle'
-                    };
-
-                    notification.innerHTML = `
+            notification.innerHTML = `
                 <i class="fa-solid ${iconMap[type]}"></i>
                 <span>${message}</span>
             `;
 
-                    document.body.appendChild(notification);
+            document.body.appendChild(notification);
 
-                    // Trigger reflow to enable transition
-                    notification.offsetHeight;
+            // Trigger reflow to enable transition
+            notification.offsetHeight;
 
-                    // Add show class to animate in
-                    notification.classList.add('show');
+            // Add show class to animate in
+            notification.classList.add('show');
 
-                    // Remove after delay
-                    setTimeout(() => {
-                        notification.classList.remove('show');
-                        // Wait for transition to finish before removing from DOM
-                        setTimeout(() => {
-                            if (notification.parentNode) {
-                                notification.parentNode.removeChild(notification);
-                            }
-                        }, 300);
-                    }, 3000);
-                }
-            }));
+            // Remove after delay
+            setTimeout(() => {
+                notification.classList.remove('show');
+                // Wait for transition to finish before removing from DOM
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+    }));
 });
