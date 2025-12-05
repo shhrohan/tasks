@@ -143,6 +143,7 @@ document.addEventListener('alpine:init', () => {
                     const currentScrollY = window.scrollY;
                     if (Math.abs(currentScrollY - lastScrollY) > 50) {
                         console.log(`[Scroll Debug] Jump detected! From ${lastScrollY} to ${currentScrollY}`);
+                        console.log('[Scroll Debug] Active Element:', document.activeElement);
                     }
                     lastScrollY = currentScrollY;
                 });
