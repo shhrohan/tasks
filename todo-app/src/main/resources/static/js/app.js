@@ -137,6 +137,16 @@ document.addEventListener('alpine:init', () => {
                 // Load swimlanes first and update UI incrementally
                 await this.fetchSwimLanes();
 
+                // Debug: Scroll Monitor
+                let lastScrollY = window.scrollY;
+                window.addEventListener('scroll', () => {
+                    const currentScrollY = window.scrollY;
+                    if (Math.abs(currentScrollY - lastScrollY) > 50) {
+                        console.log(`[Scroll Debug] Jump detected! From ${lastScrollY} to ${currentScrollY}`);
+                    }
+                    lastScrollY = currentScrollY;
+                });
+
                 // Initialize loading state for all lanes to ensure reactivity
                 // Swimlane Reordering
                 this.$nextTick(() => {
