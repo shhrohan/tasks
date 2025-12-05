@@ -131,6 +131,7 @@ document.addEventListener('alpine:init', () => {
 
                 // Debug: Expose scope
                 window.todoAppScope = this;
+                alert('Debug: App Init Running'); // Visual confirmation
                 console.log('Alpine scope exposed as window.todoAppScope', this);
 
                 // Global Axios Interceptor for Logging
