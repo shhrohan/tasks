@@ -327,11 +327,33 @@ document.addEventListener('alpine:init', () => {
                 // Update with authoritative data from backend
                 const index = this.tasks.findIndex(t => t.id == id);
                 if (index !== -1) {
-                    this.tasks[index] = response.data;
+                    const serverTask = response.data;
+                    const localTask = this.tasks[index];
+
+                    // SMART MERGE: Only update if critical fields differ or for background fields
+                    // This prevents Alpine from destroying the DOM element if the status/lane matches
+                    if (localTask.status !== serverTask.status ||
+                        localTask.swimLane?.id !== serverTask.swimLane?.id) {
+                        // Backend rejected our move or changed something critical - Full Replace
+                        this.tasks[index] = serverTask;
+                    } else {
+                        // Soft Update: Keep the object reference, update properties
+                        // We iterate keys to ensure we catch everything without replacing the object
+                        Object.keys(serverTask).forEach(key => {
+                            if (key !== 'status' && key !== 'swimLane') {
+                                localTask[key] = serverTask[key];
+                            }
+                        });
+                        // Explicitly ensure nested objects are updated if needed, but for swimLane we checked ID
+                        // If we need to update swimLane name (rare), we can do it:
+                        if (localTask.swimLane && serverTask.swimLane) {
+                            localTask.swimLane.name = serverTask.swimLane.name;
+                        }
+                    }
 
                     // If the task pane is open for this task, update it too
                     if (this.currentTask && this.currentTask.id == id) {
-                        this.refreshTaskData(response.data);
+                        this.refreshTaskData(serverTask);
                     }
                 }
             } catch (error) {
@@ -1020,22 +1042,29 @@ document.addEventListener('alpine:init', () => {
         animateElements() {
             this.$nextTick(() => {
                 // Animate swimlane rows
-                gsap.to('.swimlane-row', {
-                    duration: 0.5,
-                    opacity: 1,
-                    y: 0,
-                    stagger: 0.1,
-                    ease: 'power2.out'
-                });
+                // Animate swimlane rows
+                const rows = document.querySelectorAll('.swimlane-row');
+                if (rows.length > 0) {
+                    gsap.to(rows, {
+                        duration: 0.5,
+                        opacity: 1,
+                        y: 0,
+                        stagger: 0.1,
+                        ease: 'power2.out'
+                    });
+                }
 
                 // Animate task cards
-                gsap.to('.task-card', {
-                    duration: 0.4,
-                    opacity: 1,
-                    scale: 1,
-                    stagger: 0.02,
-                    ease: 'back.out'
-                });
+                const cards = document.querySelectorAll('.task-card');
+                if (cards.length > 0) {
+                    gsap.to(cards, {
+                        duration: 0.4,
+                        opacity: 1,
+                        scale: 1,
+                        stagger: 0.02,
+                        ease: 'back.out'
+                    });
+                }
             });
         },
 

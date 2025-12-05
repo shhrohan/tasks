@@ -100,7 +100,7 @@ The frontend was rewritten from Vanilla JS to **Alpine.js** to improve maintaina
 ```bash
 mvn spring-boot:run
 ```
-The application will be available at **[http://localhost:8081](http://localhost:8081)** (Note: Port 8081).
+The application will be available at **[http://localhost:8080](http://localhost:8080)** (Note: Port 8080).
 
 ### Running Tests
 ```bash
