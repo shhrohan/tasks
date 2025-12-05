@@ -1225,8 +1225,10 @@ function todoApp() {
     };
 }
 
-// Expose and register
+// Expose globally
 window.todoApp = todoApp;
-if (window.Alpine) {
+
+// Register with Alpine when it initializes
+document.addEventListener('alpine:init', () => {
     Alpine.data('todoApp', todoApp);
-}
+});
