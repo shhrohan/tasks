@@ -152,17 +152,6 @@ document.addEventListener('alpine:init', () => {
                 // Load swimlanes first and update UI incrementally
                 await this.fetchSwimLanes();
 
-                // Debug: Scroll Monitor
-                let lastScrollY = window.scrollY;
-                window.addEventListener('scroll', () => {
-                    const currentScrollY = window.scrollY;
-                    if (Math.abs(currentScrollY - lastScrollY) > 50) {
-                        console.log(`[Scroll Debug] Jump detected! From ${lastScrollY} to ${currentScrollY}`);
-                        console.log('[Scroll Debug] Active Element:', document.activeElement);
-                    }
-                    lastScrollY = currentScrollY;
-                });
-
                 // Initialize loading state for all lanes to ensure reactivity
                 // Swimlane Reordering
                 this.$nextTick(() => {
@@ -922,8 +911,6 @@ document.addEventListener('alpine:init', () => {
             this.isEditMode = true; // It is an existing task
             this.isViewMode = true; // Start in view mode
 
-            // Debug log
-            console.log(`[Debug] openTaskModal called for task ${taskData.id}.`);
             // this.taskPane.show();
             this.isTaskOpen = true;
         },
