@@ -19,7 +19,15 @@ export const Store = {
         message: '',
         type: 'info',
         confirmText: 'Confirm',
-        onConfirm: null
+        action: null, // Stores the function to call on confirm
+        payload: null // Stores arguments
+    },
+    inputModal: {
+        open: false,
+        title: '',
+        value: '',
+        mode: '', // 'TASK' or 'SWIMLANE'
+        payload: null
     },
     columns: ['TODO', 'IN_PROGRESS', 'DONE', 'BLOCKED', 'DEFERRED'],
 
@@ -27,9 +35,9 @@ export const Store = {
     async init() {
         console.log('[Store] Initializing...');
         this.loading = true;
-        // Reset Modal State to be safe
-        this.modal.open = false;
-        this.modal.type = 'info';
+        // Reset Modal State
+        this.closeModal();
+        this.closeInputModal();
 
         try {
             await this.loadData();
@@ -49,6 +57,22 @@ export const Store = {
         const activeLanes = lanes.map(l => ({ ...l, collapsed: false, loading: true }));
 
         return { lanes: activeLanes };
+    },
+
+    getLaneStats(laneId) {
+        // Since we don't have this.tasks populated in Store (it's in App now mainly),
+        // we might rely on the App spreading Store methods.
+        // HOWEVER, 'this' context inside Store methods when called via Alpine component
+        // will be the Alpine component instance.
+        // So 'this.tasks' refers to the component's reactive tasks array.
+
+        const tasks = this.tasks || [];
+        const laneTasks = tasks.filter(t => t.swimLane && t.swimLane.id === laneId);
+
+        return {
+            total: laneTasks.length,
+            // Add other stats if needed in future
+        };
     },
 
     async fetchLaneTasks(laneId) {
@@ -74,50 +98,144 @@ export const Store = {
         }
     },
 
-    // --- Modal Actions ---
-    openModal({ title, message, type = 'info', confirmText = 'Confirm', onConfirm }) {
-        this.modal.title = title;
-        this.modal.message = message;
-        this.modal.type = type;
-        this.modal.confirmText = confirmText;
-        this.modal.onConfirm = onConfirm;
+    // --- Modal Management ---
+
+    // 1. Confirm Modal
+    confirmAction(actionName, payload) {
+        console.log(`[Store] Opening Confirm Modal for ${actionName}`, payload);
+        this.modal.payload = payload;
+        this.modal.action = actionName;
         this.modal.open = true;
+
+        if (actionName === 'deleteLane') {
+            this.modal.title = 'Delete Swimlane?';
+            this.modal.message = 'This will archive the swimlane. You can restore it later from database/admin.';
+            this.modal.type = 'danger';
+            this.modal.confirmText = 'Delete';
+        } else if (actionName === 'completeLane') {
+            this.modal.title = 'Complete Swimlane?';
+            this.modal.message = 'This will mark all tasks as done and hide the lane.';
+            this.modal.type = 'success';
+            this.modal.confirmText = 'Complete';
+        }
     },
 
     closeModal() {
+        console.log('[Store] Closing Confirm Modal');
         this.modal.open = false;
         setTimeout(() => {
-            this.modal.onConfirm = null; // Cleanup
+            this.modal.action = null;
+            this.modal.payload = null;
         }, 300);
     },
 
-    confirmAction() {
-        if (this.modal.onConfirm) {
-            this.modal.onConfirm();
-        }
+    confirmModalAction() {
+        console.log('[Store] Generic Confirm Action Triggered');
+        const { action, payload } = this.modal;
+        if (action === 'deleteLane') this.deleteLaneRecursive(payload);
+        if (action === 'completeLane') this.completeLaneRecursive(payload);
         this.closeModal();
     },
 
-    // --- Getters (Alpine works best with functions for computed data) ---
-
-    getTasksByLaneAndStatus(laneId, status) {
-        // Safe access to avoid "undefined" errors
-        return this.tasks.filter(t =>
-            t.swimLane &&
-            t.swimLane.id === laneId &&
-            t.status === status
-        );
+    // 2. Input Modal
+    openSwimlaneModal() {
+        console.log('[Store] Opening Swimlane Input Modal');
+        this.inputModal.mode = 'SWIMLANE';
+        this.inputModal.title = 'New Board (Swimlane)';
+        this.inputModal.value = '';
+        this.inputModal.open = true;
+        // Focus Hack
+        setTimeout(() => {
+            const input = document.querySelector('[x-ref="inputField"]');
+            if (input) input.focus();
+        }, 100);
     },
 
-    getLaneStats(laneId) {
-        const tasks = this.tasks.filter(t => t.swimLane && t.swimLane.id === laneId);
-        const total = tasks.length;
-        const done = tasks.filter(t => t.status === 'DONE').length;
-        return {
-            total,
-            done,
-            percent: total === 0 ? 0 : Math.round((done / total) * 100)
-        };
+    openTaskModal(laneId) {
+        console.log(`[Store] Opening Task Input Modal for Lane ${laneId}`);
+        this.inputModal.mode = 'TASK';
+        this.inputModal.title = 'New Task';
+        this.inputModal.value = '';
+        this.inputModal.payload = { laneId }; // Store context
+        this.inputModal.open = true;
+        // Focus Hack
+        setTimeout(() => {
+            const input = document.querySelector('[x-ref="inputField"]');
+            if (input) input.focus();
+        }, 100);
+    },
+
+    closeInputModal() {
+        console.log('[Store] Closing Input Modal');
+        this.inputModal.open = false;
+        setTimeout(() => {
+            this.inputModal.value = '';
+        }, 300);
+    },
+
+    async submitInputModal() {
+        console.log('[Store] Submitting Input Modal', this.inputModal);
+        const val = this.inputModal.value.trim();
+        if (!val) {
+            console.warn('[Store] Input empty, ignoring');
+            return;
+        }
+
+        if (this.inputModal.mode === 'SWIMLANE') {
+            await this.createSwimLane(val);
+        } else if (this.inputModal.mode === 'TASK') {
+            const laneId = this.inputModal.payload.laneId;
+            await this.createTask(val, laneId);
+        }
+        this.closeInputModal();
+    },
+
+    // --- Create Actions ---
+
+    async createSwimLane(name) {
+        try {
+            // Optimistic? No, let's wait for ID from server for correctness
+            const newLane = await Api.createSwimLane(name);
+            newLane.collapsed = false;
+            newLane.loading = false;
+            this.lanes.push(newLane);
+            this.triggerSave();
+        } catch (e) {
+            console.error('[Store] Failed to create lane', e);
+            alert('Error creating lane');
+        }
+    },
+
+    async createTask(name, laneId) {
+        try {
+            // Construct Payload
+            const lane = this.lanes.find(l => l.id === laneId);
+            if (!lane) return;
+
+            const taskPayload = {
+                name: name,
+                status: 'TODO',
+                swimLane: lane, // Backend expects object or ID? Service uses Entity.
+                // Note: If backend expects just ID in DTO, this might fail if using raw Entity in controller.
+                // Controller accepts 'Task' entity. It has 'swimLane' field.
+                // Let's send the full object structure cleanly.
+                swimLane: { id: laneId }
+            };
+
+            const newTask = await Api.createTask(taskPayload);
+
+            // Add to local state (if not using SSE or strictly relying on it)
+            // We use SSE for updates, but immediate feedback is nice.
+            // Check if already covered by SSE?
+            // If SSE is fast, we might duplicate.
+            // Safe bet: Add it, and let deduplication logic in 'fetchLaneTasks' or 'onServerTaskUpdate' handle it.
+            // Our 'onServerTaskUpdate' updates by ID, so it's safe.
+            this.tasks.push(newTask);
+            this.triggerSave();
+        } catch (e) {
+            console.error('[Store] Failed to create task', e);
+            alert('Error creating task');
+        }
     },
 
     // --- Actions ---
@@ -166,9 +284,7 @@ export const Store = {
         }
     },
 
-    async deleteLane(laneId) {
-        if (!confirm('Are you sure you want to delete this swimlane?')) return;
-
+    async deleteLaneRecursive(laneId) {
         // Optimistic Remove
         const originalLanes = [...this.lanes];
         this.lanes = this.lanes.filter(l => l.id !== laneId);
@@ -185,12 +301,13 @@ export const Store = {
         }
     },
 
-    async completeLane(laneId) {
-        if (!confirm('Mark this swimlane as complete?')) return;
-
+    async completeLaneRecursive(laneId) {
         // Optimistic Update
         const lane = this.lanes.find(l => l.id === laneId);
-        if (lane) lane.isCompleted = true;
+        if (lane) lane.isCompleted = true; // In active view, this might hide it if we filter
+
+        // If we want it to vanish from "Active" view:
+        this.lanes = this.lanes.filter(l => l.id !== laneId);
 
         try {
             console.log(`[Store] Completing lane ${laneId}`);
@@ -198,7 +315,12 @@ export const Store = {
             this.triggerSave();
         } catch (e) {
             console.error('[Store] Complete Failed', e);
-            if (lane) lane.isCompleted = false; // Rollback
+            if (lane) {
+                // Restore
+                lane.isCompleted = false;
+                this.lanes.push(lane); // Hacky restore position??
+                this.loadData(); // Safer
+            }
         }
     },
 

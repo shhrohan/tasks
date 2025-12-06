@@ -24,6 +24,10 @@
                 <i class="fa-solid fa-cubes me-2"></i>TaskBoard 3D
             </a>
             <div class="d-flex align-items-center gap-3">
+                <!-- Add Swimlane Button -->
+                <button class="btn btn-primary btn-sm" @click="openSwimlaneModal()">
+                    <i class="fa-solid fa-plus"></i> New Board
+                </button>
                 <!-- Save Indicator -->
                 <div x-show="showSaved" x-transition class="text-success small fw-bold">
                     <i class="fa-solid fa-check"></i> Saved
@@ -71,12 +75,12 @@
 
                                 <!-- Right: Actions -->
                                 <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-outline-success" @click.stop="completeLane(lane.id)"
-                                        title="Complete Lane">
+                                    <button class="btn btn-sm btn-outline-success"
+                                        @click.stop="confirmAction('completeLane', lane.id)" title="Complete Lane">
                                         <i class="fa-solid fa-check"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger" @click.stop="deleteLane(lane.id)"
-                                        title="Delete Lane">
+                                    <button class="btn btn-sm btn-outline-danger"
+                                        @click.stop="confirmAction('deleteLane', lane.id)" title="Delete Lane">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>
                                 </div>
@@ -87,8 +91,7 @@
                                 <!-- Add Task Button Col -->
                                 <div
                                     class="col-12 col-lg-2 d-flex align-items-center justify-content-center border-end border-secondary">
-                                    <button class="btn btn-outline-primary btn-sm"
-                                        @click.stop="alert('Add Task via API for now')">
+                                    <button class="btn btn-outline-primary btn-sm" @click.stop="openTaskModal(lane.id)">
                                         <i class="fa-solid fa-plus"></i> Add Task
                                     </button>
                                 </div>
@@ -130,15 +133,64 @@
 
     </div>
 
+    <!-- Modals -->
+
+    <!-- ============================================== -->
+    <!-- CUSTOM MODALS (Fixed Overlay)                  -->
+    <!-- ============================================== -->
+
+    <!-- ============================================== -->
+    <!-- CUSTOM MODALS (Fixed Overlay)                  -->
+    <!-- ============================================== -->
+
+    <!-- 1. General Confirmation Modal -->
+    <div class="custom-modal-overlay" x-show="modal.open" x-transition.opacity :class="{ 'active': modal.open }"
+        style="display: none !important;" x-init="$el.style.display = ''">
+        <div class="custom-modal-card" @click.outside="closeModal()">
+            <div class="custom-modal-header">
+                <h3 class="custom-modal-title" x-text="modal.title">Confirm</h3>
+                <button type="button" class="custom-modal-close" @click="closeModal()">&times;</button>
+            </div>
+            <div class="custom-modal-body">
+                <p class="mb-0" x-text="modal.message"></p>
+            </div>
+            <div class="custom-modal-footer">
+                <button type="button" class="btn btn-secondary" @click="closeModal()">Cancel</button>
+                <button type="button" class="btn" :class="'btn-' + modal.type" @click="confirmModalAction()"
+                    x-text="modal.confirmText"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Input Modal (Task/Swimlane) -->
+    <div class="custom-modal-overlay" x-show="inputModal.open" x-transition.opacity
+        :class="{ 'active': inputModal.open }" style="display: none !important;" x-init="$el.style.display = ''">
+        <div class="custom-modal-card" @click.outside="closeInputModal()">
+            <div class="custom-modal-header">
+                <h3 class="custom-modal-title" x-text="inputModal.title">Input</h3>
+                <button type="button" class="custom-modal-close" @click="closeInputModal()">&times;</button>
+            </div>
+            <div class="custom-modal-body">
+                <div class="mb-3">
+                    <label class="form-label text-sm text-secondary uppercase fw-bold mb-2">Name / Description</label>
+                    <input type="text" class="form-control form-control-lg bg-dark text-white border-secondary"
+                        placeholder="Enter name..." x-model="inputModal.value" @keydown.enter="submitInputModal()"
+                        x-ref="inputField"> <!-- Added x-ref for focus -->
+                </div>
+            </div>
+            <div class="custom-modal-footer">
+                <button type="button" class="btn btn-secondary" @click="closeInputModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" @click="submitInputModal()">Save</button>
+            </div>
+        </div>
+    </div>
+
     <!-- JS Dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 
-    <!-- Module Entry Point -->
-    <script type="module" src="js/app.js?v=12"></script>
-
-    <!-- Alpine (Must load AFTER modules define data) -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.12.0/dist/cdn.min.js"></script>
+    <!-- Main Application (Handles Alpine Init) -->
+    <script type="module" src="js/app.js?v=esm_init"></script>
 
 </body>
 
