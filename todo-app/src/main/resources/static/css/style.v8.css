@@ -705,54 +705,6 @@ body {
 }
 
 
-/* Split-Screen Dashboard Layout */
-.dashboard-layout {
-    display: flex;
-    gap: 1.5rem;
-    /* Space between board and sidebar */
-    align-items: flex-start;
-    /* Ensure sidebar sticks to top */
-    position: relative;
-}
-
-.board-area {
-    flex: 1;
-    /* Take remaining space */
-    min-width: 0;
-    /* Prevent flex overflow */
-    transition: all 0.3ms ease;
-    /* Smooth resize when sidebar opens */
-}
-
-/* Sidebar (Replaces overlay pane) */
-.details-sidebar {
-    width: 400px;
-    flex-shrink: 0;
-    position: sticky;
-    /* THE KEY: Sticks while you scroll the board */
-    top: 90px;
-    /* Below the header */
-    height: calc(100vh - 110px);
-    /* Fill screen, allow internal scroll */
-    background: rgba(15, 23, 42, 0.6);
-    /* Slightly more transparent than before */
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    backdrop-filter: blur(12px);
-    box-shadow: -5px 10px 30px rgba(0, 0, 0, 0.3);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    /* Internal scrolling handled by body */
-    z-index: 900;
-}
-
-/* Hide the old overlay classes to avoid conflict if any remain */
-.task-overlay-backdrop,
-.task-overlay-pane {
-    display: none !important;
-}
-
 /* Simple Task Overlay (Replacement for complex offcanvas) */
 .task-overlay-backdrop {
     display: none !important;
@@ -760,8 +712,9 @@ body {
 }
 
 .task-overlay-pane {
-    position: absolute;
-    /* top is set dynamically via JS style binding */
+    position: fixed;
+    top: 80px;
+    /* Sit below the navbar (approx height) */
     right: 0;
     bottom: 0;
     height: calc(100vh - 80px);

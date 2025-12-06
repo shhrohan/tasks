@@ -108,6 +108,13 @@ mvn test
 ```
 
 ## CRITICAL WORKFLOW RULES
+*   **BROWSER USAGE**:
+    *   For loading the website and testing, **ALWAYS** reuse the already open browser tab. **DO NOT** open a new tab.
+
+*   **MANDATORY LOGGING & VERIFICATION**:
+    *   **ALWAYS** add helper debug logs for all frontend and backend functionalities created or updated.
+    *   All frontend changes **MUST** be accompanied by logs printed on the browser console.
+    *   Changes are considered correctly working **ONLY** when logs are available as proof of correctness.
 
 *   **MANDATORY OPTIMIZATION (STOP & THINK)**:
     *   Before *every* code change, pause and ask: "Is there a better/cleaner/more standard way to do this?"

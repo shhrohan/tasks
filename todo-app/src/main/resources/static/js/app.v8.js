@@ -949,15 +949,6 @@ function todoApp() {
             };
         },
 
-        selectTask(task) {
-            // "Active" task logic
-            this.selectedTask = task;
-
-            // Set initial position based on current scroll
-            // This allows the pane to open "here" but then scroll with the page (absolute positioning)
-            this.paneTop = Math.max(80, window.scrollY + 80);
-        },
-
         closeTask() {
             this.selectedTask = null;
         },

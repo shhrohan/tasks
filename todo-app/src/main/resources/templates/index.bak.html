@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo & Reminders - 3D Swimlanes</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/style.v10.css">
+    <!-- Highcharts -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/highcharts-3d.js"></script>
+    <script src="https://code.highcharts.com/themes/dark-unica.js"></script>
+</head>
+
+
+<body x-data="todoApp()" x-init="init()">
+
+
+    <div class="app-container">
+        <!-- Save Indicator -->
+        <div x-show="showSaveIndicator" x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="transform -translate-y-full" x-transition:enter-end="transform translate-y-0"
+            x-transition:leave="transition ease-in duration-300" x-transition:leave-start="transform translate-y-0"
+            x-transition:leave-end="transform -translate-y-full"
+            class="position-fixed top-0 start-0 w-100 bg-success text-white text-center py-1 fw-bold"
+            style="z-index: 2000; height: 4px;">
+        </div>
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-transparent app-header mb-3 mb-lg-4">
+            <div class="container-fluid">
+                <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+                    <i class="fa-solid fa-cubes-stacked"></i> Task Board 3D
+                </a>
+                <div class="d-flex gap-2">
+                    <div class="btn-group" role="group" aria-label="View Switcher">
+                        <button type="button" class="btn btn-outline-light"
+                            :class="{ 'active': currentView === 'main' }"
+                            @click="currentView = 'main'; $nextTick(() => animateElements())">
+                            <i class="fa-solid fa-cubes-stacked"></i> Board
+                        </button>
+                        <button type="button" class="btn btn-outline-light"
+                            :class="{ 'active': currentView === 'list' }"
+                            @click="currentView = 'list'; $nextTick(() => animateElements())">
+                            <i class="fa-solid fa-list"></i> List
+                        </button>
+                        <button type="button" class="btn btn-outline-light"
+                            :class="{ 'active': currentView === 'completed' }"
+                            @click="currentView = 'completed'; $nextTick(() => animateElements())">
+                            <i class="fa-solid fa-check-circle"></i> Completed
+                        </button>
+                    </div>
+                    <button @click="showDoneTasks = !showDoneTasks" class="btn btn-outline-light"
+                        :class="{ 'active': !showDoneTasks }"
+                        :title="showDoneTasks ? 'Hide Done Tasks' : 'Show Done Tasks'">
+                        <i class="fa-solid" :class="showDoneTasks ? 'fa-eye' : 'fa-eye-slash'"></i>
+                        <span class="d-none d-md-inline ms-1" x-text="showDoneTasks ? 'Hide Done' : 'Show Done'"></span>
+                    </button>
+                    <button @click="openCreateLaneModal()" class="btn btn-outline-light">
+                        <i class="fa-solid fa-road"></i> New Swimlane
+                    </button>
+
+                </div>
+            </div>
+        </nav>
+
+        <!-- View Stack for 3D Flip -->
+        <div class="view-stack">
+            <!-- Main View -->
+            <div x-show="currentView === 'main'" x-transition:enter="flip-in-active"
+                x-transition:enter-start="flip-in-from" x-transition:enter-end="flip-in-to"
+                x-transition:leave="flip-out-active" x-transition:leave-start="flip-out-from"
+                x-transition:leave-end="flip-out-to" class="main-view container-fluid">
+                <!-- Statistics Section (Collapsible Accordion) -->
+                <div class="stats-accordion mb-3 mb-lg-4">
+                    <div class="glass-panel rounded overflow-hidden">
+                        <!-- Header -->
+                        <div @click="toggleStats()"
+                            class="p-3 d-flex justify-content-between align-items-center cursor-pointer stats-header-toggle"
+                            role="button">
+                            <h4 class="mb-0 h5"><i class="fa-solid fa-chart-pie me-2"></i> Statistics</h4>
+                            <i class="fa-solid fa-chevron-down transition-transform"
+                                :class="{ 'rotate-180': showStats }"></i>
+                        </div>
+
+                        <!-- Content -->
+                        <div x-show="showStats" x-collapse x-transition:enter="transition ease-out duration-300"
+                            x-transition:enter-start="opacity-0 transform scale-95"
+                            x-transition:enter-end="opacity-100 transform scale-100"
+                            x-transition:leave="transition ease-in duration-200"
+                            x-transition:leave-start="opacity-100 transform scale-100"
+                            x-transition:leave-end="opacity-0 transform scale-95">
+                            <div class="p-4 border-top border-secondary">
+                                <div class="row g-4">
+                                    <div class="col-md-6">
+                                        <div class="card bg-transparent border-secondary h-100">
+                                            <div class="card-header border-secondary text-center text-white">
+                                                Tasks by Status
+                                            </div>
+                                            <div class="card-body d-flex justify-content-center align-items-center"
+                                                style="min-height: 300px;">
+                                                <div id="statusChart" style="width: 100%; height: 300px;"></div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card bg-transparent border-secondary h-100">
+                                            <div class="card-header border-secondary text-center text-white">
+                                                Tasks by Swimlane
+                                            </div>
+                                            <div class="card-body d-flex justify-content-center align-items-center"
+                                                style="min-height: 300px;">
+                                                <div id="swimlaneChart" style="width: 100%; height: 300px;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tag Search Section -->
+                <div class="mb-3 mb-lg-4">
+                    <div class="glass-panel rounded p-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <label class="text-white fw-bold mb-0">Filter by Tags:</label>
+                            <div class="input-group" style="max-width: 500px;">
+                                <span class="input-group-text bg-transparent border-secondary text-white">
+                                    <i class="fa-solid fa-tags"></i>
+                                </span>
+                                <input type="text" class="form-control bg-transparent border-secondary text-white"
+                                    x-model.debounce.300ms="newSearchTag" @keydown.enter.prevent="addSearchTag()"
+                                    placeholder="type here">
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-2">
+                                <template x-for="(tag, index) in searchTags" :key="index">
+                                    <span class="badge bg-primary d-flex align-items-center gap-2 p-2">
+                                        <span x-text="tag"></span>
+                                        <i class="fa-solid fa-times cursor-pointer" @click="removeSearchTag(index)"></i>
+                                    </span>
+                                </template>
+                            </div>
+
+                            <button x-show="searchTags.length > 0" @click="clearSearch()"
+                                class="btn btn-sm btn-outline-secondary ms-auto">
+                                Clear All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Layout Wrapper -->
+                <div class="dashboard-layout position-relative">
+
+                    <!-- Left Column: The Board -->
+                    <div class="board-area">
+                        <!-- Board Headers -->
+                        <div class="row board-header-row mb-3 d-none d-lg-flex gap-3">
+                            <div class="col-2 header-spacer"></div>
+                            <div class="col status-header status-todo">
+                                <h2>Todo</h2>
+                            </div>
+                            <div class="col status-header status-progress">
+                                <h2>In Progress</h2>
+                            </div>
+                            <div class="col status-header status-done">
+                                <h2>Done</h2>
+                            </div>
+                            <div class="col status-header status-blocked">
+                                <h2>Blocked</h2>
+                            </div>
+                            <div class="col status-header status-deferred">
+                                <h2>Deferred</h2>
+                            </div>
+                        </div>
+
+                        <div class="board-container">
+                            <template x-if="activeLanes.length === 0">
+                                <div class="alert alert-info text-center glass-panel">
+                                    <p class="mb-0">No active swimlanes. Create one to get started!</p>
+                                </div>
+                            </template>
+
+                            <template x-for="lane in visibleLanes" :key="lane.id">
+                                <div class="row mb-3 mb-lg-4 swimlane-row"
+                                    :class="{'collapsed': lane.collapsed, 'opacity-50': getSwimLaneStats(lane.id).total === 0}"
+                                    :data-lane-id="lane.id">
+                                    <div class="swimlane-header p-3 d-flex justify-content-between align-items-center cursor-pointer"
+                                        @click="toggleLaneCollapse(lane)">
+                                        <div class="swimlane-title d-flex align-items-center gap-3">
+                                            <i class="fa-solid fa-chevron-down swimlane-toggle"></i>
+                                            <span class="h4 mb-0 fw-bold" x-text="lane.name"></span>
+                                            <span class="badge bg-primary rounded-pill fs-6 shadow-sm"
+                                                x-text="getSwimLaneTaskCount(lane.id)"></span>
+                                            <div x-show="loadingLanes[lane.id]"
+                                                class="spinner-border spinner-border-sm text-primary" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <!-- Stats Section -->
+                                            <div
+                                                class="swimlane-stats d-none d-md-flex flex-column align-items-end me-2">
+                                                <div class="d-flex align-items-center gap-2 small text-white-50 mb-1">
+                                                    <span class="fw-bold text-white"
+                                                        x-text="getSwimLaneStats(lane.id).percent + '%'"></span>
+                                                    <span>&bull;</span>
+                                                    <span
+                                                        x-text="getSwimLaneStats(lane.id).done + '/' + getSwimLaneStats(lane.id).total + ' Done'"></span>
+                                                </div>
+                                                <div class="progress w-100"
+                                                    style="height: 6px; width: 120px !important; background: rgba(255,255,255,0.1);">
+                                                    <div class="progress-bar bg-success" role="progressbar"
+                                                        :style="'width: ' + getSwimLaneStats(lane.id).percent + '%'"
+                                                        :aria-valuenow="getSwimLaneStats(lane.id).percent"
+                                                        aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+                                            </div>
+                                            <div class="swimlane-actions d-flex gap-2">
+                                                <button
+                                                    @click.stop="openConfirmModal('complete_lane', lane.id, 'Mark this swimlane as completed?')"
+                                                    class="btn btn-sm btn-outline-success">
+                                                    <i class="fa-solid fa-check"></i> Complete
+                                                </button>
+                                                <button
+                                                    @click.stop="openConfirmModal('delete_lane', lane.id, 'Delete this swimlane?')"
+                                                    class="btn btn-sm btn-outline-danger">
+                                                    <i class="fa-solid fa-trash"></i> Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="swimlane-content row g-3 px-3 pb-3 pt-0" x-show="!lane.collapsed"
+                                        x-collapse>
+                                        <!-- Action Column -->
+                                        <div
+                                            class="col-12 col-lg-2 d-flex align-items-center justify-content-center border-end border-secondary">
+                                            <button @click="openCreateTaskModal(lane.id)"
+                                                class="btn btn-primary w-100 w-lg-auto px-lg-4">
+                                                <i class="fa-solid fa-plus"></i> Add Task
+                                            </button>
+                                        </div>
+
+                                        <!-- Status Columns -->
+                                        <template x-for="status in columns" :key="status">
+                                            <div class="col-12 col-lg lane-column"
+                                                :id="'lane-' + lane.id + '-' + status" :data-status="status"
+                                                :data-lane-id="lane.id">
+                                                <template x-for="task in getLaneTasksByStatus(lane.id, status)"
+                                                    :key="task.id">
+                                                    <div class="card task-card mb-2" :data-task-id="task.id"
+                                                        @click="selectTask(task)">
+                                                        <div class="card-body p-2">
+                                                            <div
+                                                                class="d-flex justify-content-between align-items-start mb-1">
+                                                                <h6 class="card-title text-white mb-0"
+                                                                    style="font-size: 0.9rem;" x-text="task.name"></h6>
+                                                            </div>
+                                                            <div class="d-flex flex-wrap gap-1 mb-1">
+                                                                <template x-for="(tag, index) in getTaskTags(task.tags)"
+                                                                    :key="tag + '-' + index">
+                                                                    <span
+                                                                        class="badge border border-secondary text-white-50"
+                                                                        style="font-size: 0.65rem;" x-text="tag"></span>
+                                                                </template>
+                                                            </div>
+                                                            <div
+                                                                class="d-flex justify-content-between align-items-center">
+                                                                <span class="text-secondary" style="font-size: 0.7rem;">
+                                                                    <i class="fa-regular fa-comment me-1"></i>
+                                                                    <span
+                                                                        x-text="task.existingComments?.length || 0"></span>
+                                                                </span>
+                                                                <span class="badge status-badge"
+                                                                    :class="'status-' + task.status.toLowerCase()"
+                                                                    style="font-size: 0.65rem;"
+                                                                    x-text="task.status"></span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Task Details Sidebar (Split Screen) -->
+                    <!-- Only visible when a task is selected -->
+                    <div class="details-sidebar" x-show="selectedTask"
+                        x-transition:enter="animate__animated animate__fadeInRight animate__faster"
+                        x-transition:leave="animate__animated animate__fadeOutRight animate__faster"
+                        style="display: none;">
+
+                        <!-- Header -->
+                        <div
+                            class="d-flex justify-content-between align-items-center p-4 border-bottom border-secondary bg-black bg-opacity-25">
+                            <h5 class="mb-0 text-white">Task Details</h5>
+                            <button type="button" class="btn-close btn-close-white" @click="closeTask()"></button>
+                        </div>
+
+                        <!-- Body -->
+                        <template x-if="selectedTask">
+                            <div class="flex-grow-1 overflow-auto custom-scrollbar p-4">
+                                <!-- Title & Status -->
+                                <div class="mb-4">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h3 class="text-white fw-bold mb-0" x-text="selectedTask?.name"></h3>
+                                        <span class="badge border status-badge ms-2"
+                                            :class="selectedTask?.status ? 'status-' + selectedTask.status.toLowerCase() : ''"
+                                            x-text="selectedTask?.status"></span>
+                                    </div>
+                                    <div class="text-white-50 small">
+                                        <i class="fa-solid fa-layer-group me-1"></i>
+                                        <span x-text="selectedTask?.swimLaneName"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Tags -->
+                                <div class="mb-4">
+                                    <label class="text-secondary small text-uppercase fw-bold mb-2">Tags</label>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <template x-for="tag in selectedTask?.tags" :key="tag">
+                                            <span class="badge bg-dark border border-secondary rounded-1 p-2"
+                                                x-text="tag"></span>
+                                        </template>
+                                        <span x-show="!selectedTask?.tags || selectedTask.tags.length === 0"
+                                            class="text-white-50 small fst-italic">No tags</span>
+                                    </div>
+                                </div>
+
+                                <!-- Comments -->
+                                <div class="mb-4">
+                                    <label class="text-secondary small text-uppercase fw-bold mb-2">Comments</label>
+                                    <div class="d-flex flex-column gap-3">
+                                        <template x-for="comment in selectedTask?.existingComments" :key="comment.id">
+                                            <div class="p-3 rounded bg-dark border border-secondary">
+                                                <div class="text-white" style="white-space: pre-wrap;"
+                                                    x-text="comment.text">
+                                                </div>
+                                                <div class="text-end mt-2">
+                                                    <span class="text-white-50 small" style="font-size: 0.75rem;"
+                                                        x-text="formatDate(comment.updatedAt)"></span>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <div x-show="!selectedTask?.existingComments || selectedTask.existingComments.length === 0"
+                                            class="text-white-50 small fst-italic">
+                                            No comments yet.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Footer Actions -->
+                        <template x-if="selectedTask">
+                            <div
+                                class="p-4 border-top border-secondary bg-black bg-opacity-25 d-flex justify-content-end gap-2">
+                                <button class="btn btn-outline-danger"
+                                    @click="if(confirm('Delete task?')) { deleteTask(selectedTask.id); closeTask(); }">
+                                    <i class="fa-solid fa-trash me-2"></i>Delete
+                                </button>
+                                <button class="btn btn-primary"
+                                    @click="showNotification('Edit feature coming in next update', 'info')">
+                                    <i class="fa-solid fa-pen me-2"></i>Edit
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+
+                </div>
+                <!-- End Dashboard Layout -->
+            </div>
+
+            <!-- List View -->
+            <div x-show="currentView === 'list'" x-transition:enter="flip-in-active"
+                x-transition:enter-start="flip-in-from" x-transition:enter-end="flip-in-to"
+                x-transition:leave="flip-out-active" x-transition:leave-start="flip-out-from"
+                x-transition:leave-end="flip-out-to" class="list-view container-fluid">
+
+                <div class="row g-4 h-100 w-100">
+                    <!-- Master List -->
+                    <div class="col-lg-4">
+                        <div class="glass-panel rounded h-100 d-flex flex-column">
+                            <div class="p-3 border-bottom border-secondary">
+                                <h4 class="mb-3"><i class="fa-solid fa-list-ul"></i> Tasks</h4>
+                                <!-- Search in List -->
+                                <div class="input-group">
+                                    <span class="input-group-text bg-transparent border-secondary text-white">
+                                        <i class="fa-solid fa-search"></i>
+                                    </span>
+                                    <input type="text" class="form-control bg-transparent border-secondary text-white"
+                                        x-model.debounce.300ms="newSearchTag" placeholder="Filter by tag...">
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 overflow-auto p-2 custom-scrollbar">
+                                <template x-if="filteredTasks.length === 0">
+                                    <div class="text-center text-white-50 p-4">
+                                        No tasks found.
+                                    </div>
+                                </template>
+                                <div class="list-group list-group-flush">
+                                    <template x-for="task in filteredTasks" :key="task.id">
+                                        <button type="button"
+                                            class="list-group-item list-group-item-action bg-transparent text-white border-bottom border-secondary mb-2 rounded"
+                                            :class="{'active-task': currentTask && currentTask.id === task.id}"
+                                            @click="selectTask(task)">
+                                            <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                                                <h6 class="mb-0 text-truncate" x-text="task.name"></h6>
+                                                <span class="badge border"
+                                                    :class="task.status ? 'status-' + task.status.toLowerCase() : ''"
+                                                    x-text="task.status"></span>
+                                            </div>
+                                            <div
+                                                class="d-flex justify-content-between align-items-center small text-white-50">
+                                                <span x-text="task.swimLane?.name"></span>
+                                                <span><i class="fa-regular fa-comment"></i> <span
+                                                        x-text="getTaskCommentCount(task.comments)"></span></span>
+                                            </div>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detail Pane -->
+                    <div class="col-lg-8">
+                        <div class="glass-panel rounded h-100 p-4">
+                            <template x-if="!currentTask || !currentTask.id">
+                                <div
+                                    class="d-flex flex-column align-items-center justify-content-center h-100 text-white-50">
+                                    <i class="fa-regular fa-hand-pointer fa-3x mb-3"></i>
+                                    <h5>Select a task to view details</h5>
+                                </div>
+                            </template>
+
+                            <template x-if="currentTask && currentTask.id">
+                                <div class="h-100 d-flex flex-column">
+                                    <!-- Header -->
+                                    <div
+                                        class="d-flex justify-content-between align-items-start mb-4 border-bottom border-secondary pb-3">
+                                        <div>
+                                            <h2 class="h3 mb-2" x-text="currentTask.name"></h2>
+                                            <div class="d-flex align-items-center gap-3">
+                                                <span class="badge border status-badge"
+                                                    :class="currentTask && currentTask.status ? 'status-' + currentTask.status.toLowerCase() : ''"
+                                                    x-text="currentTask.status"></span>
+                                                <span class="text-white-50 small">
+                                                    <i class="fa-solid fa-layer-group me-1"></i>
+                                                    <span x-text="currentTask.swimLaneName"></span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-outline-danger btn-sm"
+                                                @click="openConfirmModal('delete_task', currentTask.id, 'Delete this task?')">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                            <button class="btn btn-primary btn-sm" @click="openTaskModal(currentTask)">
+                                                <i class="fa-solid fa-pen"></i> Edit Full
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Content -->
+                                    <div class="flex-grow-1 overflow-auto custom-scrollbar pe-2">
+                                        <!-- Tags -->
+                                        <div class="mb-4" x-show="currentTask.tags.length > 0">
+                                            <label class="text-secondary small text-uppercase fw-bold mb-2">Tags</label>
+                                            <div class="d-flex flex-wrap gap-2">
+                                                <template x-for="tag in currentTask.tags" :key="tag">
+                                                    <span class="badge bg-dark border border-secondary rounded-1"
+                                                        x-text="tag"></span>
+                                                </template>
+                                            </div>
+                                        </div>
+
+                                        <!-- Comments -->
+                                        <div class="mb-4">
+                                            <label
+                                                class="text-secondary small text-uppercase fw-bold mb-2">Comments</label>
+                                            <template
+                                                x-if="currentTask.existingComments && currentTask.existingComments.length > 0">
+                                                <div class="d-flex flex-column gap-3 mb-3">
+                                                    <template x-for="comment in currentTask.existingComments"
+                                                        :key="comment.id">
+                                                        <div class="p-3 rounded bg-dark border border-secondary">
+                                                            <div
+                                                                class="d-flex justify-content-between align-items-start mb-1">
+                                                                <div class="text-white fst-italic"
+                                                                    style="white-space: pre-wrap;"
+                                                                    x-text="comment.text"></div>
+                                                                <div class="d-flex gap-2 ms-3">
+                                                                    <i class="fa-solid fa-trash small cursor-pointer text-danger opacity-50 hover-opacity-100"
+                                                                        @click="deleteComment(comment.id)"
+                                                                        title="Delete"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="text-end">
+                                                                <span class="text-white-50 small"
+                                                                    style="font-size: 0.75rem;"
+                                                                    x-text="formatDate(comment.updatedAt)"></span>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                            <template
+                                                x-if="!currentTask.existingComments || currentTask.existingComments.length === 0">
+                                                <p class="text-white-50 fst-italic mb-3">No comments yet.</p>
+                                            </template>
+
+                                            <!-- Add Comment -->
+                                            <div class="d-flex gap-2 mt-3">
+                                                <textarea class="form-control bg-dark text-white border-secondary"
+                                                    x-model="currentTask.comments" rows="2"
+                                                    placeholder="Add a comment... (Shift+Enter for new line)"
+                                                    @keydown.enter.prevent="if(!$event.shiftKey) addComment()"></textarea>
+                                                <button class="btn btn-primary align-self-end" @click="addComment()">
+                                                    <i class="fa-solid fa-paper-plane"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="alert alert-secondary text-center">No completed swimlanes yet.</div>
+        </div>
+        </template>
+
+        <template x-for="lane in completedLanes" :key="lane.id">
+            <div class="col-md-6 col-xl-4">
+                <div class="card h-100 glass-panel border-0 text-white">
+                    <div
+                        class="card-header bg-transparent border-bottom border-secondary d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fa-solid fa-check-circle text-success"></i> <span
+                                x-text="lane.name"></span></h5>
+                        <span class="badge bg-secondary"
+                            x-text="tasks.filter(t => t.swimLane?.id === lane.id).length + ' tasks'"></span>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <template x-for="(count, status) in getCompletedLaneTaskSummary(lane.id)" :key="status">
+                                <span class="badge border" :class="'status-' + status.toLowerCase()">
+                                    <span x-text="status + ': ' + count"></span>
+                                </span>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-top border-secondary d-flex gap-2">
+                        <button @click="openConfirmModal('reactivate_lane', lane.id, 'Reactivate this swimlane?')"
+                            class="btn btn-sm btn-outline-light flex-grow-1">
+                            <i class="fa-solid fa-undo"></i> Reactivate
+                        </button>
+                        <button @click="openConfirmModal('delete_lane', lane.id, 'Delete this swimlane permanently?')"
+                            class="btn btn-sm btn-outline-danger flex-grow-1">
+                            <i class="fa-solid fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+    </div>
+    <!-- End Old Pane -->
+
+
+    <!-- Swimlane Modal (Bootstrap) -->
+    <div class="modal fade" id="laneModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-panel text-white">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">Create Swimlane</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="laneForm" @submit.prevent="handleLaneSubmit()">
+                        <div class="mb-3">
+                            <label for="lane-name" class="form-label">Swimlane Name</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary"
+                                x-model="currentLane.name" id="lane-name" required
+                                placeholder="e.g. Feature A, Q4 Goals">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" @click="handleLaneSubmit()">Create
+                        Lane</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    </div>
+
+    <!-- Confirmation Modal (Bootstrap) -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-panel text-white">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">Confirm Action</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p x-text="confirmMessage"></p>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" @click="handleConfirm()">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Unsaved Tag Confirmation Modal -->
+    <div class="modal fade" id="unsavedTagModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-panel text-white">
+                <div class="modal-header border-bottom border-secondary">
+                    <h5 class="modal-title text-warning-pulse">Unsaved Tag</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>You have a <span class="text-warning fw-bold">tag</span> that's not added. Do you want to
+                        go
+                        ahead?</p>
+                </div>
+                <div class="modal-footer border-top border-secondary">
+                    <button type="button" class="btn btn-outline-light" @click="cancelUnsavedTag()">Go
+                        Back</button>
+                    <button type="button" class="btn btn-primary" @click="confirmSaveWithUnsavedTag()">Yes, Go
+                        ahead</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+
+
+
+
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Axios -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- SortableJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+
+    <!-- Application Logic (Loads after deps, before Alpine) -->
+    <script src="js/app.v10.js"></script>
+
+    <!-- Alpine.js Collapse Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+    <!-- Alpine.js -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</body>
+
+</html>
