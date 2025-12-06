@@ -30,12 +30,14 @@ const SSE_URL = '/api/sse/stream';
 export const Api = {
     // --- Tasks ---
     async fetchTasks() {
-        // Fetch all tasks using the generic endpoint
-        // Note: The previous app fetched per-swimlane. We can do that or fetch all.
-        // Given the controller supports GET /, let's try fetching all to be efficient.
-        // If that's not supported by backend logic (it was separate calls), we can adapt.
-        // Checking GEMINI.md: "GET /: Get all tasks." -> Supported.
+        // Fetch all tasks (Legacy/Bulk support)
         const response = await axios.get(TASKS_URL);
+        return response.data;
+    },
+
+    async fetchTasksByLane(swimLaneId) {
+        // Fetch tasks for specific lane
+        const response = await axios.get(`${TASKS_URL}/swimlane/${swimLaneId}`);
         return response.data;
     },
 

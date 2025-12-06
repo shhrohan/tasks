@@ -196,14 +196,19 @@ body {
     background-color: var(--todo-color);
 }
 
+.task-card[data-status="TODO"] {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(100, 116, 139, 0.1) 0%, rgba(30, 41, 59, 0.9) 100%);
+    border-color: rgba(100, 116, 139, 0.3);
+}
+
 .task-card[data-status="IN_PROGRESS"]::before {
     background-color: var(--progress-color);
 }
 
 .task-card[data-status="IN_PROGRESS"] {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(59, 130, 246, 0.4) 0%, rgba(30, 41, 59, 0.9) 100%);
-    border-color: rgba(59, 130, 246, 0.6);
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(59, 130, 246, 0.25) 0%, rgba(30, 41, 59, 0.9) 100%);
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.1);
 }
 
 .task-card[data-status="DONE"]::before {
@@ -211,17 +216,28 @@ body {
 }
 
 .task-card[data-status="DONE"] {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(16, 185, 129, 0.4) 0%, rgba(30, 41, 59, 0.9) 100%);
-    border-color: rgba(16, 185, 129, 0.6);
-    box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(16, 185, 129, 0.25) 0%, rgba(30, 41, 59, 0.9) 100%);
+    border-color: rgba(16, 185, 129, 0.5);
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
 }
 
 .task-card[data-status="BLOCKED"]::before {
     background-color: var(--blocked-color);
 }
 
+.task-card[data-status="BLOCKED"] {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(239, 68, 68, 0.25) 0%, rgba(30, 41, 59, 0.9) 100%);
+    border-color: rgba(239, 68, 68, 0.5);
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.1);
+}
+
 .task-card[data-status="DEFERRED"]::before {
     background-color: var(--deferred-color);
+}
+
+.task-card[data-status="DEFERRED"] {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(245, 158, 11, 0.25) 0%, rgba(30, 41, 59, 0.9) 100%);
+    border-color: rgba(245, 158, 11, 0.5);
 }
 
 /* Completed View */
@@ -725,59 +741,7 @@ body {
 }
 
 /* Sidebar (Replaces overlay pane) */
-.details-sidebar {
-    width: 400px;
-    flex-shrink: 0;
-    position: sticky;
-    /* THE KEY: Sticks while you scroll the board */
-    top: 90px;
-    /* Below the header */
-    height: calc(100vh - 110px);
-    /* Fill screen, allow internal scroll */
-    background: rgba(15, 23, 42, 0.6);
-    /* Slightly more transparent than before */
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    backdrop-filter: blur(12px);
-    box-shadow: -5px 10px 30px rgba(0, 0, 0, 0.3);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    /* Internal scrolling handled by body */
-    z-index: 900;
-}
-
-/* Hide the old overlay classes to avoid conflict if any remain */
-.task-overlay-backdrop,
-.task-overlay-pane {
-    display: none !important;
-}
-
-/* Simple Task Overlay (Replacement for complex offcanvas) */
-.task-overlay-backdrop {
-    display: none !important;
-    /* Non-blocking design: Remove backdrop */
-}
-
-.task-overlay-pane {
-    position: absolute;
-    /* top is set dynamically via JS style binding */
-    right: 0;
-    bottom: 0;
-    height: calc(100vh - 80px);
-    /* Fill remaining height */
-    width: 450px;
-    max-width: 90vw;
-    background: rgba(15, 23, 42, 0.95);
-    border-left: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
-    z-index: 900;
-    /* Below app-header (1000) but above board content */
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    backdrop-filter: blur(10px);
-}
+/* Sidebar Styles Removed */
 
 /* Animations for Alpine x-show */
 /* Backdrop Fade */

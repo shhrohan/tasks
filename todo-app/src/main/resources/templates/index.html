@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 
     <!-- Custom CSS (v11 matched) -->
-    <link rel="stylesheet" href="/css/style.v10.css">
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 
 <body class="bg-dark text-white" x-data="todoApp">
@@ -57,21 +57,38 @@
                         <div class="row mb-3 mb-lg-4 swimlane-row" :data-lane-id="lane.id">
 
                             <!-- Swimlane Header -->
-                            <div class="swimlane-header p-3 d-flex justify-content-between align-items-center">
+                            <div class="swimlane-header p-3 d-flex justify-content-between align-items-center"
+                                @click="toggleLaneCollapse(lane.id)" style="cursor: pointer;">
                                 <div class="d-flex align-items-center gap-3">
+                                    <i class="fa-solid"
+                                        :class="lane.collapsed ? 'fa-chevron-right' : 'fa-chevron-down'"></i>
                                     <span class="h4 mb-0 fw-bold" x-text="lane.name"></span>
                                     <span class="badge bg-primary rounded-pill"
                                         x-text="getLaneStats(lane.id).total"></span>
+                                    <div x-show="lane.loading" class="spinner-border spinner-border-sm text-primary"
+                                        role="status"></div>
+                                </div>
+
+                                <!-- Right: Actions -->
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-success" @click.stop="completeLane(lane.id)"
+                                        title="Complete Lane">
+                                        <i class="fa-solid fa-check"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" @click.stop="deleteLane(lane.id)"
+                                        title="Delete Lane">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
                                 </div>
                             </div>
 
                             <!-- Swimlane Body (Columns) -->
-                            <div class="swimlane-content row g-3 px-3 pb-3 pt-0">
+                            <div class="swimlane-content row g-3 px-3 pb-3 pt-0" x-show="!lane.collapsed" x-transition>
                                 <!-- Add Task Button Col -->
                                 <div
                                     class="col-12 col-lg-2 d-flex align-items-center justify-content-center border-end border-secondary">
                                     <button class="btn btn-outline-primary btn-sm"
-                                        @click="alert('Add Task via API for now')">
+                                        @click.stop="alert('Add Task via API for now')">
                                         <i class="fa-solid fa-plus"></i> Add Task
                                     </button>
                                 </div>
@@ -84,11 +101,11 @@
                                         <!-- Tasks -->
                                         <template x-for="task in getTasks(lane.id, status)" :key="task.id">
                                             <div class="card task-card mb-2" :data-task-id="task.id"
-                                                @click="selectTask(task)">
-                                                <div class="card-body p-2">
+                                                :data-status="task.status">
+                                                <div class="card-body p-2 d-flex flex-column">
                                                     <h6 class="card-title text-white mb-1" x-text="task.name"></h6>
-                                                    <!-- Tags -->
-                                                    <div class="d-flex flex-wrap gap-1">
+                                                    <!-- Tags: Bottom Right -->
+                                                    <div class="d-flex flex-wrap gap-1 mt-2 ms-auto">
                                                         <template x-for="tag in getTags(task.tags)" :key="tag">
                                                             <span class="badge border border-secondary text-white-50"
                                                                 style="font-size: 0.6rem;" x-text="tag"></span>
@@ -108,35 +125,6 @@
             </div>
             <!-- End Board Area -->
 
-            <!-- RIGHT: Details Sidebar -->
-            <div class="details-sidebar" x-show="selectedTask"
-                x-transition:enter="animate__animated animate__fadeInRight animate__faster"
-                x-transition:leave="animate__animated animate__fadeOutRight animate__faster" style="display: none;">
-
-                <div class="d-flex justify-content-between p-4 border-bottom border-secondary">
-                    <h5 class="mb-0">Details</h5>
-                    <button class="btn-close btn-close-white" @click="deselectTask()"></button>
-                </div>
-
-                <template x-if="selectedTask">
-                    <div class="p-4">
-                        <h3 class="fw-bold mb-3" x-text="selectedTask.name"></h3>
-                        <span class="badge bg-primary mb-3" x-text="selectedTask.status"></span>
-
-                        <div class="mb-3">
-                            <label class="text-secondary small">TAGS</label>
-                            <div class="d-flex gap-2 flex-wrap">
-                                <template x-for="tag in getTags(selectedTask.tags)" :key="tag">
-                                    <span class="badge bg-dark border" x-text="tag"></span>
-                                </template>
-                            </div>
-                        </div>
-
-                        <!-- Add more details/comments here later -->
-                    </div>
-                </template>
-            </div>
-
         </div>
         <!-- End Dashboard Layout -->
 
@@ -147,7 +135,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 
     <!-- Module Entry Point -->
-    <script type="module" src="js/app.v11.js"></script>
+    <script type="module" src="js/app.js?v=12"></script>
 
     <!-- Alpine (Must load AFTER modules define data) -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.12.0/dist/cdn.min.js"></script>
