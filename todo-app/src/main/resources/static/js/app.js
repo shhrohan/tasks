@@ -79,16 +79,18 @@ Alpine.data('todoApp', () => ({
     },
 
     setupDrag() {
-        // Binds Sortable to Tasks
-        Drag.initTaskSortables(Store);
-
-        // Binds Sortable to Lanes
+        // Binds Sortable to Lanes (Board level)
         const container = document.querySelector('.board-container');
         if (container) {
             Drag.initLaneSortable(container, Store, () => {
                 // Flash Refresh Callback if needed
             });
         }
+    },
+
+    // Called via x-init on each .lane-column
+    initColumn(el) {
+        Drag.initOneColumn(el, this);
     },
 
     // Helper wrappers for template access

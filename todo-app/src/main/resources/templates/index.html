@@ -76,12 +76,8 @@
                                 <!-- Right: Actions -->
                                 <div class="d-flex gap-2">
                                     <button class="btn btn-sm btn-outline-success"
-                                        @click.stop="confirmAction('completeLane', lane.id)" title="Complete Lane">
-                                        <i class="fa-solid fa-check"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger"
-                                        @click.stop="confirmAction('deleteLane', lane.id)" title="Delete Lane">
-                                        <i class="fa-solid fa-trash"></i>
+                                        @click.stop="confirmAction('completeLane', lane.id)" title="Mark As Completed">
+                                        <i class="fa-solid fa-check me-2"></i>Mark As Completed
                                     </button>
                                 </div>
                             </div>
@@ -99,7 +95,7 @@
                                 <!-- Status Columns -->
                                 <template x-for="status in columns" :key="status">
                                     <div class="col-12 col-lg lane-column" :id="'lane-' + lane.id + '-' + status"
-                                        :data-status="status" :data-lane-id="lane.id">
+                                        :data-status="status" :data-lane-id="lane.id" x-init="initColumn($el)">
 
                                         <!-- Tasks -->
                                         <template x-for="task in getTasks(lane.id, status)" :key="task.id">
@@ -110,8 +106,10 @@
                                                     <!-- Tags: Bottom Right -->
                                                     <div class="d-flex flex-wrap gap-1 mt-2 ms-auto">
                                                         <template x-for="tag in getTags(task.tags)" :key="tag">
-                                                            <span class="badge border border-secondary text-white-50"
-                                                                style="font-size: 0.6rem;" x-text="tag"></span>
+                                                            <span
+                                                                class="badge border border-secondary text-white fw-normal"
+                                                                style="font-size: 0.9rem; letter-spacing: 0.03em;"
+                                                                x-text="tag"></span>
                                                         </template>
                                                     </div>
                                                 </div>
