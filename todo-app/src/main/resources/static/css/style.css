@@ -1132,3 +1132,12 @@ body {
 .btn-secondary:hover {
     background: rgba(148, 163, 184, 0.3);
 }
+
+/* Core fix for Status Pills UI */
+.swimlane-progress-inline .status-pill-lg {
+    height: 30px !important;
+    min-width: 70px !important;
+    font-size: 15px !important;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}

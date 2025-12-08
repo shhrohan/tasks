@@ -90,23 +90,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 | `904d78d` | Dec 6 | Custom delete modal |
 | `7648b23` | Dec 6 | Modular import structure |
 | `9274c37` | Dec 6 | Modular frontend rewrite (v11) |
-
----
-
-## [1.1.0] - 2025-12-05 — UI/UX Overhaul & Production Readiness
-
-### Added
-- **Swimlane Drag-and-Drop** - Reorder entire swimlanes
-- **Enhanced Swimlane Headers** with inline statistics
-- **Smart Swimlane Expansion** with visual spinners
-- **Top-Center Notifications** for better visibility
-- **Incremental UI Data Loading** for faster initial render
-- **Production Database Configuration** with environment profiles
-- **Log4j2 Console Logging** with custom pattern: `[Level] [Thread | Class:Line]`
-- **Application Startup Logger** for monitoring
-
-### Fixed
-- **Alpine.js Component Loading Issues** (a series of rapid fixes)
   - **Issue**: `openTaskModal` function not found
   - **Attempts**: Cache busting, script reordering, Alpine presence logging
   - **Solution**: Switched from Bootstrap Offcanvas to custom Alpine pane

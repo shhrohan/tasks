@@ -127,40 +127,39 @@ DRAG-AND-DROP CRITICAL NOTES:
                                         x-show="getLaneStats(lane.id).total > 0" @click.stop>
                                         <div class="d-flex align-items-center gap-2 w-100">
                                             <!-- Todo -->
-                                            <div class="badge rounded-pill bg-secondary d-flex align-items-center justify-content-center shadow-sm"
-                                                style="min-width: 70px; height: 50px; font-size: 21px; font-weight: 700; transition: all 0.3s ease;"
+                                            <div class="badge rounded-pill bg-secondary d-flex align-items-center justify-content-center shadow-sm status-pill-lg"
                                                 :style="'flex-grow: ' + getLaneStats(lane.id).todo"
                                                 x-show="getLaneStats(lane.id).todo > 0"
-                                                x-text="getLaneStats(lane.id).todoPct + '%'" title="Todo"></div>
+                                                x-text="getLaneStats(lane.id).todoPct + '% (' + getLaneStats(lane.id).todo + ')'"
+                                                title="Todo"></div>
 
                                             <!-- In Progress -->
-                                            <div class="badge rounded-pill bg-primary d-flex align-items-center justify-content-center shadow-sm"
-                                                style="min-width: 70px; height: 50px; font-size: 21px; font-weight: 700; transition: all 0.3s ease;"
+                                            <div class="badge rounded-pill bg-primary d-flex align-items-center justify-content-center shadow-sm status-pill-lg"
                                                 :style="'flex-grow: ' + getLaneStats(lane.id).inProgress"
                                                 x-show="getLaneStats(lane.id).inProgress > 0"
-                                                x-text="getLaneStats(lane.id).inProgressPct + '%'" title="In Progress">
-                                            </div>
+                                                x-text="getLaneStats(lane.id).inProgressPct + '% (' + getLaneStats(lane.id).inProgress + ')'"
+                                                title="In Progress"></div>
 
                                             <!-- Done -->
-                                            <div class="badge rounded-pill bg-success d-flex align-items-center justify-content-center shadow-sm"
-                                                style="min-width: 70px; height: 50px; font-size: 21px; font-weight: 700; transition: all 0.3s ease;"
+                                            <div class="badge rounded-pill bg-success d-flex align-items-center justify-content-center shadow-sm status-pill-lg"
                                                 :style="'flex-grow: ' + getLaneStats(lane.id).done"
                                                 x-show="getLaneStats(lane.id).done > 0"
-                                                x-text="getLaneStats(lane.id).donePct + '%'" title="Done"></div>
+                                                x-text="getLaneStats(lane.id).donePct + '% (' + getLaneStats(lane.id).done + ')'"
+                                                title="Done"></div>
 
                                             <!-- Blocked -->
-                                            <div class="badge rounded-pill bg-danger d-flex align-items-center justify-content-center shadow-sm"
-                                                style="min-width: 70px; height: 50px; font-size: 21px; font-weight: 700; transition: all 0.3s ease;"
+                                            <div class="badge rounded-pill bg-danger d-flex align-items-center justify-content-center shadow-sm status-pill-lg"
                                                 :style="'flex-grow: ' + getLaneStats(lane.id).blocked"
                                                 x-show="getLaneStats(lane.id).blocked > 0"
-                                                x-text="getLaneStats(lane.id).blockedPct + '%'" title="Blocked"></div>
+                                                x-text="getLaneStats(lane.id).blockedPct + '% (' + getLaneStats(lane.id).blocked + ')'"
+                                                title="Blocked"></div>
 
                                             <!-- Deferred -->
-                                            <div class="badge rounded-pill bg-warning text-dark d-flex align-items-center justify-content-center shadow-sm"
-                                                style="min-width: 70px; height: 50px; font-size: 21px; font-weight: 700; transition: all 0.3s ease;"
+                                            <div class="badge rounded-pill bg-warning text-dark d-flex align-items-center justify-content-center shadow-sm status-pill-lg"
                                                 :style="'flex-grow: ' + getLaneStats(lane.id).deferred"
                                                 x-show="getLaneStats(lane.id).deferred > 0"
-                                                x-text="getLaneStats(lane.id).deferredPct + '%'" title="Deferred"></div>
+                                                x-text="getLaneStats(lane.id).deferredPct + '% (' + getLaneStats(lane.id).deferred + ')'"
+                                                title="Deferred"></div>
                                         </div>
                                     </div>
 
