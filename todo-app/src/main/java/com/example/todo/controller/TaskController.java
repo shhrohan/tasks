@@ -67,10 +67,14 @@ public class TaskController {
     }
 
     @PatchMapping("/{id}/move")
-    public ResponseEntity<Task> moveTask(@PathVariable Long id, @RequestParam TaskStatus status, @RequestParam(required = false) Long swimLaneId) {
-        log.info("Moving task {} to status {} in swimlane {}", id, status, swimLaneId);
+    public ResponseEntity<Task> moveTask(
+            @PathVariable Long id,
+            @RequestParam TaskStatus status,
+            @RequestParam(required = false) Long swimLaneId,
+            @RequestParam(required = false) Integer position) {
+        log.info("Moving task {} to status {} in swimlane {} at position {}", id, status, swimLaneId, position);
         try {
-            Task moved = taskService.moveTask(id, status, swimLaneId);
+            Task moved = taskService.moveTask(id, status, swimLaneId, position);
             return ResponseEntity.ok(moved);
         } catch (IllegalArgumentException e) {
             log.error("Failed to move task {}", id, e);
@@ -82,7 +86,7 @@ public class TaskController {
     public ResponseEntity<com.example.todo.model.Comment> addComment(@PathVariable Long id, @RequestBody String text) {
         log.info("Adding comment to task {}", id);
         try {
-            // Text might come as a JSON string or plain text depending on frontend. 
+            // Text might come as a JSON string or plain text depending on frontend.
             // Simple approach: assume raw string or handle quotes if JSON.
             // Better: use a DTO, but for single string, raw body is fine if handled.
             // Let's clean quotes if it's a JSON string literal.
@@ -91,7 +95,7 @@ public class TaskController {
                 cleanText = text.substring(1, text.length() - 1);
             }
             // Also unescape if needed, but simple for now.
-            
+
             com.example.todo.model.Comment comment = taskService.addComment(id, cleanText);
             return ResponseEntity.ok(comment);
         } catch (Exception e) {
@@ -101,7 +105,8 @@ public class TaskController {
     }
 
     @PutMapping("/{id}/comments/{commentId}")
-    public ResponseEntity<com.example.todo.model.Comment> updateComment(@PathVariable Long id, @PathVariable String commentId, @RequestBody String text) {
+    public ResponseEntity<com.example.todo.model.Comment> updateComment(@PathVariable Long id,
+            @PathVariable String commentId, @RequestBody String text) {
         log.info("Updating comment {} in task {}", commentId, id);
         try {
             String cleanText = text;

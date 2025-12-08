@@ -87,13 +87,15 @@ public class TaskService {
     }
 
     @Transactional
-    public Task moveTask(Long id, TaskStatus newStatus, Long swimLaneId) {
-        log.info("Delegating MOVE for task {} to Async Service", id);
+    public Task moveTask(Long id, TaskStatus newStatus, Long swimLaneId, Integer position) {
+        log.info("Delegating MOVE for task {} to Async Service (status={}, lane={}, position={})", id, newStatus,
+                swimLaneId, position);
 
         // Optimization: Skip DB fetch. Construct dummy object for UI response.
         Task dummyTask = new Task();
         dummyTask.setId(id);
         dummyTask.setStatus(newStatus);
+        dummyTask.setPosition(position);
 
         if (swimLaneId != null) {
             SwimLane lane = new SwimLane();
@@ -101,7 +103,7 @@ public class TaskService {
             dummyTask.setSwimLane(lane);
         }
 
-        asyncWriteService.moveTask(id, newStatus, swimLaneId);
+        asyncWriteService.moveTask(id, newStatus, swimLaneId, position);
         log.info("Returning immediate response to UI for move task {}", id);
         return dummyTask;
     }

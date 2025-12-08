@@ -33,4 +33,8 @@ public class Task {
     @ManyToOne
     @JoinColumn(name = "swim_lane_id")
     private SwimLane swimLane;
+
+    // Position within the column (for ordering)
+    @Column(name = "position_order")
+    private Integer position;
 }

@@ -71,12 +71,14 @@ class TaskServiceTest {
     void moveTask_ShouldUpdateStatusAndLane() {
         Long taskId = 1L;
         Long laneId = 2L;
+        Integer position = 0;
 
-        Task result = taskService.moveTask(taskId, TaskStatus.DONE, laneId);
+        Task result = taskService.moveTask(taskId, TaskStatus.DONE, laneId, position);
 
         assertEquals(TaskStatus.DONE, result.getStatus());
         assertEquals(laneId, result.getSwimLane().getId());
-        verify(asyncWriteService).moveTask(taskId, TaskStatus.DONE, laneId);
+        assertEquals(position, result.getPosition());
+        verify(asyncWriteService).moveTask(taskId, TaskStatus.DONE, laneId, position);
         verify(taskDAO, never()).findById(taskId);
     }
 

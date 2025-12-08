@@ -47,11 +47,12 @@ class AsyncWriteServiceTest {
     void moveTask_ShouldCallTaskDAOUpdatePosition() {
         Long taskId = 1L;
         Long laneId = 2L;
+        Integer position = 0;
         com.example.todo.model.TaskStatus status = com.example.todo.model.TaskStatus.DONE;
 
-        asyncWriteService.moveTask(taskId, status, laneId);
+        asyncWriteService.moveTask(taskId, status, laneId, position);
 
-        verify(taskDAO).updatePosition(taskId, status, laneId);
+        verify(taskDAO).updatePosition(taskId, status, laneId, position);
     }
 
     @Test

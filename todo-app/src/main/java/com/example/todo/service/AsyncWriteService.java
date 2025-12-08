@@ -36,17 +36,27 @@ public class AsyncWriteService {
 
     @Async("asyncWriteExecutor")
     @Transactional
-    public void moveTask(Long id, com.example.todo.model.TaskStatus status, Long laneId) {
-        log.info("AsyncDB: [DEBUG] Start processing MOVE for Task ID {} to Status {} Lane {}...", id,
-                status, laneId);
+    public void moveTask(Long id, com.example.todo.model.TaskStatus status, Long laneId, Integer position) {
+        log.info("AsyncDB: Start processing MOVE for Task ID {} to Status {} Lane {} Position {}...", id,
+                status, laneId, position);
         simulateLatency();
-        taskDAO.updatePosition(id, status, laneId);
 
-        // Fetch updated task to broadcast full state
+        // STEP 1: Shift existing tasks to make room (single bulk UPDATE)
+        if (position != null && laneId != null) {
+            int shifted = taskDAO.shiftPositionsDown(laneId, status, position, id);
+            log.info("AsyncDB: Shifted {} tasks at position >= {} in lane {} column {}",
+                    shifted, position, laneId, status);
+        }
+
+        // STEP 2: Update the moved task's position
+        taskDAO.updatePosition(id, status, laneId, position);
+
+        // STEP 3: Broadcast update to all clients via SSE
         taskDAO.findById(id).ifPresent(task -> {
-            log.info("AsyncDB: [DEBUG] Task found after update: ID={}, Name={}, Status={}, Lane={}",
+            log.info("AsyncDB: Task updated: ID={}, Name={}, Status={}, Lane={}, Position={}",
                     task.getId(), task.getName(), task.getStatus(),
-                    task.getSwimLane() != null ? task.getSwimLane().getId() : "null");
+                    task.getSwimLane() != null ? task.getSwimLane().getId() : "null",
+                    task.getPosition());
             sseService.broadcast("task-updated", task);
         });
 
