@@ -10,20 +10,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased] - 2025-12-08
 
-### Added
-- **Premium Toast Notifications** with rich visual feedback for saved changes
-- **Task Position Support** - Tasks now maintain their position within columns
-  - New `position` field in `Task` entity
-  - Backend support for position persistence during drag-and-drop
-  - Automatic reordering when tasks are moved to existing positions
-- **JaCoCo Code Coverage Integration** (`49377e1`)
-  - Added JaCoCo Maven plugin for code coverage reporting
-  - **Code coverage displayed on application startup** in `StartupLogger`
-  - Shows instruction, branch, and line coverage percentages
-  - Includes letter grade (A+, A, B, C, D, F) based on line coverage
-
-### Fixed
-- **Test Suite Fixes** for async write behavior (`52f528a`)
   - `AsyncWriteServiceTest` - Added missing `SseService` mock
   - `TaskControllerTest` - Updated assertions for optimistic async responses
   - `SwimLaneControllerTest` - Made assertions resilient to parallel execution

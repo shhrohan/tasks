@@ -1,3 +1,45 @@
+# PRIME DIRECTIVES (NON-NEGOTIABLE EXECUTION PROTOCOLS)
+
+> [!IMPORTANT]
+> **YOU MUST FOLLOW THESE RULES WITHOUT EXCEPTION. THEY TAKE PRECEDENCE OVER EVERYTHING ELSE.**
+
+## 1. FRONTEND VERIFICATION PROTOCOL (THE GOLDEN RULE)
+*   **NEVER** modify source files (JS/HTML/CSS) blindly.
+*   **ALWAYS** verify fixes/features by **injecting code into the running browser tab** first.
+    *   Use Console for JS logic.
+    *   Use DOM editing for HTML structure.
+    *   Use Style Editor for CSS.
+*   **ONLY** when the injected fix is verified working in the browser, propagate it to the source code.
+*   **LOGGING**: All frontend changes **MUST** include console logs (`[App] ...`) to prove execution.
+
+## 2. BROWSER USAGE
+*   **ALWAYS** reuse the already open browser tab.
+*   **NEVER** open a new tab for localhost.
+
+## 3. COMMIT & RESTART CYCLE
+*   **VALIDATION FIRST**: Before committing, you MUST:
+    1.  Apply changes.
+    2.  Restart the application (`mvn spring-boot:run`).
+    3.  Verify functionality via Browser Subagent.
+    4.  **ASK USER FOR PERMISSION** to commit.
+*   **AFTER APPROVAL**:
+    *   Commit with semantic message: `git commit -am "feat/fix: Description"`
+
+## 4. MANDATORY TEST COVERAGE
+*   **EVERY** new feature or bug fix **MUST** have corresponding test cases (Unit or Integration).
+*   **VERIFY** tests pass before asking for commit approval.
+
+## 5. CHANGELOG MANAGEMENT
+*   **UPDATE** `CHANGELOG.md` for **EVERY** significant change (feature, fix, refactor).
+*   **DO NOT DEFER** this. It is part of the implementation task.
+
+## 6. STOP & THINK (OPTIMIZATION)
+*   **PAUSE** before every change. Ask: "Is this the best/cleanest way?"
+*   **PROPOSE** better alternatives to the user if the original request is sub-optimal.
+*   **REFUSE** blind obedience to bad patterns.
+
+---
+
 # Project: To-Do and Reminders Application
 
 ## Project Overview
@@ -363,39 +405,6 @@ The application will be available at **[http://localhost:8080](http://localhost:
 ```bash
 mvn test
 ```
-
-## CRITICAL WORKFLOW RULES
-*   **BROWSER USAGE**:
-    *   For loading the website and testing, **ALWAYS** reuse the already open browser tab. **DO NOT** open a new tab.
-
-*   **MANDATORY LOGGING & VERIFICATION**:
-    *   **ALWAYS** add helper debug logs for all frontend and backend functionalities created or updated.
-    *   All frontend changes **MUST** be accompanied by logs printed on the browser console.
-    *   Changes are considered correctly working **ONLY** when logs are available as proof of correctness.
-
-*   **MANDATORY OPTIMIZATION (STOP & THINK)**:
-    *   Before *every* code change, pause and ask: "Is there a better/cleaner/more standard way to do this?"
-    *   If a better approach exists, you **MUST** propose it to the user **BEFORE** writing any code.
-    *   **Blind obedience to sub-optimal requests is a FAILURE.**
-    *   Support your suggestion with reasoning (e.g., "This approach scales better," "This matches the existing pattern," "This avoids X edge case").
-
-*   **MANDATORY TEST COVERAGE & DOCUMENTATION**:
-    *   **TEST CASES**: For every new feature or bug fix, you **MUST** create or update corresponding test cases (Unit/Integration) to verify the behavior.
-    *   **CHANGELOG**: You **MUST** update `CHANGELOG.md` for every significant change (feature, fix, refactor). Do not defer this.
-
-*   **COMMIT & RESTART CYCLE**:
-    *   **VALIDATION FIRST**: Before committing, you MUST:
-        1.  Apply changes.
-        2.  Restart the application (`mvn spring-boot:run`).
-        3.  Verify functionality (browser check/logs).
-        4.  **ASK USER FOR PERMISSION** to commit.
-    *   **AFTER USER APPROVAL**:
-        1.  **Commit**: `git commit -am "Type: Description"`
-        2.  **Restart** (if needed/requested).
-
-*   **Override**: Only proceed with the original (sub-optimal) request if the user explicitly overrides your suggestion *after* you have presented it.
-
----
 
 ## CHANGELOG MANAGEMENT
 
