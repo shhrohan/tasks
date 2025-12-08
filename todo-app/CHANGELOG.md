@@ -3,19 +3,6 @@
 All notable changes to the **Task Board 3D** Todo Application are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
----
-
-  - Confirmation modal for delete/complete actions
-  - Input modal for task/swimlane creation with status dropdown and tag chips
-- **Premium Toast Notifications**: Slide-down "Changes Saved" toast with animated checkmark
-- **Collapsible Swimlanes**: Click header to expand/collapse with chevron animation
-- **Swimlane Statistics**: Badge showing task count per lane
-- **Tag Chips**: Visual badge display for task tags with add/remove functionality in modal
-- **Loading Spinners**: Per-lane loading indicators during async task fetch
-- **Mobile Responsive Layout**: 
-  - Vertical column stacking on small screens
-  - Injected status headers via CSS `::before`
   - Touch-friendly drag targets
 - **Dark Theme**: Full dark mode with CSS custom properties
 

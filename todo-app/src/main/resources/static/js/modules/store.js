@@ -138,6 +138,10 @@ export const Store = {
         this.lanes.forEach(l => l.collapsed = newState);
     },
 
+    areAllLanesCollapsed() {
+        return this.lanes.length > 0 && this.lanes.every(l => l.collapsed);
+    },
+
     // --- Modal Management ---
 
     // 1. Confirm Modal
