@@ -13,7 +13,10 @@ export const Store = {
 
     // UI State
     showSaved: false,
+    showErrorToast: false, // New error state
+    errorMessage: '',      // New error message
     saveTimeout: null,
+    errorTimeout: null,    // New error timeout
     modal: {
         open: false,
         title: '',
@@ -282,7 +285,7 @@ export const Store = {
             this.triggerSave();
         } catch (e) {
             console.error('[Store] createSwimLane - FAILED:', e);
-            alert('Error creating lane');
+            this.showError('Error creating lane');
         }
     },
 
@@ -313,7 +316,7 @@ export const Store = {
             this.triggerSave();
         } catch (e) {
             console.error('[Store] createTask - FAILED:', e);
-            alert('Error creating task');
+            this.showError('Error creating task');
         }
     },
 
@@ -358,7 +361,9 @@ export const Store = {
             const originalLane = this.lanes.find(l => l.id == originalLaneId);
             if (originalLane) task.swimLane = originalLane;
             task.position = originalPosition;
-            alert('Failed to move task');
+            if (originalLane) task.swimLane = originalLane;
+            task.position = originalPosition;
+            this.showError('Failed to move task');
         }
     },
 
@@ -372,6 +377,7 @@ export const Store = {
         } catch (e) {
             console.error('[Store] reorderLanesOptimistic - FAILED:', e);
             this.loadData();
+            this.showError('Failed to reorder lanes');
         }
     },
 
@@ -387,7 +393,7 @@ export const Store = {
         } catch (e) {
             console.error('[Store] deleteLaneRecursive - FAILED:', e);
             this.lanes = originalLanes;
-            alert('Failed to delete lane');
+            this.showError('Failed to delete lane');
         }
     },
 
@@ -416,6 +422,17 @@ export const Store = {
         this.showSaved = true;
         if (this.saveTimeout) clearTimeout(this.saveTimeout);
         this.saveTimeout = setTimeout(() => this.showSaved = false, 1500);
+    },
+
+    triggerError(msg) {
+        this.errorMessage = msg;
+        this.showErrorToast = true;
+        if (this.errorTimeout) clearTimeout(this.errorTimeout);
+        this.errorTimeout = setTimeout(() => this.showErrorToast = false, 3000);
+    },
+
+    showError(msg) {
+        this.triggerError(msg);
     },
 
     // --- SSE Handlers ---

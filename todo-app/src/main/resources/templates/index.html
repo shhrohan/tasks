@@ -69,18 +69,8 @@ DRAG-AND-DROP CRITICAL NOTES:
         </div>
     </nav>
 
-    <!-- Notification Toast -->
-    <div class="notification-toast" :class="{ 'show': showSaved }" style="display: none;" x-show="true"
-        x-init="$el.style.display = ''">
-        <div class="notification-content">
-            <div class="notification-icon">
-                <i class="fa-solid fa-check check-anim" x-show="showSaved"></i>
-            </div>
-            <span>Changes Saved</span>
-        </div>
-        <button class="notification-close" @click="showSaved = false">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
+    <i class="fa-solid fa-xmark"></i>
+    </button>
     </div>
 
     <div class="container-fluid px-4 pb-5">
@@ -242,6 +232,29 @@ DRAG-AND-DROP CRITICAL NOTES:
     </div>
 
     <!-- Modals -->
+
+    <!-- Notifications -->
+    <!-- Saved Notification -->
+    <div class="notification-toast success" :class="{ 'show': showSaved }" x-show="showSaved"
+        x-transition.opacity.duration.300ms style="display: none;">
+        <div class="notification-content">
+            <div class="notification-icon">
+                <i class="fas fa-check"></i>
+            </div>
+            <span>Saved!</span>
+        </div>
+    </div>
+
+    <!-- Error Notification -->
+    <div class="notification-toast error" :class="{ 'show': showErrorToast }" x-show="showErrorToast"
+        x-transition.opacity.duration.300ms style="display: none;">
+        <div class="notification-content">
+            <div class="notification-icon error">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <span x-text="errorMessage"></span>
+        </div>
+    </div>
 
     <!-- ============================================== -->
     <!-- CUSTOM MODALS (Fixed Overlay)                  -->
