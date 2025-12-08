@@ -27,6 +27,10 @@ export const Store = {
         open: false,
         title: '',
         value: '',
+        status: 'TODO', // For task creation
+        tags: [],       // Array of tag strings
+        tagInput: '',   // Current tag being typed
+        laneName: '',   // Swimlane name for display
         mode: '', // 'TASK' or 'SWIMLANE'
         payload: null
     },
@@ -158,9 +162,16 @@ export const Store = {
 
     openTaskModal(laneId) {
         console.log(`[Store] Opening Task Input Modal for Lane ${laneId}`);
+        const lane = this.lanes.find(l => l.id === laneId);
+        const laneName = lane ? lane.name : 'Unknown';
+
         this.inputModal.mode = 'TASK';
         this.inputModal.title = 'New Task';
+        this.inputModal.laneName = laneName;
         this.inputModal.value = '';
+        this.inputModal.status = 'TODO';
+        this.inputModal.tags = [];
+        this.inputModal.tagInput = '';
         this.inputModal.payload = { laneId }; // Store context
         this.inputModal.open = true;
         document.body.style.overflow = 'hidden'; // Disable page scroll
@@ -171,14 +182,35 @@ export const Store = {
         }, 100);
     },
 
+
+
     closeInputModal() {
         console.log('[Store] Closing Input Modal');
         this.inputModal.open = false;
         document.body.style.overflow = ''; // Re-enable page scroll
         setTimeout(() => {
             this.inputModal.value = '';
+            this.inputModal.status = 'TODO';
+            this.inputModal.tags = [];
+            this.inputModal.tagInput = '';
         }, 300);
     },
+
+    // Tag management for input modal
+    addTag() {
+        const tag = this.inputModal.tagInput.trim();
+        if (tag && !this.inputModal.tags.includes(tag)) {
+            this.inputModal.tags.push(tag);
+            console.log('[Store] Added tag:', tag, 'All tags:', this.inputModal.tags);
+        }
+        this.inputModal.tagInput = '';
+    },
+
+    removeTag(index) {
+        const removed = this.inputModal.tags.splice(index, 1);
+        console.log('[Store] Removed tag:', removed, 'Remaining tags:', this.inputModal.tags);
+    },
+
 
     async submitInputModal() {
         console.log('[Store] Submitting Input Modal', this.inputModal);
@@ -192,7 +224,9 @@ export const Store = {
             await this.createSwimLane(val);
         } else if (this.inputModal.mode === 'TASK') {
             const laneId = this.inputModal.payload.laneId;
-            await this.createTask(val, laneId);
+            const status = this.inputModal.status || 'TODO';
+            const tags = this.inputModal.tags || [];
+            await this.createTask(val, laneId, status, tags);
         }
         this.closeInputModal();
     },
@@ -214,8 +248,8 @@ export const Store = {
         }
     },
 
-    async createTask(name, laneId) {
-        console.log('[Store] createTask - Calling API with:', { name, laneId });
+    async createTask(name, laneId, status = 'TODO', tags = []) {
+        console.log('[Store] createTask - Calling API with:', { name, laneId, status, tags });
         try {
             const lane = this.lanes.find(l => l.id === laneId);
             if (!lane) {
@@ -223,9 +257,13 @@ export const Store = {
                 return;
             }
 
+            // Convert tags array to JSON string
+            const tagsJson = tags.length > 0 ? JSON.stringify(tags) : null;
+
             const taskPayload = {
                 name: name,
-                status: 'TODO',
+                status: status,
+                tags: tagsJson,
                 swimLane: { id: laneId }
             };
             console.log('[Store] createTask - Full payload:', taskPayload);
