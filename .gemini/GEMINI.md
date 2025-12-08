@@ -379,6 +379,10 @@ mvn test
     *   **Blind obedience to sub-optimal requests is a FAILURE.**
     *   Support your suggestion with reasoning (e.g., "This approach scales better," "This matches the existing pattern," "This avoids X edge case").
 
+*   **MANDATORY TEST COVERAGE & DOCUMENTATION**:
+    *   **TEST CASES**: For every new feature or bug fix, you **MUST** create or update corresponding test cases (Unit/Integration) to verify the behavior.
+    *   **CHANGELOG**: You **MUST** update `CHANGELOG.md` for every significant change (feature, fix, refactor). Do not defer this.
+
 *   **COMMIT & RESTART CYCLE**:
     *   **VALIDATION FIRST**: Before committing, you MUST:
         1.  Apply changes.
