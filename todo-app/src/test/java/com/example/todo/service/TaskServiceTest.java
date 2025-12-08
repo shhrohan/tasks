@@ -182,8 +182,126 @@ class TaskServiceTest {
 
         verify(asyncWriteService).saveTask(task);
         verify(taskDAO, never()).save(task);
-        // Verify comment is gone (simple check on the saved object or logic)
-        // Since we mock save to return arg, we can check the arg, but verify is enough
-        // for interaction.
+    }
+
+    @Test
+    void createTask_ShouldPreserveStatus_WhenStatusIsSet() {
+        Task task = new Task();
+        task.setName("Test Task");
+        task.setStatus(TaskStatus.IN_PROGRESS);
+
+        when(taskDAO.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Task createdTask = taskService.createTask(task);
+
+        assertEquals(TaskStatus.IN_PROGRESS, createdTask.getStatus());
+        verify(taskDAO).save(task);
+    }
+
+    @Test
+    void updateTask_ShouldThrowException_WhenTaskNotFound() {
+        Long taskId = 999L;
+        Task updatedInfo = new Task();
+        updatedInfo.setName("New Name");
+
+        when(taskDAO.findById(taskId)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () -> taskService.updateTask(taskId, updatedInfo));
+    }
+
+    @Test
+    void updateTask_ShouldUpdateSwimLane_WhenProvided() {
+        Long taskId = 1L;
+        Long swimLaneId = 2L;
+
+        Task existingTask = new Task();
+        existingTask.setId(taskId);
+        existingTask.setName("Old Name");
+
+        SwimLane swimLane = new SwimLane();
+        swimLane.setId(swimLaneId);
+
+        Task updatedInfo = new Task();
+        updatedInfo.setName("New Name");
+        updatedInfo.setStatus(TaskStatus.DONE);
+        updatedInfo.setSwimLane(swimLane);
+
+        when(taskDAO.findById(taskId)).thenReturn(Optional.of(existingTask));
+        when(swimLaneDAO.findById(swimLaneId)).thenReturn(Optional.of(swimLane));
+
+        Task result = taskService.updateTask(taskId, updatedInfo);
+
+        assertEquals("New Name", result.getName());
+        assertEquals(swimLaneId, result.getSwimLane().getId());
+        verify(asyncWriteService).saveTask(existingTask);
+    }
+
+    @Test
+    void moveTask_ShouldWorkWithoutSwimLaneId() {
+        Long taskId = 1L;
+        Integer position = 0;
+
+        Task result = taskService.moveTask(taskId, TaskStatus.BLOCKED, null, position);
+
+        assertEquals(TaskStatus.BLOCKED, result.getStatus());
+        assertNull(result.getSwimLane());
+        assertEquals(position, result.getPosition());
+        verify(asyncWriteService).moveTask(taskId, TaskStatus.BLOCKED, null, position);
+    }
+
+    @Test
+    void addComment_ShouldThrowException_WhenTaskNotFound() {
+        Long taskId = 999L;
+        when(taskDAO.findById(taskId)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () -> taskService.addComment(taskId, "Comment"));
+    }
+
+    @Test
+    void updateComment_ShouldThrowException_WhenTaskNotFound() {
+        Long taskId = 999L;
+        when(taskDAO.findById(taskId)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () -> taskService.updateComment(taskId, "c1", "Text"));
+    }
+
+    @Test
+    void deleteComment_ShouldThrowException_WhenTaskNotFound() {
+        Long taskId = 999L;
+        when(taskDAO.findById(taskId)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () -> taskService.deleteComment(taskId, "c1"));
+    }
+
+    @Test
+    void addComment_ShouldWorkWithEmptyComments() {
+        Long taskId = 1L;
+        Task task = new Task();
+        task.setId(taskId);
+        task.setComments(""); // Empty string
+
+        when(taskDAO.findById(taskId)).thenReturn(Optional.of(task));
+
+        com.example.todo.model.Comment comment = taskService.addComment(taskId, "First Comment");
+
+        assertNotNull(comment);
+        assertEquals("First Comment", comment.getText());
+        verify(asyncWriteService).saveTask(task);
+    }
+
+    @Test
+    void addComment_ShouldWorkWithNullComments() {
+        Long taskId = 1L;
+        Task task = new Task();
+        task.setId(taskId);
+        task.setComments(null); // Null comments
+
+        when(taskDAO.findById(taskId)).thenReturn(Optional.of(task));
+
+        com.example.todo.model.Comment comment = taskService.addComment(taskId, "First Comment");
+
+        assertNotNull(comment);
+        assertEquals("First Comment", comment.getText());
+        verify(asyncWriteService).saveTask(task);
     }
 }

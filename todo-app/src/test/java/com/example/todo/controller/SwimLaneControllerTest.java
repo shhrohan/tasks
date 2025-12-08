@@ -124,4 +124,23 @@ class SwimLaneControllerTest extends BaseIntegrationTest {
         SwimLane deletedLane = swimLaneRepository.findById(lane.getId()).orElseThrow();
         assertTrue(deletedLane.getIsDeleted());
     }
+
+    @Test
+    void reorderSwimLanes_ShouldReturnOk() throws Exception {
+        SwimLane lane1 = new SwimLane();
+        lane1.setName("Lane A");
+        lane1.setPosition(0);
+        lane1 = swimLaneRepository.save(lane1);
+
+        SwimLane lane2 = new SwimLane();
+        lane2.setName("Lane B");
+        lane2.setPosition(1);
+        lane2 = swimLaneRepository.save(lane2);
+
+        // Reorder to B, A
+        mockMvc.perform(patch("/api/swimlanes/reorder")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("[" + lane2.getId() + ", " + lane1.getId() + "]"))
+                .andExpect(status().isOk());
+    }
 }

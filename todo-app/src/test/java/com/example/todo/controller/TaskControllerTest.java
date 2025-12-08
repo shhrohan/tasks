@@ -194,4 +194,65 @@ class TaskControllerTest extends BaseIntegrationTest {
                 Task deletedCommentTask = taskRepository.findById(task.getId()).orElseThrow();
                 assertEquals("[]", deletedCommentTask.getComments());
         }
+
+        @Test
+        void getTasksBySwimLane_ShouldReturnTasksForLane() throws Exception {
+                SwimLane lane = new SwimLane();
+                lane.setName("Test Lane");
+                lane = swimLaneRepository.save(lane);
+
+                Task task = new Task();
+                task.setName("Task in Lane");
+                task.setStatus(TaskStatus.TODO);
+                task.setSwimLane(lane);
+                taskRepository.save(task);
+
+                mockMvc.perform(get("/api/tasks/swimlane/{id}", lane.getId()))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$[?(@.name == 'Task in Lane')]").exists());
+        }
+
+        @Test
+        void moveTask_ShouldWorkWithPositionParameter() throws Exception {
+                SwimLane lane = new SwimLane();
+                lane.setName("Lane for Position");
+                lane = swimLaneRepository.save(lane);
+
+                Task task = new Task();
+                task.setName("Task with Position");
+                task.setStatus(TaskStatus.TODO);
+                task = taskRepository.save(task);
+
+                mockMvc.perform(patch("/api/tasks/{id}/move", task.getId())
+                                .param("status", "IN_PROGRESS")
+                                .param("swimLaneId", lane.getId().toString())
+                                .param("position", "5"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.status").value("IN_PROGRESS"))
+                                .andExpect(jsonPath("$.position").value(5));
+        }
+
+        @Test
+        void updateTask_ShouldReturnNotFound_WhenTaskDoesNotExist() throws Exception {
+                Task updatedInfo = new Task();
+                updatedInfo.setName("Some Name");
+                updatedInfo.setStatus(TaskStatus.TODO);
+
+                mockMvc.perform(put("/api/tasks/{id}", 9999L)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(updatedInfo)))
+                                .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void createTask_ShouldSetDefaultStatus_WhenNotProvided() throws Exception {
+                Task task = new Task();
+                task.setName("Task without Status");
+
+                mockMvc.perform(post("/api/tasks")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(task)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.status").value("TODO"));
+        }
 }

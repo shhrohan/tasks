@@ -8,8 +8,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -46,7 +48,8 @@ class SwimLaneDAOTest {
 
     @Test
     void findByIsCompletedFalseAndIsDeletedFalse_ShouldDelegateToRepository() {
-        when(swimLaneRepository.findByIsCompletedFalseAndIsDeletedFalseOrderByPositionAsc()).thenReturn(Collections.emptyList());
+        when(swimLaneRepository.findByIsCompletedFalseAndIsDeletedFalseOrderByPositionAsc())
+                .thenReturn(Collections.emptyList());
 
         List<SwimLane> result = swimLaneDAO.findByIsCompletedFalseAndIsDeletedFalseOrderByPositionAsc();
 
@@ -56,7 +59,8 @@ class SwimLaneDAOTest {
 
     @Test
     void findByIsCompletedTrueAndIsDeletedFalse_ShouldDelegateToRepository() {
-        when(swimLaneRepository.findByIsCompletedTrueAndIsDeletedFalseOrderByPositionAsc()).thenReturn(Collections.emptyList());
+        when(swimLaneRepository.findByIsCompletedTrueAndIsDeletedFalseOrderByPositionAsc())
+                .thenReturn(Collections.emptyList());
 
         List<SwimLane> result = swimLaneDAO.findByIsCompletedTrueAndIsDeletedFalseOrderByPositionAsc();
 
@@ -68,9 +72,9 @@ class SwimLaneDAOTest {
     void findById_ShouldDelegateToRepository() {
         Long id = 1L;
         SwimLane lane = new SwimLane();
-        when(swimLaneRepository.findById(id)).thenReturn(java.util.Optional.of(lane));
+        when(swimLaneRepository.findById(id)).thenReturn(Optional.of(lane));
 
-        java.util.Optional<SwimLane> result = swimLaneDAO.findById(id);
+        Optional<SwimLane> result = swimLaneDAO.findById(id);
 
         assertTrue(result.isPresent());
         verify(swimLaneRepository).findById(id);
@@ -84,5 +88,57 @@ class SwimLaneDAOTest {
         swimLaneDAO.deleteById(id);
 
         verify(swimLaneRepository).deleteById(id);
+    }
+
+    @Test
+    void findMaxPosition_ShouldDelegateToRepository() {
+        when(swimLaneRepository.findMaxPosition()).thenReturn(5);
+
+        Integer result = swimLaneDAO.findMaxPosition();
+
+        assertEquals(5, result);
+        verify(swimLaneRepository).findMaxPosition();
+    }
+
+    @Test
+    void findMaxPosition_ShouldReturnNull_WhenNoLanes() {
+        when(swimLaneRepository.findMaxPosition()).thenReturn(null);
+
+        Integer result = swimLaneDAO.findMaxPosition();
+
+        assertNull(result);
+        verify(swimLaneRepository).findMaxPosition();
+    }
+
+    @Test
+    void saveAll_ShouldDelegateToRepository() {
+        SwimLane lane1 = new SwimLane();
+        lane1.setId(1L);
+        SwimLane lane2 = new SwimLane();
+        lane2.setId(2L);
+        List<SwimLane> lanes = Arrays.asList(lane1, lane2);
+
+        when(swimLaneRepository.saveAll(lanes)).thenReturn(lanes);
+
+        List<SwimLane> result = swimLaneDAO.saveAll(lanes);
+
+        assertEquals(2, result.size());
+        verify(swimLaneRepository).saveAll(lanes);
+    }
+
+    @Test
+    void findAllById_ShouldDelegateToRepository() {
+        List<Long> ids = Arrays.asList(1L, 2L, 3L);
+        SwimLane lane1 = new SwimLane();
+        lane1.setId(1L);
+        SwimLane lane2 = new SwimLane();
+        lane2.setId(2L);
+
+        when(swimLaneRepository.findAllById(ids)).thenReturn(Arrays.asList(lane1, lane2));
+
+        List<SwimLane> result = swimLaneDAO.findAllById(ids);
+
+        assertEquals(2, result.size());
+        verify(swimLaneRepository).findAllById(ids);
     }
 }
