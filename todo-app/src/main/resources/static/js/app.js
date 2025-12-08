@@ -10,6 +10,16 @@ import { Drag } from './modules/drag.js';
 
 console.log('[App] Loading v13 ESM...');
 
+// --- Global Error Safety Net ---
+window.onerror = function (msg, url, lineNo, columnNo, error) {
+    console.error('[Uncaught Error]', { msg, url, line: lineNo, col: columnNo, error });
+    return false; // Let default handler run too
+};
+
+window.addEventListener('unhandledrejection', event => {
+    console.error('[Unhandled Promise Rejection]', event.reason);
+});
+
 // Define the Main Component
 Alpine.data('todoApp', () => ({
     // Explicit Reactive State
