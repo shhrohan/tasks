@@ -43,23 +43,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ---
 
 ## [1.3.0] - 2025-12-07 — Drag-and-Drop Stability & Documentation
-
-### Added
-- Comprehensive API call logging with all parameters for debugging
-- Expanded `GEMINI.md` with exhaustive drag-drop system reference guide
-- Verbose logging throughout drag-and-drop lifecycle
-
-### Fixed
-- **Critical Drag-and-Drop Regression** - Tasks were not draggable after async load
-  - **Root Cause**: Sortable.js was initialized on empty columns before task data was fetched
-  - **Solution**: Implemented `reinitSortableForLane()` to reinitialize Sortable after `$nextTick()` once tasks load
-- **Z-Index Hover State** - Task cards would disappear behind other elements on hover
-- Per-column `x-init` restoration for reliable column initialization
-
-### Documentation
-- Added complete architecture diagram for drag system
-- Documented initialization timing issues and solutions
-- Created CSS 3D transforms troubleshooting guide
 - Added event lifecycle reference
 
 ### Technical Details

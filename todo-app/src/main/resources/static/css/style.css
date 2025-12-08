@@ -1135,9 +1135,12 @@ body {
 
 /* Core fix for Status Pills UI */
 .swimlane-progress-inline .status-pill-lg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     height: 30px !important;
     min-width: 70px !important;
     font-size: 15px !important;
-    font-weight: 500;
+    font-weight: 600;
     transition: all 0.3s ease;
 }
