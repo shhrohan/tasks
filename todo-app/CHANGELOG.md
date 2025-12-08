@@ -15,6 +15,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Backend support for position persistence during drag-and-drop
   - Automatic reordering when tasks are moved to existing positions
 
+### Fixed
+- **Test Suite Fixes** for async write behavior (`52f528a`)
+  - `AsyncWriteServiceTest` - Added missing `SseService` mock
+  - `TaskControllerTest` - Updated assertions for optimistic async responses
+  - `SwimLaneControllerTest` - Made assertions resilient to parallel execution
+  
+### Tests
+- Added missing test coverage for `TaskDAO` position methods:
+  - `updatePosition()` - Delegates position updates to repository
+  - `findBySwimLaneId()` - Fetches tasks ordered by position
+  - `shiftPositionsDown()` - Bulk updates for task reordering
+- Added `getTasksBySwimLaneId()` test in `TaskServiceTest`
+- **Total Tests**: 56 (all passing)
+
 ---
 
 ## [1.3.0] - 2025-12-07 — Drag-and-Drop Stability & Documentation
