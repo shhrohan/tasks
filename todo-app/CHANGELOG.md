@@ -16,6 +16,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Pulse animation on BLOCKED segment  
   - Hover effect scales bar for visibility
   - Displays "% Complete" label
+- **Collapse All Swimlanes Button** (navbar)
+  - Smart toggle: Collapses all if any are open, expands all if all are closed
+  - Uses `fa-compress` icon for compact UI
 
 ### Documentation
 - **Comprehensive Codebase Review** - Full source code walkthrough and analysis

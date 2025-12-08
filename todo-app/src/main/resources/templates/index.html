@@ -55,6 +55,10 @@ DRAG-AND-DROP CRITICAL NOTES:
                 <i class="fa-solid fa-cubes me-2"></i>TaskBoard 3D
             </a>
             <div class="d-flex align-items-center gap-3">
+                <!-- Collapse All Button -->
+                <button class="btn btn-outline-light btn-sm" @click="toggleAllLanes()" title="Toggle All Lanes">
+                    <i class="fa-solid fa-compress"></i> Collapse All
+                </button>
                 <!-- Add Swimlane Button -->
                 <button class="btn btn-primary btn-sm" @click="openSwimlaneModal()">
                     <i class="fa-solid fa-plus"></i> New Board

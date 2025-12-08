@@ -127,6 +127,17 @@ export const Store = {
         }
     },
 
+    toggleAllLanes() {
+        // Check if any lane is currently expanded (not collapsed)
+        const anyExpanded = this.lanes.some(l => !l.collapsed);
+
+        // If any are expanded, we want to collapse all (newState = true).
+        // If all are already collapsed, we want to expand all (newState = false).
+        const newState = anyExpanded ? true : false;
+
+        this.lanes.forEach(l => l.collapsed = newState);
+    },
+
     // --- Modal Management ---
 
     // 1. Confirm Modal
