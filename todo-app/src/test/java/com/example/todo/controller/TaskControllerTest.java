@@ -255,4 +255,60 @@ class TaskControllerTest extends BaseIntegrationTest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.status").value("TODO"));
         }
+
+        @Test
+        void addComment_ShouldHandleJsonWrappedText() throws Exception {
+                Task task = new Task();
+                task.setName("Comment Task JSON");
+                task.setStatus(TaskStatus.TODO);
+                task = taskRepository.save(task);
+
+                // Text wrapped in JSON quotes
+                mockMvc.perform(post("/api/tasks/{id}/comments", task.getId())
+                                .content("\"New Comment\""))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.text").value("New Comment"));
+        }
+
+        @Test
+        void updateComment_ShouldReturnBadRequest_WhenCommentNotFound() throws Exception {
+                Task task = new Task();
+                task.setName("Update Comment Error Task");
+                task.setStatus(TaskStatus.TODO);
+                task.setComments("[]"); // Empty comments
+                task = taskRepository.save(task);
+
+                mockMvc.perform(put("/api/tasks/{id}/comments/{commentId}", task.getId(), "non-existent")
+                                .content("Updated Text"))
+                                .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void deleteComment_ShouldReturnBadRequest_WhenTaskNotFound() throws Exception {
+                mockMvc.perform(delete("/api/tasks/{id}/comments/{commentId}", 9999L, "c1"))
+                                .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void addComment_ShouldReturnBadRequest_WhenTaskNotFound() throws Exception {
+                mockMvc.perform(post("/api/tasks/{id}/comments", 9999L)
+                                .content("Test Comment"))
+                                .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void updateComment_ShouldHandleJsonWrappedText() throws Exception {
+                Task task = new Task();
+                task.setName("Update JSON Comment Task");
+                task.setStatus(TaskStatus.TODO);
+                String json = "[{\"id\":\"c1\",\"text\":\"Old\",\"createdAt\":\"2023-01-01T10:00:00\",\"updatedAt\":\"2023-01-01T10:00:00\"}]";
+                task.setComments(json);
+                task = taskRepository.save(task);
+
+                // Text wrapped in JSON quotes
+                mockMvc.perform(put("/api/tasks/{id}/comments/{commentId}", task.getId(), "c1")
+                                .content("\"New Text\""))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.text").value("New Text"));
+        }
 }

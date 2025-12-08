@@ -304,4 +304,104 @@ class TaskServiceTest {
         assertEquals("First Comment", comment.getText());
         verify(asyncWriteService).saveTask(task);
     }
+
+    @Test
+    void addComment_ShouldMigrateLegacyStringArrayFormat() {
+        Long taskId = 1L;
+        Task task = new Task();
+        task.setId(taskId);
+        // Legacy format: array of strings
+        task.setComments("[\"Old comment 1\", \"Old comment 2\"]");
+
+        when(taskDAO.findById(taskId)).thenReturn(Optional.of(task));
+
+        com.example.todo.model.Comment comment = taskService.addComment(taskId, "New Comment");
+
+        assertNotNull(comment);
+        assertEquals("New Comment", comment.getText());
+        verify(asyncWriteService).saveTask(task);
+        // The task should now have migrated comments + new comment
+        assertTrue(task.getComments().contains("Old comment 1"));
+        assertTrue(task.getComments().contains("New Comment"));
+    }
+
+    @Test
+    void updateComment_ShouldThrowException_WhenCommentNotFound() {
+        Long taskId = 1L;
+        Task task = new Task();
+        task.setId(taskId);
+        task.setComments(
+                "[{\"id\":\"c1\",\"text\":\"Text\",\"createdAt\":\"2023-01-01T10:00:00\",\"updatedAt\":\"2023-01-01T10:00:00\"}]");
+
+        when(taskDAO.findById(taskId)).thenReturn(Optional.of(task));
+
+        // Try to update a non-existent comment
+        assertThrows(RuntimeException.class, () -> taskService.updateComment(taskId, "non-existent-id", "New Text"));
+    }
+
+    @Test
+    void updateTask_ShouldThrowException_WhenSwimLaneNotFound() {
+        Long taskId = 1L;
+        Long swimLaneId = 999L;
+
+        Task existingTask = new Task();
+        existingTask.setId(taskId);
+        existingTask.setName("Old Name");
+
+        SwimLane swimLane = new SwimLane();
+        swimLane.setId(swimLaneId);
+
+        Task updatedInfo = new Task();
+        updatedInfo.setName("New Name");
+        updatedInfo.setStatus(TaskStatus.DONE);
+        updatedInfo.setSwimLane(swimLane);
+
+        when(taskDAO.findById(taskId)).thenReturn(Optional.of(existingTask));
+        when(swimLaneDAO.findById(swimLaneId)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () -> taskService.updateTask(taskId, updatedInfo));
+    }
+
+    @Test
+    void getAllTasks_ShouldReturnAllTasks() {
+        Task task1 = new Task();
+        task1.setId(1L);
+        Task task2 = new Task();
+        task2.setId(2L);
+
+        when(taskDAO.findAll()).thenReturn(java.util.Arrays.asList(task1, task2));
+
+        java.util.List<Task> result = taskService.getAllTasks();
+
+        assertEquals(2, result.size());
+        verify(taskDAO).findAll();
+    }
+
+    @Test
+    void getTask_ShouldReturnEmpty_WhenNotFound() {
+        Long taskId = 999L;
+
+        when(taskDAO.findById(taskId)).thenReturn(Optional.empty());
+
+        Optional<Task> result = taskService.getTask(taskId);
+
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    void addComment_ShouldHandleMalformedJson() {
+        Long taskId = 1L;
+        Task task = new Task();
+        task.setId(taskId);
+        task.setComments("not valid json"); // Malformed JSON
+
+        when(taskDAO.findById(taskId)).thenReturn(Optional.of(task));
+
+        // Should not throw, should start with empty list
+        com.example.todo.model.Comment comment = taskService.addComment(taskId, "New Comment");
+
+        assertNotNull(comment);
+        assertEquals("New Comment", comment.getText());
+        verify(asyncWriteService).saveTask(task);
+    }
 }
