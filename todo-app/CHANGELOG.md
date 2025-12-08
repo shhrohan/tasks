@@ -247,19 +247,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - **Core Task Board Application** with swimlane-based organization
 - **Kanban Board View** with TODO, IN_PROGRESS, DONE, BLOCKED, DEFERRED columns
-- **Task Management** - Create, update, delete tasks
-- **Comments System** - Add, edit, delete task comments
-- **Tags Support** - JSON-based tag storage
-- **Swimlane Management** - Create, complete, delete swimlanes
-- **Drag-and-Drop** tasks within and across columns (Sortable.js)
-- **Collapsible Swimlanes** with smooth Alpine.js x-collapse animation
-- **Azure App Service** deployment workflow (later removed)
-
-### Fixed
-- Alpine.js x-collapse animation for smooth lane toggling
-- Lane collapse class binding for arrow rotation
-- Comment count positioning (moved to bottom-left)
-- Add Task button width
 - Body background class removal
 
 ### Removed
