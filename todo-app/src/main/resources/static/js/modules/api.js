@@ -51,9 +51,12 @@ export const Api = {
         return response.data;
     },
 
-    async moveTask(id, status, swimLaneId) {
-        // PATCH /api/tasks/{id}/move?status=...&swimLaneId=...
-        const url = `${TASKS_URL}/${id}/move?status=${status}&swimLaneId=${swimLaneId}`;
+    async moveTask(id, status, swimLaneId, position) {
+        // PATCH /api/tasks/{id}/move?status=...&swimLaneId=...&position=...
+        let url = `${TASKS_URL}/${id}/move?status=${status}&swimLaneId=${swimLaneId}`;
+        if (position !== undefined && position !== null) {
+            url += `&position=${position}`;
+        }
         const response = await axios.patch(url);
         return response.data;
     },

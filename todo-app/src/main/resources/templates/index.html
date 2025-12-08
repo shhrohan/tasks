@@ -95,7 +95,7 @@
                                 <!-- Status Columns -->
                                 <template x-for="status in columns" :key="status">
                                     <div class="col-12 col-lg lane-column" :id="'lane-' + lane.id + '-' + status"
-                                        :data-status="status" :data-lane-id="lane.id" x-init="initColumn($el)">
+                                        :data-status="status" :data-lane-id="lane.id">
 
                                         <!-- Tasks -->
                                         <template x-for="task in getTasks(lane.id, status)" :key="task.id">
@@ -190,6 +190,24 @@
     <!-- Main Application (Handles Alpine Init) -->
     <script type="module" src="js/app.js?v=esm_init"></script>
 
+    <!-- Debug Script (Injected by Helper) -->
+    <script>
+        (function () {
+            const log = (type, e) => {
+                const card = e.target.closest('.task-card');
+                const col = e.target.closest('.lane-column');
+                console.log(`[Event ${type}]`, {
+                    target: e.target.tagName,
+                    cardId: card ? card.dataset.taskId : 'N/A',
+                    column: col ? col.dataset.status : 'N/A',
+                    raw: e.target
+                });
+            };
+            document.addEventListener('mousedown', e => log('MouseDown', e), true);
+            document.addEventListener('mouseup', e => log('MouseUp', e), true);
+            document.addEventListener('click', e => log('Click', e), true);
+        })();
+    </script>
 </body>
 
 </html>

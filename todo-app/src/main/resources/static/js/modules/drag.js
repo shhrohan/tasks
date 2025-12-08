@@ -7,57 +7,51 @@
 export const Drag = {
 
     initOneColumn(col, scope) {
-        // Idempotency: If already initialized, skip (or destroy/recreate if you prefer)
-        if (col.sortableInstance) {
-            console.log(`[Drag] SKIP Init: Lane ${col.getAttribute('data-lane-id')} Status ${col.getAttribute('data-status')} (Already has instance)`);
-            return;
-        }
-
-        console.log(`[Drag] Lifecycle Init: Lane ${col.getAttribute('data-lane-id')} Status ${col.getAttribute('data-status')} | DOM Element:`, col);
+        if (col.sortableInstance) return;
 
         col.sortableInstance = new Sortable(col, {
             group: 'tasks',
             animation: 150,
-            delay: 0, // Instant drag
+            delay: 0,
             delayOnTouchOnly: true,
             touchStartThreshold: 3,
             ghostClass: 'task-ghost',
             dragClass: 'task-drag',
-            // forceFallback: false, // Default
+            forceFallback: false, // Revert to Native Drag (CSS fix should handle hit-test)
 
-            onStart: (evt) => {
-                console.log('[Drag] Started', evt);
+            onChoose: (evt) => {
+                console.log('[Drag] onChoose (Sortable Selection)', evt.item);
             },
 
+            onStart: (evt) => {
+                console.log('[Drag] onStart (Drag Started)', evt.item);
+            },
+
+
             onEnd: (evt) => {
-                const item = evt.item;
-                const to = evt.to;
-                const from = evt.from;
+                try {
+                    const item = evt.item;
+                    const to = evt.to;
+                    const from = evt.from;
+                    const newIndex = evt.newIndex;
 
-                console.log('[Drag] Ended', { item, from, to, sameContainer: to === from });
+                    if (!item || !to || (to === from && newIndex === evt.oldIndex)) return;
 
-                if (to === from && evt.newIndex === evt.oldIndex) return;
+                    const taskId = item.getAttribute('data-task-id');
+                    const newStatus = to.getAttribute('data-status');
+                    const newLaneId = to.getAttribute('data-lane-id');
 
-                const taskId = item.getAttribute('data-task-id');
-                const newStatus = to.getAttribute('data-status');
-                const newLaneId = to.getAttribute('data-lane-id');
-
-                // Log the state of the 'to' column to see if it survives
-                console.log(`[Drag] Task ${taskId} -> ${newStatus} (Lane ${newLaneId})`);
-
-                scope.moveTaskOptimistic(taskId, newStatus, newLaneId);
-
-                // Debug Check after small delay to see if instance survives
-                setTimeout(() => {
-                    if (to.sortableInstance) {
-                        console.log(`[Drag] Check: Sortable instance survived on destination column ${newStatus}`);
-                    } else {
-                        console.error(`[Drag] Check: Sortable instance LOST on destination column ${newStatus} (Alpine re-render likely destroyed it)`);
-                        // Attempt re-init if lost (failsafe)
-                        // Drag.initOneColumn(to, scope);
+                    if (!taskId || !newStatus || !newLaneId) {
+                        console.warn('[Drag] Missing attributes:', { taskId, newStatus, newLaneId });
+                        return;
                     }
-                }, 500);
+
+                    scope.moveTaskOptimistic(taskId, newStatus, newLaneId, newIndex);
+                } catch (err) {
+                    console.error('[Drag] Error in onEnd:', err);
+                }
             }
+
         });
     },
 
@@ -83,13 +77,6 @@ export const Drag = {
 
                 // 2. Update Store
                 store.reorderLanesOptimistic(newIds);
-
-                // 3. NUCLEAR FLASH RESET (Essential for Alpine Sync)
-                // We must force Alpine to re-render the list to match its internal state
-                // otherwise future drags fail because DOM != VirtualDOM
-                // However, we wait for the store to update first.
-                // In this simplified version, let's try relying on the Store's refresh.
-                // If regression happens, we re-add the "activeLanes = []" hack here.
 
                 if (refreshCallback) refreshCallback();
             }

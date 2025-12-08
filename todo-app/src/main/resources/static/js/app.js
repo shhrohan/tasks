@@ -23,6 +23,15 @@ Alpine.data('todoApp', () => ({
     async init() {
         console.log('[App] Alpine Init');
 
+        // Debug Interaction
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.task-card')) {
+                console.log('[Click] Task Card clicked!', e.target);
+            }
+        }, true); // Capture phase to ensure we see it even if stopped later
+
+
+
         // 1. Data Load (Lanes first)
         try {
             const data = await Store.loadData();
@@ -86,11 +95,17 @@ Alpine.data('todoApp', () => ({
                 // Flash Refresh Callback if needed
             });
         }
+
+        // Binds Sortable to ALL columns centrally
+        // This avoids x-init scope issues and ensures DOM is ready
+        this.setupTaskSortables();
     },
 
-    // Called via x-init on each .lane-column
-    initColumn(el) {
-        Drag.initOneColumn(el, this);
+    setupTaskSortables() {
+        const columns = document.querySelectorAll('.lane-column');
+        columns.forEach(col => {
+            Drag.initOneColumn(col, this);
+        });
     },
 
     // Helper wrappers for template access
@@ -99,7 +114,11 @@ Alpine.data('todoApp', () => ({
         // Do NOT delegate to Store (Non-reactive Module State)
         const tasks = this.tasks.filter(t =>
             t.swimLane && t.swimLane.id === laneId && t.status === status
-        );
+        ).sort((a, b) => {
+            const posA = a.position !== null ? a.position : 999999;
+            const posB = b.position !== null ? b.position : 999999;
+            return posA - posB;
+        });
         return tasks;
     },
 

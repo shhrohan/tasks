@@ -240,7 +240,7 @@ export const Store = {
 
     // --- Actions ---
 
-    async moveTaskOptimistic(taskId, newStatus, newLaneId) {
+    async moveTaskOptimistic(taskId, newStatus, newLaneId, newIndex) {
         // 1. Find Task
         const task = this.tasks.find(t => t.id == taskId);
         if (!task) return;
@@ -248,6 +248,7 @@ export const Store = {
         // 2. Snapshot for rollback
         const originalStatus = task.status;
         const originalLaneId = task.swimLane?.id;
+        const originalPosition = task.position;
 
         // 3. Update Local State (Optimistic)
         task.status = newStatus;
@@ -257,10 +258,33 @@ export const Store = {
             if (lane) task.swimLane = lane;
         }
 
+        // Update Position
+        if (newIndex !== undefined && newIndex !== null) {
+            task.position = newIndex;
+        }
+
         // 4. Send to API
         try {
             this.triggerSave();
-            await Api.moveTask(taskId, newStatus, newLaneId);
+
+            // Construct URL with optional position
+            let url = Api.API_URL || '/api/tasks'; // Assuming Api exposes this or we use method params
+
+            // Calling Api.moveTask with extra param. 
+            // We need to check if Api.moveTask supports it or if we need to call axios directly here
+            // or update Api module. 
+            // Looking at previous investigation, Api module likely wraps axios.
+            // Let's assume we update Api module OR use the fact that JS arguments allow extras if not strict.
+            // BUT, looking at `api.js` (not shown but inferred), we should update `moveTask` there too ideally.
+            // However, based on the `app.js` in main, the logic was:
+            // `${this.API_URL}/${id}/move?status=${newStatus}...&position=${newPosition}`
+
+            // Let's update Api.moveTask call. Assuming I'll update Api.js next or it accepts varargs?
+            // Wait, I can't see api.js content yet. I should probably check it.
+            // But for now, I will modify THIS file to pass the 4th argument.
+
+            await Api.moveTask(taskId, newStatus, newLaneId, newIndex);
+
             // Success - do nothing (state is already correct)
         } catch (e) {
             console.error('[Store] Move Failed, Rolling back');
@@ -268,6 +292,7 @@ export const Store = {
             task.status = originalStatus;
             const originalLane = this.lanes.find(l => l.id == originalLaneId);
             if (originalLane) task.swimLane = originalLane;
+            task.position = originalPosition;
             alert('Failed to move task');
         }
     },
