@@ -102,56 +102,53 @@ DRAG-AND-DROP CRITICAL NOTES:
                         <div class="row mb-3 mb-lg-4 swimlane-row" :data-lane-id="lane.id">
 
                             <!-- Swimlane Header -->
-                            <div class="swimlane-header p-3 d-flex justify-content-between align-items-center"
-                                @click="toggleLaneCollapse(lane.id)" style="cursor: pointer;">
-                                <div class="d-flex align-items-center gap-3">
-                                    <i class="fa-solid"
-                                        :class="lane.collapsed ? 'fa-chevron-right' : 'fa-chevron-down'"></i>
-                                    <span class="h4 mb-0 fw-bold" x-text="lane.name"></span>
-                                    <span class="badge bg-primary rounded-pill"
-                                        x-text="getLaneStats(lane.id).total"></span>
-                                    <div x-show="lane.loading" class="spinner-border spinner-border-sm text-primary"
-                                        role="status"></div>
-                                </div>
+                            <div class="swimlane-header p-3" @click="toggleLaneCollapse(lane.id)"
+                                style="cursor: pointer;">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                    <!-- Left: Title & Stats -->
+                                    <div class="d-flex align-items-center gap-3">
+                                        <i class="fa-solid"
+                                            :class="lane.collapsed ? 'fa-chevron-right' : 'fa-chevron-down'"></i>
+                                        <span class="h4 mb-0 fw-bold" x-text="lane.name"></span>
+                                        <span class="badge bg-primary rounded-pill"
+                                            x-text="getLaneStats(lane.id).total"></span>
+                                        <div x-show="lane.loading" class="spinner-border spinner-border-sm text-primary"
+                                            role="status"></div>
+                                    </div>
 
-                                <!-- Right: Actions -->
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-outline-success"
-                                        @click.stop="confirmAction('completeLane', lane.id)" title="Mark As Completed">
-                                        <i class="fa-solid fa-check me-2"></i>Mark As Completed
-                                    </button>
-                                </div>
-                            </div>
+                                    <!-- Center: Progress Bar (Inline in Header) -->
+                                    <div class="swimlane-progress-inline flex-grow-1 mx-3"
+                                        x-show="getLaneStats(lane.id).total > 0" @click.stop>
+                                        <div class="progress-bar-container"
+                                            :title="'Done: ' + getLaneStats(lane.id).donePct + '% | In Progress: ' + getLaneStats(lane.id).inProgressPct + '% | Todo: ' + getLaneStats(lane.id).todoPct + '%'">
+                                            <div class="progress-segment segment-done"
+                                                :style="'width: ' + getLaneStats(lane.id).donePct + '%'"
+                                                x-show="getLaneStats(lane.id).done > 0"></div>
+                                            <div class="progress-segment segment-progress"
+                                                :style="'width: ' + getLaneStats(lane.id).inProgressPct + '%'"
+                                                x-show="getLaneStats(lane.id).inProgress > 0"></div>
+                                            <div class="progress-segment segment-todo"
+                                                :style="'width: ' + getLaneStats(lane.id).todoPct + '%'"
+                                                x-show="getLaneStats(lane.id).todo > 0"></div>
+                                            <div class="progress-segment segment-blocked"
+                                                :style="'width: ' + getLaneStats(lane.id).blockedPct + '%'"
+                                                x-show="getLaneStats(lane.id).blocked > 0"></div>
+                                            <div class="progress-segment segment-deferred"
+                                                :style="'width: ' + getLaneStats(lane.id).deferredPct + '%'"
+                                                x-show="getLaneStats(lane.id).deferred > 0"></div>
+                                        </div>
+                                        <span class="progress-pct text-success"
+                                            x-text="getLaneStats(lane.id).donePct + '%'"></span>
+                                    </div>
 
-                            <!-- Progress Bar (Segmented by Status) -->
-                            <div class="swimlane-progress mx-3 mb-2" x-show="getLaneStats(lane.id).total > 0">
-                                <div class="progress-bar-container"
-                                    :title="'Done: ' + getLaneStats(lane.id).donePct + '% | In Progress: ' + getLaneStats(lane.id).inProgressPct + '% | Todo: ' + getLaneStats(lane.id).todoPct + '%'">
-                                    <!-- Done segment (green) -->
-                                    <div class="progress-segment segment-done"
-                                        :style="'width: ' + getLaneStats(lane.id).donePct + '%'"
-                                        x-show="getLaneStats(lane.id).done > 0"></div>
-                                    <!-- In Progress segment (blue) -->
-                                    <div class="progress-segment segment-progress"
-                                        :style="'width: ' + getLaneStats(lane.id).inProgressPct + '%'"
-                                        x-show="getLaneStats(lane.id).inProgress > 0"></div>
-                                    <!-- Todo segment (gray) -->
-                                    <div class="progress-segment segment-todo"
-                                        :style="'width: ' + getLaneStats(lane.id).todoPct + '%'"
-                                        x-show="getLaneStats(lane.id).todo > 0"></div>
-                                    <!-- Blocked segment (red) -->
-                                    <div class="progress-segment segment-blocked"
-                                        :style="'width: ' + getLaneStats(lane.id).blockedPct + '%'"
-                                        x-show="getLaneStats(lane.id).blocked > 0"></div>
-                                    <!-- Deferred segment (orange) -->
-                                    <div class="progress-segment segment-deferred"
-                                        :style="'width: ' + getLaneStats(lane.id).deferredPct + '%'"
-                                        x-show="getLaneStats(lane.id).deferred > 0"></div>
-                                </div>
-                                <!-- Completion percentage text -->
-                                <div class="progress-label">
-                                    <span class="text-success fw-bold"
-                                        x-text="getLaneStats(lane.id).donePct + '% Complete'"></span>
+                                    <!-- Right: Actions -->
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-success"
+                                            @click.stop="confirmAction('completeLane', lane.id)"
+                                            title="Mark As Completed">
+                                            <i class="fa-solid fa-check me-2"></i>Mark As Completed
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 

@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased] - 2025-12-09
 
+### Added
+- **Rich Segmented Progress Bar** in swimlane headers (`7acaf5e`)
+  - Shows task distribution by status (TODO, IN_PROGRESS, DONE, BLOCKED, DEFERRED)
+  - Color-coded gradient segments matching status colors
+  - Shimmer animation on IN_PROGRESS segment
+  - Pulse animation on BLOCKED segment  
+  - Hover effect scales bar for visibility
+  - Displays "% Complete" label
+
 ### Documentation
 - **Comprehensive Codebase Review** - Full source code walkthrough and analysis
 - **GEMINI.md Updates**:
