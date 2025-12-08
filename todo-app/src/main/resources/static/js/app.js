@@ -110,9 +110,14 @@ Alpine.data('todoApp', () => ({
                     );
                     this.tasks.push(...newTasks);
 
-                    // Mark lane as loaded
+                    // Mark lane as loaded and auto-expand if tasks exist
                     const localLane = this.lanes.find(l => l.id === lane.id);
-                    if (localLane) localLane.loading = false;
+                    if (localLane) {
+                        localLane.loading = false;
+                        if (newTasks.length > 0) {
+                            localLane.collapsed = false;
+                        }
+                    }
 
                     // ---------------------------------------------------------
                     // CRITICAL: Reinitialize Sortable AFTER tasks are rendered

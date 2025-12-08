@@ -95,22 +95,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 - **Alpine.js Store** for centralized state management of tasks and swimlanes
-- Initial todo application frontend with Alpine.js integration
-- Modular frontend architecture with separate Store, Api, and Drag modules
-- Custom delete confirmation modal with Alpine.js ESM initialization
-
-### Fixed
-- **Long-Running Drag-and-Drop Issues** - Complete resolution via Alpine.js store pattern
-  - **Problem**: State synchronization issues between vanilla JS and DOM updates
-  - **Solution**: Centralized reactive state with Alpine.js store pattern
-
-### Refactored
-- Complete modularization of `app.js` into:
-  - `store.js` - State management
-  - `api.js` - HTTP communication
-  - `drag.js` - Sortable.js configuration
-- Removed legacy version files and old implementations
-
 ### Technical Details
 | Commit | Time | Description |
 |--------|------|-------------|

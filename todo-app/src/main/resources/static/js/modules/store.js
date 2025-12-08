@@ -59,7 +59,7 @@ export const Store = {
         const lanes = await Api.fetchSwimLanes();
 
         // Initialize UI state for lanes (collapsed, etc)
-        const activeLanes = lanes.map(l => ({ ...l, collapsed: false, loading: true }));
+        const activeLanes = lanes.map(l => ({ ...l, collapsed: true, loading: true }));
 
         return { lanes: activeLanes };
     },
