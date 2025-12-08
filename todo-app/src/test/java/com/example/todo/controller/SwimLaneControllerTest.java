@@ -22,12 +22,12 @@ class SwimLaneControllerTest extends BaseIntegrationTest {
     @Test
     void getAllSwimLanes_ShouldReturnList() throws Exception {
         SwimLane lane = new SwimLane();
-        lane.setName("Lane 1");
+        lane.setName("Test Lane For GetAll");
         swimLaneRepository.save(lane);
 
         mockMvc.perform(get("/api/swimlanes"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Lane 1"));
+                .andExpect(jsonPath("$[?(@.name == 'Test Lane For GetAll')]").exists());
     }
 
     @Test
