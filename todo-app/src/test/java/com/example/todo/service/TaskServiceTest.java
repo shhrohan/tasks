@@ -95,6 +95,21 @@ class TaskServiceTest {
     }
 
     @Test
+    void getTasksBySwimLaneId_ShouldReturnTasksForLane() {
+        Long swimLaneId = 1L;
+        Task task1 = new Task();
+        task1.setId(1L);
+        Task task2 = new Task();
+        task2.setId(2L);
+        when(taskDAO.findBySwimLaneId(swimLaneId)).thenReturn(java.util.Arrays.asList(task1, task2));
+
+        java.util.List<Task> result = taskService.getTasksBySwimLaneId(swimLaneId);
+
+        assertEquals(2, result.size());
+        verify(taskDAO).findBySwimLaneId(swimLaneId);
+    }
+
+    @Test
     void getTask_ShouldReturnTask_WhenFound() {
         Long taskId = 1L;
         Task task = new Task();
