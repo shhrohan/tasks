@@ -348,10 +348,10 @@ export const Store = {
 
         // 4. Send to API
         try {
-            this.triggerSave();
             console.log('[Store] moveTaskOptimistic - Calling API.moveTask with:', { taskId, newStatus, newLaneId, newIndex });
             await Api.moveTask(taskId, newStatus, newLaneId, newIndex);
             console.log('[Store] moveTaskOptimistic - API call successful');
+            this.triggerSave();
         } catch (e) {
             console.error('[Store] moveTaskOptimistic - FAILED, rolling back:', e);
             task.status = originalStatus;
@@ -364,10 +364,11 @@ export const Store = {
 
     async reorderLanesOptimistic(newIds) {
         console.log('[Store] reorderLanesOptimistic - Calling API with:', { newIds });
-        this.triggerSave();
+        // this.triggerSave(); // Moved to after success
         try {
             await Api.reorderSwimlanes(newIds);
             console.log('[Store] reorderLanesOptimistic - Reorder successful');
+            this.triggerSave();
         } catch (e) {
             console.error('[Store] reorderLanesOptimistic - FAILED:', e);
             this.loadData();
