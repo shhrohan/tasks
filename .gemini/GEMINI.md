@@ -47,6 +47,7 @@ The application follows a standard layered Spring Boot architecture:
 *   `name` (String): Name of the swimlane (e.g., "Feature A").
 *   `isCompleted` (Boolean): Status of the swimlane.
 *   `isDeleted` (Boolean): Soft delete flag.
+*   `position` (Integer): Display order for lane reordering.
 
 ### Task
 *   `id` (Long): Primary Key.
@@ -66,10 +67,12 @@ The application follows a standard layered Spring Boot architecture:
 *   `POST /`: Create a new swimlane (`{name}`).
 *   `PATCH /{id}/complete`: Mark swimlane as complete.
 *   `PATCH /{id}/uncomplete`: Reactivate swimlane.
+*   `PATCH /reorder`: Reorder swimlanes (body: `Long[]` of IDs).
 *   `DELETE /{id}`: Soft delete swimlane.
 
 ### Tasks (`/api/tasks`)
 *   `GET /`: Get all tasks.
+*   `GET /swimlane/{swimLaneId}`: Get tasks by lane (for incremental loading).
 *   `GET /{id}`: Get specific task.
 *   `POST /`: Create a new task.
 *   `PUT /{id}`: Update task details.
@@ -79,6 +82,10 @@ The application follows a standard layered Spring Boot architecture:
 *   `PUT /{id}/comments/{commentId}`: Update comment.
 *   `DELETE /{id}/comments/{commentId}`: Delete comment.
 
+### Server-Sent Events (`/api/sse`)
+*   `GET /stream`: Subscribe to real-time updates (SSE connection).
+    *   Events: `init`, `task-updated`, `task-deleted`, `lane-updated`, `heartbeat`
+
 ## Frontend Architecture
 
 The frontend was rewritten from Vanilla JS to **Alpine.js** to improve maintainability and performance.
@@ -86,9 +93,32 @@ The frontend was rewritten from Vanilla JS to **Alpine.js** to improve maintaina
 *   **Reactive State**: `todoApp` Alpine component manages `tasks`, `swimLanes`, and `currentView`.
 *   **Declarative UI**: HTML uses `x-for`, `x-if`, and `x-model` instead of manual DOM manipulation.
 *   **Optimized Animations**: GSAP handles complex animations (ripples, transitions) instead of CSS/JS hybrids.
-*   **Component Structure**:
-    *   `app.js`: Contains the Alpine data object and API logic.
-    *   `index.html`: Contains the template and Alpine directives.
+*   **Modular Structure**:
+    *   `app.js`: Alpine component entry point, initialization orchestration.
+    *   `modules/store.js`: Centralized state management, modal handling, optimistic updates.
+    *   `modules/api.js`: Axios HTTP client with interceptors, SSE initialization.
+    *   `modules/drag.js`: SortableJS integration for drag-and-drop.
+    *   `index.html`: Thymeleaf template with Alpine directives.
+
+## Real-Time Updates (SSE Architecture)
+
+The application uses Server-Sent Events for real-time synchronization:
+
+1.  **SseService**: Manages client connections with `CopyOnWriteArrayList<SseEmitter>`.
+2.  **SseController**: Exposes `/api/sse/stream` endpoint.
+3.  **AsyncWriteService**: After async DB writes, broadcasts updates via SSE.
+4.  **Frontend (api.js)**: `initSSE()` subscribes and handles `task-updated`, `task-deleted`, `lane-updated` events.
+5.  **Heartbeat**: Every 30 seconds to keep connections alive and clean up dead clients.
+
+## Async Write-Behind Architecture
+
+Database writes are optimized for perceived performance:
+
+1.  **Optimistic UI**: Frontend updates state immediately.
+2.  **Fire-and-Forget**: Service layer queues writes to `AsyncWriteService`.
+3.  **Single-Threaded Executor**: Guarantees sequential DB writes (no race conditions).
+4.  **SSE Broadcast**: After DB write completes, broadcasts to all clients.
+5.  **Simulated Latency**: 100ms delay built-in to prove decoupling works.
 
 ## DRAG-AND-DROP SYSTEM - COMPLETE REFERENCE
 
@@ -100,19 +130,19 @@ The frontend was rewritten from Vanilla JS to **Alpine.js** to improve maintaina
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  index.html                                                  │
+│  index.html                                                 │
 │  ├── .board-container     (Lane Sortable - reorder lanes)   │
 │  │   └── .swimlane-row    (Lane wrapper)                    │
 │  │       └── .lane-column (Task Sortable - reorder tasks)   │
 │  │           └── .task-card (Draggable item)                │
-│                                                              │
-│  app.js                                                      │
+│                                                             │
+│  app.js                                                     │
 │  ├── init()               → Loads lanes, then tasks async   │
 │  ├── setupDrag()          → Inits lane-level Sortable       │
 │  ├── initColumn(el)       → Called by x-init (may be empty) │
 │  └── reinitSortableForLane() → CRITICAL: Reinits after load │
-│                                                              │
-│  drag.js                                                     │
+│                                                             │
+│  drag.js                                                    │
 │  ├── initOneColumn()      → Creates Sortable on column      │
 │  └── initLaneSortable()   → Creates Sortable on board       │
 └─────────────────────────────────────────────────────────────┘
