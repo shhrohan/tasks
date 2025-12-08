@@ -206,6 +206,21 @@
             document.addEventListener('mousedown', e => log('MouseDown', e), true);
             document.addEventListener('mouseup', e => log('MouseUp', e), true);
             document.addEventListener('click', e => log('Click', e), true);
+
+            // DIAGNOSTIC: Check Sortable instances after 5 seconds
+            setTimeout(() => {
+                console.warn('\\n\\n=== DIAGNOSTIC: Checking Sortable instances after 5s ===');
+                const columns = document.querySelectorAll('.lane-column');
+                console.log(`Found ${columns.length} lane-column elements`);
+                columns.forEach(col => {
+                    const cards = col.querySelectorAll('.task-card');
+                    console.log(`Column ${col.id}: ${cards.length} cards, sortableInstance: ${!!col.sortableInstance}`);
+                    if (col.sortableInstance) {
+                        console.log('  -> Sortable options:', col.sortableInstance.options);
+                    }
+                });
+                console.warn('=== END DIAGNOSTIC ===\\n\\n');
+            }, 5000);
         })();
     </script>
 </body>

@@ -65,6 +65,12 @@ Alpine.data('todoApp', () => ({
                     const localLane = this.lanes.find(l => l.id === lane.id);
                     if (localLane) localLane.loading = false;
 
+                    // FIX: Re-initialize Sortable AFTER tasks are rendered
+                    // Use $nextTick to wait for DOM update
+                    this.$nextTick(() => {
+                        this.reinitSortableForLane(lane.id);
+                    });
+
                 } catch (e) {
                     console.error(`[App] Error fetching lane ${lane.id}:`, e);
                 }
@@ -95,10 +101,8 @@ Alpine.data('todoApp', () => ({
                 // Flash Refresh Callback if needed
             });
         }
-
-        // Binds Sortable to ALL columns centrally
-        // This avoids x-init scope issues and ensures DOM is ready
-        this.setupTaskSortables();
+        // NOTE: Column-level Sortable is initialized via x-init="initColumn($el)" on each .lane-column
+        // Do NOT call setupTaskSortables() here - it causes duplicate initialization
     },
 
     setupTaskSortables() {
@@ -112,6 +116,23 @@ Alpine.data('todoApp', () => ({
     initColumn(el) {
         console.log('[App] initColumn called for', el.getAttribute('data-lane-id'), el.getAttribute('data-status'));
         Drag.initOneColumn(el, this);
+    },
+
+    // Re-initialize Sortable for a lane AFTER tasks are loaded
+    reinitSortableForLane(laneId) {
+        console.log(`[App] reinitSortableForLane called for lane ${laneId}`);
+        // Find all columns for this lane
+        const columns = document.querySelectorAll(`.lane-column[data-lane-id="${laneId}"]`);
+        columns.forEach(col => {
+            // Destroy existing instance if present
+            if (col.sortableInstance) {
+                console.log(`[App] Destroying old Sortable for ${col.id}`);
+                col.sortableInstance.destroy();
+                col.sortableInstance = null;
+            }
+            // Re-create with current DOM (which now has task cards)
+            Drag.initOneColumn(col, this);
+        });
     },
 
     // Helper wrappers for template access

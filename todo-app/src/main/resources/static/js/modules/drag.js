@@ -13,57 +13,83 @@ export const Drag = {
             return;
         }
 
-        console.log(`[Drag] Lifecycle Init: Lane ${col.getAttribute('data-lane-id')} Status ${col.getAttribute('data-status')} | DOM Element:`, col);
+        // DIAGNOSTIC: Check what we're initializing
+        const children = col.querySelectorAll('.task-card');
+        console.log(`[Drag] Lifecycle Init: Lane ${col.getAttribute('data-lane-id')} Status ${col.getAttribute('data-status')}`);
+        console.log(`[Drag] Column has ${children.length} task-card children at init time`);
+        console.log(`[Drag] Column element:`, col);
+        console.log(`[Drag] Column ID:`, col.id);
+        console.log(`[Drag] Scope (this):`, scope);
 
-        col.sortableInstance = new Sortable(col, {
-            group: 'tasks',
-            animation: 150,
-            delay: 0,
-            delayOnTouchOnly: true,
-            touchStartThreshold: 3,
-            ghostClass: 'task-ghost',
-            dragClass: 'task-drag',
-            forceFallback: true, // Use JS-based drag (native drag fails with 3D transforms)
+        // DIAGNOSTIC: Check if Sortable is available
+        if (typeof Sortable === 'undefined') {
+            console.error('[Drag] ERROR: Sortable is not defined!');
+            return;
+        }
+        console.log('[Drag] Sortable is available:', typeof Sortable);
 
-            onChoose: (evt) => {
-                console.log('[Drag] onChoose (Sortable Selection)', evt.item);
-            },
+        try {
+            col.sortableInstance = new Sortable(col, {
+                group: 'tasks',
+                animation: 150,
+                delay: 0,
+                delayOnTouchOnly: true,
+                touchStartThreshold: 3,
+                ghostClass: 'task-ghost',
+                dragClass: 'task-drag',
+                // forceFallback: false, // Default - let browser decide
 
-            onStart: (evt) => {
-                console.log('[Drag] onStart (Drag Started)', evt.item, evt);
-            },
+                onChoose: (evt) => {
+                    console.log('[Drag] onChoose - item selected:', evt.item);
+                },
 
-            onEnd: (evt) => {
-                const item = evt.item;
-                const to = evt.to;
-                const from = evt.from;
-                const newIndex = evt.newIndex;
+                onStart: (evt) => {
+                    console.log('[Drag] onStart - drag began:', evt.item, evt);
+                },
 
-                console.log('[Drag] onEnd', { item, from, to, sameContainer: to === from, oldIndex: evt.oldIndex, newIndex });
+                onMove: (evt) => {
+                    console.log('[Drag] onMove - dragging:', evt.dragged);
+                    return true; // Allow move
+                },
 
-                if (to === from && evt.newIndex === evt.oldIndex) {
-                    console.log('[Drag] No change detected, skipping');
-                    return;
-                }
+                onEnd: (evt) => {
+                    const item = evt.item;
+                    const to = evt.to;
+                    const from = evt.from;
+                    const newIndex = evt.newIndex;
 
-                const taskId = item.getAttribute('data-task-id');
-                const newStatus = to.getAttribute('data-status');
-                const newLaneId = to.getAttribute('data-lane-id');
+                    console.log('[Drag] onEnd', { item, from, to, sameContainer: to === from, oldIndex: evt.oldIndex, newIndex });
 
-                console.log(`[Drag] Task ${taskId} -> ${newStatus} (Lane ${newLaneId})`);
-
-                scope.moveTaskOptimistic(taskId, newStatus, newLaneId, newIndex);
-
-                // Debug Check after small delay to see if instance survives
-                setTimeout(() => {
-                    if (to.sortableInstance) {
-                        console.log(`[Drag] Check: Sortable instance survived on destination column ${newStatus}`);
-                    } else {
-                        console.error(`[Drag] Check: Sortable instance LOST on destination column ${newStatus} (Alpine re-render likely destroyed it)`);
+                    if (to === from && evt.newIndex === evt.oldIndex) {
+                        console.log('[Drag] No change detected, skipping');
+                        return;
                     }
-                }, 500);
-            }
-        });
+
+                    const taskId = item.getAttribute('data-task-id');
+                    const newStatus = to.getAttribute('data-status');
+                    const newLaneId = to.getAttribute('data-lane-id');
+
+                    console.log(`[Drag] Task ${taskId} -> ${newStatus} (Lane ${newLaneId})`);
+
+                    scope.moveTaskOptimistic(taskId, newStatus, newLaneId, newIndex);
+                }
+            });
+
+            console.log('[Drag] Sortable instance created successfully:', col.sortableInstance);
+
+            // DIAGNOSTIC: Add direct mouse listeners to the column to see if events reach it
+            col.addEventListener('mousedown', (e) => {
+                const card = e.target.closest('.task-card');
+                console.log('[Drag] DIRECT mousedown on column', {
+                    target: e.target.tagName,
+                    card: card ? card.getAttribute('data-task-id') : 'none',
+                    column: col.getAttribute('data-status')
+                });
+            }, true);
+
+        } catch (err) {
+            console.error('[Drag] ERROR creating Sortable:', err);
+        }
     },
 
     initLaneSortable(containerElement, store, refreshCallback) {

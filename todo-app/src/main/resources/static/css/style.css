@@ -155,10 +155,15 @@ body {
     padding: 0.5rem;
     border: 1px dashed rgba(255, 255, 255, 0.05);
     transition: background 0.2s;
+    position: relative;
+    /* Establish stacking context for children */
+    z-index: 1;
+    /* Base z-index */
 }
 
 .lane-column:hover {
     background: rgba(255, 255, 255, 0.02);
+    /* Don't change z-index on hover - let task cards stay above */
 }
 
 /* Task Cards - 3D */
@@ -166,30 +171,33 @@ body {
     background: var(--card-bg);
     border: var(--glass-border);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    cursor: pointer;
-    /* User request: Match header style */
+    cursor: grab;
+    /* Show grab cursor for draggable items */
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     transform-style: flat;
-    /* Prevent 3D container from intercepting clicks */
-    transform: translateZ(2px);
-    /* Lift off the board */
+    /* Prevent 3D issues */
+    transform: none;
+    /* Remove translateZ - it causes stacking issues */
     color: var(--text-primary);
     user-select: none;
-    z-index: 1000;
-    /* Higher z-index to ensure clicks are not intercepted by 3D layers */
+    z-index: 10;
+    /* Above column, below modals */
     position: relative;
-    /* Prevent text selection during drag */
+    pointer-events: auto;
+    /* Ensure events are captured */
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
 }
 
 .task-card:hover {
-    transform: translateZ(10px) scale(1.02) rotateX(2deg);
+    transform: scale(1.02);
+    /* Simple scale, no 3D */
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
-    z-index: 1001;
-    /* Keep above other cards on hover */
+    z-index: 20;
+    /* Just slightly above other cards */
     border-color: rgba(255, 255, 255, 0.3);
+    cursor: grab;
 }
 
 .task-card:active,
