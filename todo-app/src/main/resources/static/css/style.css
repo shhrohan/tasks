@@ -183,6 +183,108 @@ body {
     transform: rotate(-90deg);
 }
 
+/* ============================================
+   SWIMLANE PROGRESS BAR - Rich Segmented UI
+   ============================================ */
+.swimlane-progress {
+    padding: 0.5rem 0;
+}
+
+.progress-bar-container {
+    height: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.progress-segment {
+    height: 100%;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+/* Done - Green with glow */
+.segment-done {
+    background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+/* In Progress - Blue with animation */
+.segment-progress {
+    background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.segment-progress::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
+}
+
+/* Todo - Gray */
+.segment-todo {
+    background: linear-gradient(90deg, #64748b 0%, #94a3b8 100%);
+}
+
+/* Blocked - Red with pulse */
+.segment-blocked {
+    background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
+    animation: pulse-blocked 2s ease-in-out infinite;
+}
+
+@keyframes pulse-blocked {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Deferred - Orange */
+.segment-deferred {
+    background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.progress-label {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+}
+
+/* Progress bar hover effect */
+.progress-bar-container:hover {
+    transform: scaleY(1.5);
+    transition: transform 0.2s ease;
+}
+
+.progress-bar-container:hover .progress-segment {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
 
 
 .lane-column {

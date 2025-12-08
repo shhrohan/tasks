@@ -73,10 +73,33 @@ export const Store = {
 
         const tasks = this.tasks || [];
         const laneTasks = tasks.filter(t => t.swimLane && t.swimLane.id === laneId);
+        const total = laneTasks.length;
+
+        // Count tasks per status
+        const todo = laneTasks.filter(t => t.status === 'TODO').length;
+        const inProgress = laneTasks.filter(t => t.status === 'IN_PROGRESS').length;
+        const done = laneTasks.filter(t => t.status === 'DONE').length;
+        const blocked = laneTasks.filter(t => t.status === 'BLOCKED').length;
+        const deferred = laneTasks.filter(t => t.status === 'DEFERRED').length;
+
+        // Calculate percentages (avoid division by zero)
+        const pct = (count) => total > 0 ? Math.round((count / total) * 100) : 0;
+
+        console.log(`[Store] getLaneStats(${laneId}):`, { total, todo, inProgress, done, blocked, deferred });
 
         return {
-            total: laneTasks.length,
-            // Add other stats if needed in future
+            total,
+            todo,
+            inProgress,
+            done,
+            blocked,
+            deferred,
+            todoPct: pct(todo),
+            inProgressPct: pct(inProgress),
+            donePct: pct(done),
+            blockedPct: pct(blocked),
+            deferredPct: pct(deferred),
+            completionPct: pct(done) // Overall completion = done tasks
         };
     },
 

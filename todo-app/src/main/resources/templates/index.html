@@ -123,6 +123,38 @@ DRAG-AND-DROP CRITICAL NOTES:
                                 </div>
                             </div>
 
+                            <!-- Progress Bar (Segmented by Status) -->
+                            <div class="swimlane-progress mx-3 mb-2" x-show="getLaneStats(lane.id).total > 0">
+                                <div class="progress-bar-container"
+                                    :title="'Done: ' + getLaneStats(lane.id).donePct + '% | In Progress: ' + getLaneStats(lane.id).inProgressPct + '% | Todo: ' + getLaneStats(lane.id).todoPct + '%'">
+                                    <!-- Done segment (green) -->
+                                    <div class="progress-segment segment-done"
+                                        :style="'width: ' + getLaneStats(lane.id).donePct + '%'"
+                                        x-show="getLaneStats(lane.id).done > 0"></div>
+                                    <!-- In Progress segment (blue) -->
+                                    <div class="progress-segment segment-progress"
+                                        :style="'width: ' + getLaneStats(lane.id).inProgressPct + '%'"
+                                        x-show="getLaneStats(lane.id).inProgress > 0"></div>
+                                    <!-- Todo segment (gray) -->
+                                    <div class="progress-segment segment-todo"
+                                        :style="'width: ' + getLaneStats(lane.id).todoPct + '%'"
+                                        x-show="getLaneStats(lane.id).todo > 0"></div>
+                                    <!-- Blocked segment (red) -->
+                                    <div class="progress-segment segment-blocked"
+                                        :style="'width: ' + getLaneStats(lane.id).blockedPct + '%'"
+                                        x-show="getLaneStats(lane.id).blocked > 0"></div>
+                                    <!-- Deferred segment (orange) -->
+                                    <div class="progress-segment segment-deferred"
+                                        :style="'width: ' + getLaneStats(lane.id).deferredPct + '%'"
+                                        x-show="getLaneStats(lane.id).deferred > 0"></div>
+                                </div>
+                                <!-- Completion percentage text -->
+                                <div class="progress-label">
+                                    <span class="text-success fw-bold"
+                                        x-text="getLaneStats(lane.id).donePct + '% Complete'"></span>
+                                </div>
+                            </div>
+
                             <!-- Swimlane Body (Columns) -->
                             <div class="swimlane-content row g-3 px-3 pb-3 pt-0" x-show="!lane.collapsed" x-transition>
                                 <!-- Add Task Button Col -->
