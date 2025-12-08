@@ -14,6 +14,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - New `position` field in `Task` entity
   - Backend support for position persistence during drag-and-drop
   - Automatic reordering when tasks are moved to existing positions
+- **JaCoCo Code Coverage Integration** (`49377e1`)
+  - Added JaCoCo Maven plugin for code coverage reporting
+  - **Code coverage displayed on application startup** in `StartupLogger`
+  - Shows instruction, branch, and line coverage percentages
+  - Includes letter grade (A+, A, B, C, D, F) based on line coverage
 
 ### Fixed
 - **Test Suite Fixes** for async write behavior (`52f528a`)
@@ -22,12 +27,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - `SwimLaneControllerTest` - Made assertions resilient to parallel execution
   
 ### Tests
-- Added missing test coverage for `TaskDAO` position methods:
-  - `updatePosition()` - Delegates position updates to repository
-  - `findBySwimLaneId()` - Fetches tasks ordered by position
-  - `shiftPositionsDown()` - Bulk updates for task reordering
-- Added `getTasksBySwimLaneId()` test in `TaskServiceTest`
-- **Total Tests**: 56 (all passing)
+- **Comprehensive Test Coverage Improvements** (`99142f7`)
+  - Coverage increased from **60.7% → 86%** instructions, **30.3% → 64%** branches
+  - Added 33 new test cases across 8 test files
+  
+- **New Test Files**:
+  - `SseServiceTest` - Tests for subscribe, broadcast, heartbeat methods
+  - `SseControllerTest` - Integration test for SSE stream endpoint
+  
+- **Enhanced Test Files**:
+  - `SwimLaneServiceTest` - Added `reorderSwimLanes`, null position, exception cases
+  - `TaskServiceTest` - Added `updateTask` exceptions, comment edge cases
+  - `AsyncWriteServiceTest` - Added skip shift conditions, task not found scenarios
+  - `SwimLaneDAOTest` - Added `findMaxPosition`, `saveAll`, `findAllById`
+  - `SwimLaneControllerTest` - Added reorder endpoint test
+  - `TaskControllerTest` - Added swimlane tasks, position param, not found cases
+  
+- **Classes at 100% Coverage**:
+  - `SwimLaneDAO`, `TaskDAO`, `SwimLaneController`, `SseController`, `SwimLaneService`, `TaskStatus`
+  
+- **Total Tests**: 89 (all passing)
+
 
 ---
 
