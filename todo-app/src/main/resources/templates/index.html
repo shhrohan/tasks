@@ -95,7 +95,7 @@
                                 <!-- Status Columns -->
                                 <template x-for="status in columns" :key="status">
                                     <div class="col-12 col-lg lane-column" :id="'lane-' + lane.id + '-' + status"
-                                        :data-status="status" :data-lane-id="lane.id">
+                                        :data-status="status" :data-lane-id="lane.id" x-init="initColumn($el)">
 
                                         <!-- Tasks -->
                                         <template x-for="task in getTasks(lane.id, status)" :key="task.id">

@@ -169,11 +169,14 @@ body {
     cursor: pointer;
     /* User request: Match header style */
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    transform-style: flat; /* Prevent 3D container from intercepting clicks */
-    transform: translateZ(2px); /* Lift off the board */
+    transform-style: flat;
+    /* Prevent 3D container from intercepting clicks */
+    transform: translateZ(2px);
+    /* Lift off the board */
     color: var(--text-primary);
     user-select: none;
-    z-index: 1000; /* Higher z-index to ensure clicks are not intercepted by 3D layers */
+    z-index: 1000;
+    /* Higher z-index to ensure clicks are not intercepted by 3D layers */
     position: relative;
     /* Prevent text selection during drag */
     -webkit-user-select: none;
@@ -184,7 +187,8 @@ body {
 .task-card:hover {
     transform: translateZ(10px) scale(1.02) rotateX(2deg);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
-    z-index: 10;
+    z-index: 1001;
+    /* Keep above other cards on hover */
     border-color: rgba(255, 255, 255, 0.3);
 }
 

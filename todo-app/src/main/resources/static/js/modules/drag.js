@@ -23,7 +23,7 @@ export const Drag = {
             touchStartThreshold: 3,
             ghostClass: 'task-ghost',
             dragClass: 'task-drag',
-            forceFallback: false, // Use Native HTML5 Drag (CSS fix handles hit-test)
+            forceFallback: true, // Use JS-based drag (native drag fails with 3D transforms)
 
             onChoose: (evt) => {
                 console.log('[Drag] onChoose (Sortable Selection)', evt.item);

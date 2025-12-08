@@ -108,6 +108,12 @@ Alpine.data('todoApp', () => ({
         });
     },
 
+    // Per-column initialization called via x-init in template
+    initColumn(el) {
+        console.log('[App] initColumn called for', el.getAttribute('data-lane-id'), el.getAttribute('data-status'));
+        Drag.initOneColumn(el, this);
+    },
+
     // Helper wrappers for template access
     getTasks(laneId, status) {
         // FIX: Use 'this.tasks' (Reactive Component State)
