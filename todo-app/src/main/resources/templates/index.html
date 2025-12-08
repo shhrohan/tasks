@@ -117,28 +117,51 @@ DRAG-AND-DROP CRITICAL NOTES:
                                     </div>
 
                                     <!-- Center: Progress Bar (Inline in Header) -->
-                                    <div class="swimlane-progress-inline flex-grow-1 mx-3"
+                                    <div class="swimlane-progress-inline flex-grow-1 mx-3 ms-auto"
                                         x-show="getLaneStats(lane.id).total > 0" @click.stop>
                                         <div class="progress-bar-container"
                                             :title="'Done: ' + getLaneStats(lane.id).donePct + '% | In Progress: ' + getLaneStats(lane.id).inProgressPct + '% | Todo: ' + getLaneStats(lane.id).todoPct + '%'">
+
+                                            <!-- Done -->
                                             <div class="progress-segment segment-done"
                                                 :style="'width: ' + getLaneStats(lane.id).donePct + '%'"
-                                                x-show="getLaneStats(lane.id).done > 0"></div>
+                                                x-show="getLaneStats(lane.id).done > 0">
+                                                <span x-show="getLaneStats(lane.id).donePct > 5"
+                                                    x-text="getLaneStats(lane.id).donePct + '%'"></span>
+                                            </div>
+
+                                            <!-- In Progress -->
                                             <div class="progress-segment segment-progress"
                                                 :style="'width: ' + getLaneStats(lane.id).inProgressPct + '%'"
-                                                x-show="getLaneStats(lane.id).inProgress > 0"></div>
+                                                x-show="getLaneStats(lane.id).inProgress > 0">
+                                                <span x-show="getLaneStats(lane.id).inProgressPct > 5"
+                                                    x-text="getLaneStats(lane.id).inProgressPct + '%'"></span>
+                                            </div>
+
+                                            <!-- Todo -->
                                             <div class="progress-segment segment-todo"
                                                 :style="'width: ' + getLaneStats(lane.id).todoPct + '%'"
-                                                x-show="getLaneStats(lane.id).todo > 0"></div>
+                                                x-show="getLaneStats(lane.id).todo > 0">
+                                                <span x-show="getLaneStats(lane.id).todoPct > 5"
+                                                    x-text="getLaneStats(lane.id).todoPct + '%'"></span>
+                                            </div>
+
+                                            <!-- Blocked -->
                                             <div class="progress-segment segment-blocked"
                                                 :style="'width: ' + getLaneStats(lane.id).blockedPct + '%'"
-                                                x-show="getLaneStats(lane.id).blocked > 0"></div>
+                                                x-show="getLaneStats(lane.id).blocked > 0">
+                                                <span x-show="getLaneStats(lane.id).blockedPct > 5"
+                                                    x-text="getLaneStats(lane.id).blockedPct + '%'"></span>
+                                            </div>
+
+                                            <!-- Deferred -->
                                             <div class="progress-segment segment-deferred"
                                                 :style="'width: ' + getLaneStats(lane.id).deferredPct + '%'"
-                                                x-show="getLaneStats(lane.id).deferred > 0"></div>
+                                                x-show="getLaneStats(lane.id).deferred > 0">
+                                                <span x-show="getLaneStats(lane.id).deferredPct > 5"
+                                                    x-text="getLaneStats(lane.id).deferredPct + '%'"></span>
+                                            </div>
                                         </div>
-                                        <span class="progress-pct text-success"
-                                            x-text="getLaneStats(lane.id).donePct + '%'"></span>
                                     </div>
 
                                     <!-- Right: Actions -->

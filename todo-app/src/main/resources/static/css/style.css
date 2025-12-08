@@ -273,27 +273,40 @@ body {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    min-width: 150px;
-    max-width: 400px;
+    min-width: 250px;
+    max-width: 500px;
+    margin-left: auto;
+    /* Right alignment */
 }
 
 .swimlane-progress-inline .progress-bar-container {
     flex-grow: 1;
-    height: 10px;
-}
-
-.progress-pct {
-    font-size: 0.85rem;
-    font-weight: 600;
-    min-width: 40px;
-    text-align: right;
-}
-
-.progress-label {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 0.25rem;
+    height: 24px;
+    /* Thicker for text */
     font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 24px;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.4);
+    /* Darker background */
+}
+
+.progress-segment {
+    height: 100%;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    display: flex;
+    /* Centering text */
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    /* Clip text if too small */
+    white-space: nowrap;
+}
+
+.progress-segment span {
+    padding: 0 4px;
 }
 
 /* Progress bar hover effect */

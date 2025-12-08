@@ -380,10 +380,14 @@ mvn test
     *   Support your suggestion with reasoning (e.g., "This approach scales better," "This matches the existing pattern," "This avoids X edge case").
 
 *   **COMMIT & RESTART CYCLE**:
-    *   **AFTER EVERY CHANGE**: You must perform the following sequence:
+    *   **VALIDATION FIRST**: Before committing, you MUST:
+        1.  Apply changes.
+        2.  Restart the application (`mvn spring-boot:run`).
+        3.  Verify functionality (browser check/logs).
+        4.  **ASK USER FOR PERMISSION** to commit.
+    *   **AFTER USER APPROVAL**:
         1.  **Commit**: `git commit -am "Type: Description"`
-        2.  **Restart**: Kill the existing process and run `mvn spring-boot:run` (or `java -jar`).
-    *   **NEVER** skip this step. It ensures the app is always in a known, working state.
+        2.  **Restart** (if needed/requested).
 
 *   **Override**: Only proceed with the original (sub-optimal) request if the user explicitly overrides your suggestion *after* you have presented it.
 
