@@ -76,17 +76,18 @@ export const Store = {
     },
 
     async fetchLaneTasks(laneId) {
+        console.log('[Store] fetchLaneTasks - Calling API with:', { laneId });
         try {
             const newTasks = await Api.fetchTasksByLane(laneId);
+            console.log(`[Store] fetchLaneTasks - Received ${newTasks.length} tasks for lane ${laneId}`);
 
             // Remove old tasks for this lane (to avoid duplicates on re-fetch)
-            // (Simpler: Filter out, then push new)
             this.tasks = this.tasks.filter(t => !t.swimLane || t.swimLane.id !== laneId);
             this.tasks.push(...newTasks);
 
             return newTasks;
         } catch (e) {
-            console.error(`[Store] Failed to load tasks for lane ${laneId}`, e);
+            console.error(`[Store] fetchLaneTasks - FAILED for lane ${laneId}:`, e);
             throw e;
         }
     },
@@ -193,47 +194,43 @@ export const Store = {
     // --- Create Actions ---
 
     async createSwimLane(name) {
+        console.log('[Store] createSwimLane - Calling API with:', { name });
         try {
-            // Optimistic? No, let's wait for ID from server for correctness
             const newLane = await Api.createSwimLane(name);
+            console.log('[Store] createSwimLane - Created successfully:', newLane);
             newLane.collapsed = false;
             newLane.loading = false;
             this.lanes.push(newLane);
             this.triggerSave();
         } catch (e) {
-            console.error('[Store] Failed to create lane', e);
+            console.error('[Store] createSwimLane - FAILED:', e);
             alert('Error creating lane');
         }
     },
 
     async createTask(name, laneId) {
+        console.log('[Store] createTask - Calling API with:', { name, laneId });
         try {
-            // Construct Payload
             const lane = this.lanes.find(l => l.id === laneId);
-            if (!lane) return;
+            if (!lane) {
+                console.error('[Store] createTask - Lane not found:', laneId);
+                return;
+            }
 
             const taskPayload = {
                 name: name,
                 status: 'TODO',
-                swimLane: lane, // Backend expects object or ID? Service uses Entity.
-                // Note: If backend expects just ID in DTO, this might fail if using raw Entity in controller.
-                // Controller accepts 'Task' entity. It has 'swimLane' field.
-                // Let's send the full object structure cleanly.
                 swimLane: { id: laneId }
             };
+            console.log('[Store] createTask - Full payload:', taskPayload);
 
             const newTask = await Api.createTask(taskPayload);
+            console.log('[Store] createTask - Created successfully:', newTask);
 
-            // Add to local state (if not using SSE or strictly relying on it)
-            // We use SSE for updates, but immediate feedback is nice.
-            // Check if already covered by SSE?
-            // If SSE is fast, we might duplicate.
-            // Safe bet: Add it, and let deduplication logic in 'fetchLaneTasks' or 'onServerTaskUpdate' handle it.
-            // Our 'onServerTaskUpdate' updates by ID, so it's safe.
             this.tasks.push(newTask);
             this.triggerSave();
         } catch (e) {
-            console.error('[Store] Failed to create task', e);
+            console.error('[Store] createTask - FAILED:', e);
             alert('Error creating task');
         }
     },
@@ -241,24 +238,28 @@ export const Store = {
     // --- Actions ---
 
     async moveTaskOptimistic(taskId, newStatus, newLaneId, newIndex) {
+        console.log('[Store] moveTaskOptimistic - Params:', { taskId, newStatus, newLaneId, newIndex });
+
         // 1. Find Task
         const task = this.tasks.find(t => t.id == taskId);
-        if (!task) return;
+        if (!task) {
+            console.error('[Store] moveTaskOptimistic - Task not found:', taskId);
+            return;
+        }
 
         // 2. Snapshot for rollback
         const originalStatus = task.status;
         const originalLaneId = task.swimLane?.id;
         const originalPosition = task.position;
+        console.log('[Store] moveTaskOptimistic - Original state:', { originalStatus, originalLaneId, originalPosition });
 
         // 3. Update Local State (Optimistic)
         task.status = newStatus;
         if (newLaneId) {
-            // We need the full lane object for the relationship
             const lane = this.lanes.find(l => l.id == newLaneId);
             if (lane) task.swimLane = lane;
         }
 
-        // Update Position
         if (newIndex !== undefined && newIndex !== null) {
             task.position = newIndex;
         }
@@ -266,29 +267,11 @@ export const Store = {
         // 4. Send to API
         try {
             this.triggerSave();
-
-            // Construct URL with optional position
-            let url = Api.API_URL || '/api/tasks'; // Assuming Api exposes this or we use method params
-
-            // Calling Api.moveTask with extra param. 
-            // We need to check if Api.moveTask supports it or if we need to call axios directly here
-            // or update Api module. 
-            // Looking at previous investigation, Api module likely wraps axios.
-            // Let's assume we update Api module OR use the fact that JS arguments allow extras if not strict.
-            // BUT, looking at `api.js` (not shown but inferred), we should update `moveTask` there too ideally.
-            // However, based on the `app.js` in main, the logic was:
-            // `${this.API_URL}/${id}/move?status=${newStatus}...&position=${newPosition}`
-
-            // Let's update Api.moveTask call. Assuming I'll update Api.js next or it accepts varargs?
-            // Wait, I can't see api.js content yet. I should probably check it.
-            // But for now, I will modify THIS file to pass the 4th argument.
-
+            console.log('[Store] moveTaskOptimistic - Calling API.moveTask with:', { taskId, newStatus, newLaneId, newIndex });
             await Api.moveTask(taskId, newStatus, newLaneId, newIndex);
-
-            // Success - do nothing (state is already correct)
+            console.log('[Store] moveTaskOptimistic - API call successful');
         } catch (e) {
-            console.error('[Store] Move Failed, Rolling back');
-            // Rollback
+            console.error('[Store] moveTaskOptimistic - FAILED, rolling back:', e);
             task.status = originalStatus;
             const originalLane = this.lanes.find(l => l.id == originalLaneId);
             if (originalLane) task.swimLane = originalLane;
@@ -298,53 +281,50 @@ export const Store = {
     },
 
     async reorderLanesOptimistic(newIds) {
-        // Sort local array based on new IDs Order
+        console.log('[Store] reorderLanesOptimistic - Calling API with:', { newIds });
         this.triggerSave();
         try {
             await Api.reorderSwimlanes(newIds);
+            console.log('[Store] reorderLanesOptimistic - Reorder successful');
         } catch (e) {
-            console.error('[Store] Lane Reorder Failed');
-            // Re-fetch to sync
+            console.error('[Store] reorderLanesOptimistic - FAILED:', e);
             this.loadData();
         }
     },
 
     async deleteLaneRecursive(laneId) {
-        // Optimistic Remove
+        console.log('[Store] deleteLaneRecursive - Calling API with:', { laneId });
         const originalLanes = [...this.lanes];
         this.lanes = this.lanes.filter(l => l.id !== laneId);
 
         try {
-            console.log(`[Store] Deleting lane ${laneId}`);
             await Api.deleteSwimLane(laneId);
+            console.log('[Store] deleteLaneRecursive - Deleted successfully');
             this.triggerSave();
         } catch (e) {
-            console.error('[Store] Delete Failed', e);
-            // Rollback
+            console.error('[Store] deleteLaneRecursive - FAILED:', e);
             this.lanes = originalLanes;
             alert('Failed to delete lane');
         }
     },
 
     async completeLaneRecursive(laneId) {
-        // Optimistic Update
+        console.log('[Store] completeLaneRecursive - Calling API with:', { laneId });
         const lane = this.lanes.find(l => l.id === laneId);
-        if (lane) lane.isCompleted = true; // In active view, this might hide it if we filter
+        if (lane) lane.isCompleted = true;
 
-        // If we want it to vanish from "Active" view:
         this.lanes = this.lanes.filter(l => l.id !== laneId);
 
         try {
-            console.log(`[Store] Completing lane ${laneId}`);
             await Api.completeSwimLane(laneId);
+            console.log('[Store] completeLaneRecursive - Completed successfully');
             this.triggerSave();
         } catch (e) {
-            console.error('[Store] Complete Failed', e);
+            console.error('[Store] completeLaneRecursive - FAILED:', e);
             if (lane) {
-                // Restore
                 lane.isCompleted = false;
-                this.lanes.push(lane); // Hacky restore position??
-                this.loadData(); // Safer
+                this.lanes.push(lane);
+                this.loadData();
             }
         }
     },
