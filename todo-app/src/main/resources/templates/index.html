@@ -1,4 +1,35 @@
 <!DOCTYPE html>
+<!--
+============================================================================
+INDEX.HTML - 3D Task Board Main Template
+============================================================================
+
+DRAG-AND-DROP CRITICAL NOTES:
+=============================
+
+1. TASK CARDS MUST HAVE draggable="true"
+   - Without this, native HTML5 drag won't work
+   - Sortable uses this attribute for drag detection
+
+2. x-init="initColumn($el)" fires when column is CREATED, NOT when tasks load
+   - Tasks are loaded asynchronously AFTER columns exist
+   - app.js calls reinitSortableForLane() after tasks load to fix this
+
+3. COLUMN STRUCTURE for Sortable:
+   .lane-column (Sortable container)
+     └── .task-card (draggable items - must have data-task-id)
+
+4. DATA ATTRIBUTES:
+   - data-lane-id  : Required on .lane-column for API calls
+   - data-status   : Required on .lane-column for status updates
+   - data-task-id  : Required on .task-card for identifying which task moved
+
+5. DO NOT ADD CSS 3D TRANSFORMS to task-card or parent elements
+   - See style.css header for full explanation
+   - Use box-shadow instead for depth effects
+
+============================================================================
+-->
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
 <head>
@@ -92,15 +123,28 @@
                                     </button>
                                 </div>
 
-                                <!-- Status Columns -->
+                                <!-- 
+                                    STATUS COLUMNS (Sortable Containers)
+                                    ====================================
+                                    - x-init fires when column HTML is created (BEFORE tasks load!)
+                                    - initColumn() calls Drag.initOneColumn() 
+                                    - reinitSortableForLane() is called AFTER tasks load to fix this
+                                    - data-status and data-lane-id are REQUIRED for API calls
+                                -->
                                 <template x-for="status in columns" :key="status">
                                     <div class="col-12 col-lg lane-column" :id="'lane-' + lane.id + '-' + status"
                                         :data-status="status" :data-lane-id="lane.id" x-init="initColumn($el)">
 
-                                        <!-- Tasks -->
+                                        <!-- 
+                                            TASK CARDS (Draggable Items)
+                                            ============================
+                                            - draggable="true" is REQUIRED for HTML5 drag
+                                            - data-task-id is REQUIRED for identifying moved task
+                                            - DO NOT add 3D transforms (translateZ, rotateX) - breaks drag!
+                                        -->
                                         <template x-for="task in getTasks(lane.id, status)" :key="task.id">
                                             <div class="card task-card mb-2" :data-task-id="task.id"
-                                                :data-status="task.status">
+                                                :data-status="task.status" draggable="true">
                                                 <div class="card-body p-2 d-flex flex-column">
                                                     <h6 class="card-title text-white mb-1" x-text="task.name"></h6>
                                                     <!-- Tags: Bottom Right -->

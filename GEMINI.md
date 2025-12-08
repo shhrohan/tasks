@@ -89,6 +89,43 @@ The frontend was rewritten from Vanilla JS to **Alpine.js** to improve maintaina
     *   `app.js`: Contains the Alpine data object and API logic.
     *   `index.html`: Contains the template and Alpine directives.
 
+## DRAG-AND-DROP TROUBLESHOOTING
+
+⚠️ **CRITICAL: If drag-drop ever breaks again, check these items first!**
+
+### 1. CSS 3D Transforms BREAK Drag Events
+The following CSS properties prevent SortableJS from receiving mouse events:
+```css
+/* DO NOT USE THESE on body, containers, or draggable elements! */
+perspective: 1000px;
+transform-style: preserve-3d;
+transform: translateZ(Npx);
+transform: rotateX/Y(...);
+```
+
+**Solution**: Use `box-shadow` for depth effects instead of 3D transforms.
+
+### 2. Sortable Must Init AFTER Task Cards Exist
+*   Alpine's `x-init` fires when element is **created**, not when children load
+*   Tasks load **asynchronously** after columns exist
+*   Call `reinitSortableForLane(laneId)` after each lane's tasks finish loading
+
+**Symptom**: Console shows `[Drag] Column has 0 task-card children`
+
+### 3. Required HTML Attributes
+```html
+<!-- Container -->
+<div class="lane-column" data-status="TODO" data-lane-id="1">
+    <!-- Draggable item -->
+    <div class="task-card" data-task-id="123" draggable="true">
+```
+
+### 4. Debug Checklist
+1. Check: `[Drag] Column has X task-card children` - must be > 0
+2. Check: `[Drag] onChoose` fires when clicking card
+3. If onChoose doesn't fire: CSS stacking context issue (3D transforms)
+4. If onStart doesn't fire: Check `draggable="true"` attribute
+
 ## Building and Running
 
 ### Prerequisites

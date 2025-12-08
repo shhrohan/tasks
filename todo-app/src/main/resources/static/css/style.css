@@ -1,3 +1,38 @@
+/**
+ * ============================================================================
+ * STYLE.CSS - Main Stylesheet for 3D Task Board
+ * ============================================================================
+ * 
+ * CRITICAL WARNING: 3D CSS TRANSFORMS BREAK DRAG-AND-DROP!
+ * =========================================================
+ * 
+ * The following CSS properties BREAK SortableJS drag events:
+ * 
+ * 1. perspective: 1000px;           (on body or parent containers)
+ * 2. transform-style: preserve-3d;  (on any parent of draggable items)
+ * 3. transform: translateZ(Npx);    (on draggable items or their parents)
+ * 4. transform: rotateX/Y();        (on draggable items)
+ * 
+ * WHY THESE BREAK DRAG:
+ * - 3D transforms create new stacking contexts
+ * - Browser hit-testing for mouse events calculates positions in 3D space
+ * - Coordinates get transformed, causing events to target wrong elements
+ * - Sortable receives events on parent containers instead of draggable items
+ * 
+ * SYMPTOMS OF THIS ISSUE:
+ * - [Drag] onChoose never fires when clicking task cards
+ * - [Drag] DIRECT mousedown logs show wrong target
+ * - Lane drag works but task card drag doesn't
+ * - Cursor shows 'grab' but drag doesn't start
+ * 
+ * SAFE ALTERNATIVES FOR DEPTH EFFECTS:
+ * - Use box-shadow for depth perception
+ * - Use subtle scale() transforms (without Z-axis)
+ * - Use opacity changes for hover states
+ * 
+ * ============================================================================
+ */
+
 :root {
     --bg-color: #0f172a;
     --card-bg: rgba(30, 41, 59, 0.8);
@@ -17,7 +52,8 @@
     --glass-border: 1px solid rgba(255, 255, 255, 0.1);
     --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 
-    /* 3D Vars */
+    /* 3D Vars - LEGACY, kept for reference but not used */
+    /* DO NOT USE THESE - they break drag events! */
     --card-depth: 5px;
     --lane-depth: 10px;
 }
@@ -36,8 +72,7 @@ body {
         radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
     min-height: 100vh;
     overflow-x: hidden;
-    perspective: 1000px;
-    /* Enable 3D perspective */
+    /* Removed perspective - it breaks drag event hit-testing */
 }
 
 /* Glassmorphism Utilities */
@@ -109,7 +144,8 @@ body {
 
 .board-container {
     padding-bottom: 2rem;
-    transform-style: preserve-3d;
+    /* Removed preserve-3d - it breaks drag events on children */
+    transform-style: flat;
 }
 
 /* Swimlane Row */
@@ -118,8 +154,9 @@ body {
     border-radius: 16px;
     border: var(--glass-border);
     transition: all 0.3s ease;
-    transform-style: preserve-3d;
-    transform: translateZ(0);
+    /* Removed 3D transforms - they break drag events on children */
+    transform-style: flat;
+    transform: none;
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -127,7 +164,7 @@ body {
 }
 
 .swimlane-row:hover {
-    transform: translateZ(5px);
+    /* Removed translateZ - just use shadow for depth effect */
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     background: rgba(15, 23, 42, 0.5);
 }
