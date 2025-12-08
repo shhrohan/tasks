@@ -169,17 +169,12 @@ body {
     cursor: pointer;
     /* User request: Match header style */
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    transform-style: flat !important;
-    /* Simplify hit testing */
-    transform: translateZ(50px);
-    /* Move significantly forward */
+    transform-style: flat; /* Prevent 3D container from intercepting clicks */
+    transform: translateZ(2px); /* Lift off the board */
     color: var(--text-primary);
     user-select: none;
-    z-index: 1000 !important;
-    /* Max Z-Index */
+    z-index: 1000; /* Higher z-index to ensure clicks are not intercepted by 3D layers */
     position: relative;
-    cursor: grab;
-    /* Explicit cursor */
     /* Prevent text selection during drag */
     -webkit-user-select: none;
     -moz-user-select: none;

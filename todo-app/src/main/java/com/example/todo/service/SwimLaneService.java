@@ -89,7 +89,7 @@ public class SwimLaneService {
         List<SwimLane> lanes = swimLaneDAO.findAllById(orderedIds);
         // Create a map for O(1) lookup
         java.util.Map<Long, SwimLane> laneMap = lanes.stream()
-            .collect(java.util.stream.Collectors.toMap(SwimLane::getId, java.util.function.Function.identity()));
+                .collect(java.util.stream.Collectors.toMap(SwimLane::getId, java.util.function.Function.identity()));
 
         for (int i = 0; i < orderedIds.size(); i++) {
             Long id = orderedIds.get(i);

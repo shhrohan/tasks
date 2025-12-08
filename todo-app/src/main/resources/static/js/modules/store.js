@@ -5,7 +5,7 @@
  */
 import { Api } from './api.js';
 
-const StoreImpl = {
+export const Store = {
     // State
     lanes: [],
     tasks: [],
@@ -46,8 +46,6 @@ const StoreImpl = {
             console.error('[Store] Failed to load data', e);
         } finally {
             this.loading = false;
-            // Verify State Integrity after initial heavy load
-            setTimeout(() => this.validateState(), 1000);
         }
     },
 
@@ -59,21 +57,6 @@ const StoreImpl = {
         const activeLanes = lanes.map(l => ({ ...l, collapsed: false, loading: true }));
 
         return { lanes: activeLanes };
-    },
-
-    validateState() {
-        // Integrity Check
-        const limit = 5; // Limit warnings
-        let warnings = 0;
-        this.tasks.forEach(t => {
-            if (!t.id) console.warn('[State] Task missing ID:', t);
-            if (!t.swimLane && warnings++ < limit) console.warn('[State] Task missing SwimLane relations:', t);
-            if (t.position === null || t.position === undefined) {
-                // Not critical, but worth noting
-            }
-        });
-        if (warnings > limit) console.warn(`[State] ... and ${warnings - limit} more integrity warnings.`);
-        console.log(`[State] Validation Complete. ${this.tasks.length} tasks, ${this.lanes.length} lanes.`);
     },
 
     getLaneStats(laneId) {
@@ -280,8 +263,6 @@ const StoreImpl = {
             task.position = newIndex;
         }
 
-        console.log(`[Store] Optimistic Move: Task ${taskId} -> ${newStatus} (Lane ${newLaneId}) @ ${newIndex}`);
-
         // 4. Send to API
         try {
             this.triggerSave();
@@ -389,35 +370,3 @@ const StoreImpl = {
         this.tasks = this.tasks.filter(t => t.id !== id);
     }
 };
-
-// Export Proxy for Automatic Operation Logging
-export const Store = new Proxy(StoreImpl, {
-    get(target, prop, receiver) {
-        const value = Reflect.get(target, prop, receiver);
-        if (typeof value === 'function') {
-            return function (...args) {
-                console.groupCollapsed(`[Store Operation] ${String(prop)}`);
-                // console.log('Args:', args); // Cloning args can be tricky if they are events
-                try {
-                    console.log('Arguments:', args);
-                } catch (e) { console.log('Arguments (Circular):', '[Object]'); }
-
-                try {
-                    const result = value.apply(this, args);
-                    if (result instanceof Promise) {
-                        result.then(res => console.log('Result (Async):', res)).catch(err => console.error('Error (Async):', err));
-                    } else {
-                        console.log('Result:', result);
-                    }
-                    console.groupEnd();
-                    return result;
-                } catch (e) {
-                    console.error('Error (Sync):', e);
-                    console.groupEnd();
-                    throw e;
-                }
-            };
-        }
-        return value;
-    }
-});
