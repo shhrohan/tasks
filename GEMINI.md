@@ -89,42 +89,231 @@ The frontend was rewritten from Vanilla JS to **Alpine.js** to improve maintaina
     *   `app.js`: Contains the Alpine data object and API logic.
     *   `index.html`: Contains the template and Alpine directives.
 
-## DRAG-AND-DROP TROUBLESHOOTING
+## DRAG-AND-DROP SYSTEM - COMPLETE REFERENCE
 
-⚠️ **CRITICAL: If drag-drop ever breaks again, check these items first!**
+⚠️ **CRITICAL: This section contains EVERYTHING needed to understand and debug drag-drop. Read it fully before making any changes!**
 
-### 1. CSS 3D Transforms BREAK Drag Events
-The following CSS properties prevent SortableJS from receiving mouse events:
+---
+
+### ARCHITECTURE OVERVIEW
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  index.html                                                  │
+│  ├── .board-container     (Lane Sortable - reorder lanes)   │
+│  │   └── .swimlane-row    (Lane wrapper)                    │
+│  │       └── .lane-column (Task Sortable - reorder tasks)   │
+│  │           └── .task-card (Draggable item)                │
+│                                                              │
+│  app.js                                                      │
+│  ├── init()               → Loads lanes, then tasks async   │
+│  ├── setupDrag()          → Inits lane-level Sortable       │
+│  ├── initColumn(el)       → Called by x-init (may be empty) │
+│  └── reinitSortableForLane() → CRITICAL: Reinits after load │
+│                                                              │
+│  drag.js                                                     │
+│  ├── initOneColumn()      → Creates Sortable on column      │
+│  └── initLaneSortable()   → Creates Sortable on board       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### INITIALIZATION TIMING (THE #1 CAUSE OF BUGS)
+
+**The Problem:**
+```
+Timeline:
+─────────────────────────────────────────────────────────────►
+1. Alpine starts
+2. Lanes fetched from API
+3. HTML rendered (columns created) ← x-init fires HERE!
+4. Tasks fetched ASYNC per lane    ← Cards don't exist yet!
+5. Cards rendered in DOM           ← Cards exist NOW
+6. reinitSortableForLane() called  ← Sortable reinit with cards
+```
+
+**Why this matters:**
+- `x-init="initColumn($el)"` fires at step 3
+- Sortable is initialized on EMPTY columns (0 draggable items)
+- Drag events have no targets = nothing works
+
+**The Solution:**
+```javascript
+// In app.js, after tasks load for a lane:
+this.$nextTick(() => {
+    this.reinitSortableForLane(lane.id);
+});
+```
+
+**Console logs to verify:**
+- `[Drag] Column has 0 task-card children` = BAD (too early)
+- `[Drag] Column has 5 task-card children` = GOOD (after reinit)
+
+---
+
+### CSS 3D TRANSFORMS - THE SILENT KILLER
+
+**These CSS properties BREAK drag events:**
+
+| Property | Effect | Why It Breaks Drag |
+|----------|--------|-------------------|
+| `perspective: Npx` | Creates 3D viewport | Changes coordinate system for hit-testing |
+| `transform-style: preserve-3d` | Enables 3D for children | Children's positions calculated in 3D space |
+| `transform: translateZ(Npx)` | Moves element in Z-axis | Mouse coordinates don't match visual position |
+| `transform: rotateX/Y()` | Rotates in 3D | Click position != element position |
+
+**Symptoms:**
+- Hovering shows correct cursor (`grab`)
+- Clicking does nothing
+- `[Drag] onChoose` never fires
+- `[Event MouseDown]` logs show wrong target (parent instead of card)
+- Lane drag works, task drag doesn't
+
+**Safe Alternatives:**
 ```css
-/* DO NOT USE THESE on body, containers, or draggable elements! */
-perspective: 1000px;
-transform-style: preserve-3d;
-transform: translateZ(Npx);
-transform: rotateX/Y(...);
+/* BAD - breaks drag */
+.task-card {
+    transform: translateZ(5px);
+    transform-style: preserve-3d;
+}
+
+/* GOOD - works with drag */
+.task-card {
+    transform: none;
+    transform-style: flat;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);  /* Use shadow for depth */
+}
 ```
 
-**Solution**: Use `box-shadow` for depth effects instead of 3D transforms.
+---
 
-### 2. Sortable Must Init AFTER Task Cards Exist
-*   Alpine's `x-init` fires when element is **created**, not when children load
-*   Tasks load **asynchronously** after columns exist
-*   Call `reinitSortableForLane(laneId)` after each lane's tasks finish loading
+### REQUIRED HTML ATTRIBUTES
 
-**Symptom**: Console shows `[Drag] Column has 0 task-card children`
-
-### 3. Required HTML Attributes
+**Container (`.lane-column`):**
 ```html
-<!-- Container -->
-<div class="lane-column" data-status="TODO" data-lane-id="1">
-    <!-- Draggable item -->
-    <div class="task-card" data-task-id="123" draggable="true">
+<div class="lane-column" 
+     :id="'lane-' + lane.id + '-' + status"
+     :data-status="status"           <!-- REQUIRED: For API call -->
+     :data-lane-id="lane.id"         <!-- REQUIRED: For API call -->
+     x-init="initColumn($el)">       <!-- Initializes Sortable -->
 ```
 
-### 4. Debug Checklist
-1. Check: `[Drag] Column has X task-card children` - must be > 0
-2. Check: `[Drag] onChoose` fires when clicking card
-3. If onChoose doesn't fire: CSS stacking context issue (3D transforms)
-4. If onStart doesn't fire: Check `draggable="true"` attribute
+**Draggable Item (`.task-card`):**
+```html
+<div class="task-card"
+     :data-task-id="task.id"         <!-- REQUIRED: Identifies task -->
+     :data-status="task.status"      <!-- For visual styling -->
+     draggable="true">               <!-- REQUIRED: Enables HTML5 drag -->
+```
+
+---
+
+### SORTABLE.JS CONFIGURATION
+
+**Current settings in `drag.js`:**
+```javascript
+new Sortable(col, {
+    group: 'tasks',           // All columns share group = cross-column drag
+    animation: 150,           // Animation duration (ms)
+    delay: 0,                 // No delay for desktop
+    delayOnTouchOnly: true,   // Delay only on mobile
+    touchStartThreshold: 3,   // Pixels before drag starts on touch
+    ghostClass: 'task-ghost', // CSS class for ghost/placeholder
+    dragClass: 'task-drag',   // CSS class while dragging
+    // forceFallback: false,  // Use native HTML5 drag (default)
+});
+```
+
+**When to use `forceFallback: true`:**
+- Only if native HTML5 drag has issues
+- Creates JS-based drag simulation
+- Heavier on performance
+- Usually NOT needed if CSS is correct
+
+---
+
+### EVENT LIFECYCLE
+
+```
+User clicks card:
+    │
+    ▼
+onChoose ─────► "[Drag] onChoose - item selected"
+    │           (If this doesn't fire, CSS is blocking events)
+    ▼
+onStart ──────► "[Drag] onStart - drag began"
+    │           (Card picked up, ghost created)
+    ▼
+onMove ───────► "[Drag] onMove - dragging" (multiple times)
+    │           (Card moving over containers)
+    ▼
+onEnd ────────► "[Drag] onEnd - drag completed"
+                (Drop happened, API call made)
+```
+
+---
+
+### COMPLETE DEBUG CHECKLIST
+
+**Step 1: Check Console on Page Load**
+```
+✓ "[App] ====== Component Initializing ======"
+✓ "[App] Loaded X lanes"
+✓ "[App] Fetching tasks for lane X"
+✓ "[App] Lane X returned Y tasks"
+✓ "[App] reinitSortableForLane called for lane X"
+✓ "[Drag] Column has Y task-card children" (Y > 0)
+✓ "[Drag] Sortable instance created successfully"
+```
+
+**Step 2: Click a Task Card**
+```
+✓ "[Event MouseDown]" shows cardId: "123" (not "N/A")
+✓ "[Drag] onChoose - item selected"
+```
+
+**Step 3: Drag the Card**
+```
+✓ "[Drag] onStart - drag began"
+✓ "[Drag] onMove - dragging" (while moving)
+✓ "[Drag] onEnd - drag completed"
+```
+
+**If Something Fails:**
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| `Column has 0 children` | Sortable init too early | Check `reinitSortableForLane()` is called |
+| `MouseDown` shows `cardId: N/A` | Click not reaching card | Check CSS stacking context, z-index |
+| `onChoose` never fires | 3D transforms blocking | Remove perspective, preserve-3d, translateZ |
+| `onStart` never fires | Missing draggable attr | Add `draggable="true"` to task-card |
+| Drag works but API fails | Wrong data-attributes | Check data-task-id, data-status, data-lane-id |
+
+---
+
+### FILES REFERENCE
+
+| File | Purpose | Key Functions |
+|------|---------|---------------|
+| `static/js/app.js` | Alpine component, init orchestration | `init()`, `reinitSortableForLane()`, `initColumn()` |
+| `static/js/modules/drag.js` | Sortable configuration | `initOneColumn()`, `initLaneSortable()` |
+| `static/css/style.css` | Styling (NO 3D transforms!) | `.task-card`, `.lane-column` |
+| `templates/index.html` | HTML structure | x-init, data-attributes, draggable |
+
+---
+
+### CSS CLASS REFERENCE
+
+| Class | Element | Notes |
+|-------|---------|-------|
+| `.board-container` | Outer container | Lane Sortable attached here |
+| `.swimlane-row` | Lane wrapper | Must NOT have 3D transforms |
+| `.lane-column` | Status column | Task Sortable attached here |
+| `.task-card` | Draggable task | Must have `draggable="true"` |
+| `.task-ghost` | Sortable ghost | Shows drop position |
+| `.task-drag` | Card while dragging | Applied during drag |
+| `.lane-ghost` | Lane ghost | For lane reordering |
 
 ## Building and Running
 
