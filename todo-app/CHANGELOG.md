@@ -25,6 +25,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - `AsyncWriteServiceTest` - Added missing `SseService` mock
   - `TaskControllerTest` - Updated assertions for optimistic async responses
   - `SwimLaneControllerTest` - Made assertions resilient to parallel execution
+- **Modal Scroll Lock** (`55b0b9e`) - Page no longer scrolls when modals are open
+  - Applies to New Board, New Task, and confirmation modals
   
 ### Tests
 - **Comprehensive Test Coverage Improvements** (`008c88f`)
