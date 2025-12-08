@@ -334,48 +334,83 @@ body {
 }
 
 
-/* Notification Toast */
-.notification {
+/* Notification Toast (Premium Slide-Down) */
+.notification-toast {
     position: fixed;
-    top: 6rem;
-    /* Below the ~4rem sticky header */
+    top: -100px;
+    /* Start hidden above */
     left: 50%;
-    transform: translateX(-50%) translateY(-20px);
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
-    border: 1px solid rgba(16, 185, 129, 0.5);
-    border-radius: 12px;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-top: 4px solid var(--done-color);
+    border-radius: 0 0 12px 12px;
     padding: 1rem 1.5rem;
     display: flex;
     align-items: center;
+    gap: 1rem;
+    color: var(--text-primary);
+    font-weight: 600;
+    backdrop-filter: blur(15px);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4),
+        0 0 15px rgba(16, 185, 129, 0.2);
+    z-index: 10000;
+    transition: top 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    min-width: 320px;
+    justify-content: space-between;
+}
+
+.notification-toast.show {
+    top: 0;
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
     gap: 0.75rem;
+}
+
+.notification-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: rgba(16, 185, 129, 0.2);
+    border-radius: 50%;
     color: var(--done-color);
-    font-weight: 500;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-    z-index: 3000;
-    opacity: 0;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    pointer-events: none;
 }
 
-.notification.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-    pointer-events: auto;
+.notification-close {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.notification i {
-    font-size: 1.2rem;
-    animation: notificationPulse 0.5s ease-out;
+.notification-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
 }
 
-@keyframes notificationPulse {
+/* Success Check Animation */
+.check-anim {
+    animation: checkPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes checkPop {
     0% {
-        transform: scale(0.5);
+        transform: scale(0);
         opacity: 0;
     }
 
-    50% {
+    80% {
         transform: scale(1.2);
     }
 

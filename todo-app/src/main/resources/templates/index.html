@@ -59,13 +59,23 @@ DRAG-AND-DROP CRITICAL NOTES:
                 <button class="btn btn-primary btn-sm" @click="openSwimlaneModal()">
                     <i class="fa-solid fa-plus"></i> New Board
                 </button>
-                <!-- Save Indicator -->
-                <div x-show="showSaved" x-transition class="text-success small fw-bold">
-                    <i class="fa-solid fa-check"></i> Saved
-                </div>
             </div>
         </div>
     </nav>
+
+    <!-- Notification Toast -->
+    <div class="notification-toast" :class="{ 'show': showSaved }" style="display: none;" x-show="true"
+        x-init="$el.style.display = ''">
+        <div class="notification-content">
+            <div class="notification-icon">
+                <i class="fa-solid fa-check check-anim" x-show="showSaved"></i>
+            </div>
+            <span>Changes Saved</span>
+        </div>
+        <button class="notification-close" @click="showSaved = false">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
 
     <div class="container-fluid px-4 pb-5">
 

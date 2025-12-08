@@ -13,6 +13,7 @@ export const Store = {
 
     // UI State
     showSaved: false,
+    saveTimeout: null,
     modal: {
         open: false,
         title: '',
@@ -331,7 +332,8 @@ export const Store = {
 
     triggerSave() {
         this.showSaved = true;
-        setTimeout(() => this.showSaved = false, 2000);
+        if (this.saveTimeout) clearTimeout(this.saveTimeout);
+        this.saveTimeout = setTimeout(() => this.showSaved = false, 1500);
     },
 
     // --- SSE Handlers ---
