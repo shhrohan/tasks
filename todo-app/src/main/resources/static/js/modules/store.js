@@ -108,6 +108,7 @@ export const Store = {
         this.modal.payload = payload;
         this.modal.action = actionName;
         this.modal.open = true;
+        document.body.style.overflow = 'hidden'; // Disable page scroll
 
         if (actionName === 'deleteLane') {
             this.modal.title = 'Delete Swimlane?';
@@ -125,6 +126,7 @@ export const Store = {
     closeModal() {
         console.log('[Store] Closing Confirm Modal');
         this.modal.open = false;
+        document.body.style.overflow = ''; // Re-enable page scroll
         setTimeout(() => {
             this.modal.action = null;
             this.modal.payload = null;
@@ -146,6 +148,7 @@ export const Store = {
         this.inputModal.title = 'New Board (Swimlane)';
         this.inputModal.value = '';
         this.inputModal.open = true;
+        document.body.style.overflow = 'hidden'; // Disable page scroll
         // Focus Hack
         setTimeout(() => {
             const input = document.querySelector('[x-ref="inputField"]');
@@ -160,6 +163,7 @@ export const Store = {
         this.inputModal.value = '';
         this.inputModal.payload = { laneId }; // Store context
         this.inputModal.open = true;
+        document.body.style.overflow = 'hidden'; // Disable page scroll
         // Focus Hack
         setTimeout(() => {
             const input = document.querySelector('[x-ref="inputField"]');
@@ -170,6 +174,7 @@ export const Store = {
     closeInputModal() {
         console.log('[Store] Closing Input Modal');
         this.inputModal.open = false;
+        document.body.style.overflow = ''; // Re-enable page scroll
         setTimeout(() => {
             this.inputModal.value = '';
         }, 300);
