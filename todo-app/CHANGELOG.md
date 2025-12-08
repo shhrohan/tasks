@@ -27,26 +27,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - `SwimLaneControllerTest` - Made assertions resilient to parallel execution
   
 ### Tests
-- **Comprehensive Test Coverage Improvements** (`99142f7`)
-  - Coverage increased from **60.7% → 86%** instructions, **30.3% → 64%** branches
-  - Added 33 new test cases across 8 test files
+- **Comprehensive Test Coverage Improvements** (`008c88f`)
+  - Coverage increased from **60.7% → 93%** instructions, **30.3% → 74%** branches
+  - Added 47 new test cases across 9 test files
   
 - **New Test Files**:
   - `SseServiceTest` - Tests for subscribe, broadcast, heartbeat methods
   - `SseControllerTest` - Integration test for SSE stream endpoint
+  - `StartupLoggerTest` - Tests for startup logging and error handling
   
 - **Enhanced Test Files**:
   - `SwimLaneServiceTest` - Added `reorderSwimLanes`, null position, exception cases
-  - `TaskServiceTest` - Added `updateTask` exceptions, comment edge cases
+  - `TaskServiceTest` - Added legacy comment parsing, malformed JSON, swimlane not found
   - `AsyncWriteServiceTest` - Added skip shift conditions, task not found scenarios
   - `SwimLaneDAOTest` - Added `findMaxPosition`, `saveAll`, `findAllById`
   - `SwimLaneControllerTest` - Added reorder endpoint test
-  - `TaskControllerTest` - Added swimlane tasks, position param, not found cases
+  - `TaskControllerTest` - Added JSON-wrapped text, comment error handling
   
 - **Classes at 100% Coverage**:
   - `SwimLaneDAO`, `TaskDAO`, `SwimLaneController`, `SseController`, `SwimLaneService`, `TaskStatus`
   
-- **Total Tests**: 89 (all passing)
+- **Total Tests**: 103 (all passing)
 
 
 ---
