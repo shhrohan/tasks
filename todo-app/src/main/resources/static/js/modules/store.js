@@ -419,6 +419,7 @@ export const Store = {
     },
 
     triggerSave() {
+        console.log('[Store] triggerSave - Showing saved toast');
         this.showSaved = true;
         if (this.saveTimeout) clearTimeout(this.saveTimeout);
         this.saveTimeout = setTimeout(() => this.showSaved = false, 1500);

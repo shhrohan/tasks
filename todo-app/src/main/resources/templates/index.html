@@ -69,10 +69,6 @@ DRAG-AND-DROP CRITICAL NOTES:
         </div>
     </nav>
 
-    <i class="fa-solid fa-xmark"></i>
-    </button>
-    </div>
-
     <div class="container-fluid px-4 pb-5">
 
         <!-- Dashboard Layout -->
@@ -235,8 +231,13 @@ DRAG-AND-DROP CRITICAL NOTES:
 
     <!-- Notifications -->
     <!-- Saved Notification -->
-    <div class="notification-toast success" :class="{ 'show': showSaved }" x-show="showSaved"
-        x-transition.opacity.duration.300ms style="display: none;">
+    <div class="notification-toast success" x-show="showSaved" x-cloak
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 transform -translate-y-full"
+        x-transition:enter-end="opacity-100 transform translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 transform translate-y-0"
+        x-transition:leave-end="opacity-0 transform -translate-y-full">
         <div class="notification-content">
             <div class="notification-icon">
                 <i class="fas fa-check"></i>
@@ -246,8 +247,13 @@ DRAG-AND-DROP CRITICAL NOTES:
     </div>
 
     <!-- Error Notification -->
-    <div class="notification-toast error" :class="{ 'show': showErrorToast }" x-show="showErrorToast"
-        x-transition.opacity.duration.300ms style="display: none;">
+    <div class="notification-toast error" x-show="showErrorToast" x-cloak
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 transform -translate-y-full"
+        x-transition:enter-end="opacity-100 transform translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 transform translate-y-0"
+        x-transition:leave-end="opacity-0 transform -translate-y-full">
         <div class="notification-content">
             <div class="notification-icon error">
                 <i class="fas fa-exclamation-triangle"></i>

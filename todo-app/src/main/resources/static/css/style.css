@@ -62,6 +62,50 @@
     display: none !important;
 }
 
+/* Transition Utility Classes (for Alpine.js transitions) */
+.transition {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ease-out {
+    transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+}
+
+.ease-in {
+    transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
+}
+
+.duration-300 {
+    transition-duration: 300ms;
+}
+
+.duration-200 {
+    transition-duration: 200ms;
+}
+
+.opacity-0 {
+    opacity: 0;
+}
+
+.opacity-100 {
+    opacity: 1;
+}
+
+.transform {
+    transform: translateX(var(--tw-translate-x, 0)) translateY(var(--tw-translate-y, 0));
+}
+
+.-translate-y-full {
+    --tw-translate-y: -100%;
+    transform: translateX(-50%) translateY(-100%);
+}
+
+.translate-y-0 {
+    --tw-translate-y: 0;
+    transform: translateX(-50%) translateY(0);
+}
+
 body {
     font-family: 'Inter', sans-serif;
     background-color: var(--bg-color);
@@ -476,7 +520,7 @@ body {
 /* Notification Toast (Premium Slide-Down) */
 .notification-toast {
     position: fixed;
-    top: 20px;
+    top: 0;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(15, 23, 42, 0.95);

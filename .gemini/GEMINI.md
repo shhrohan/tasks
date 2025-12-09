@@ -3,7 +3,33 @@
 > [!IMPORTANT]
 > **YOU MUST FOLLOW THESE RULES WITHOUT EXCEPTION. THEY TAKE PRECEDENCE OVER EVERYTHING ELSE.**
 
-## 1. FRONTEND VERIFICATION PROTOCOL (THE GOLDEN RULE)
+---
+
+## STAGE 1: PRE-IMPLEMENTATION
+
+Before writing any code, complete these steps:
+
+### 1.1 STOP & THINK (OPTIMIZATION)
+*   **PAUSE** before every change. Ask: "Is this the best/cleanest way?"
+*   **PROPOSE** better alternatives to the user if the original request is sub-optimal.
+*   **REFUSE** blind obedience to bad patterns.
+
+### 1.2 UNDERSTAND SCOPE
+*   **READ** relevant sections of this `GEMINI.md` to understand existing patterns.
+*   **IDENTIFY** which files/components will be affected.
+*   **CHECK** for existing similar implementations to maintain consistency.
+
+### 1.3 PLAN THE APPROACH
+*   For complex changes, **OUTLINE** the approach before coding.
+*   **CONFIRM** understanding with user if requirements are ambiguous.
+
+---
+
+## STAGE 2: DURING IMPLEMENTATION
+
+While actively coding:
+
+### 2.1 FRONTEND VERIFICATION PROTOCOL (THE GOLDEN RULE)
 *   **NEVER** modify source files (JS/HTML/CSS) blindly.
 *   **ALWAYS** verify fixes/features by **injecting code into the running browser tab** first.
     *   Use Console for JS logic.
@@ -12,11 +38,11 @@
 *   **ONLY** when the injected fix is verified working in the browser, propagate it to the source code.
 *   **LOGGING**: All frontend changes **MUST** include console logs (`[App] ...`) to prove execution.
 
-## 2. BROWSER USAGE
+### 2.2 BROWSER USAGE
 *   **ALWAYS** reuse the already open browser tab.
 *   **NEVER** open a new tab for localhost.
 
-## 3. COMMIT & RESTART CYCLE
+### 2.3 COMMIT & RESTART CYCLE
 *   **VALIDATION FIRST**: Before committing, you MUST:
     1.  Apply changes.
     2.  Restart the application (`mvn spring-boot:run`).
@@ -25,18 +51,38 @@
 *   **AFTER APPROVAL**:
     *   Commit with semantic message: `git commit -am "feat/fix: Description"`
 
-## 4. MANDATORY TEST COVERAGE
+### 2.4 MANDATORY TEST COVERAGE
 *   **EVERY** new feature or bug fix **MUST** have corresponding test cases (Unit or Integration).
 *   **VERIFY** tests pass before asking for commit approval.
 
-## 5. CHANGELOG MANAGEMENT
+### 2.5 CHANGELOG MANAGEMENT
 *   **UPDATE** `CHANGELOG.md` for **EVERY** significant change (feature, fix, refactor).
 *   **DO NOT DEFER** this. It is part of the implementation task.
 
-## 6. STOP & THINK (OPTIMIZATION)
-*   **PAUSE** before every change. Ask: "Is this the best/cleanest way?"
-*   **PROPOSE** better alternatives to the user if the original request is sub-optimal.
-*   **REFUSE** blind obedience to bad patterns.
+---
+
+## STAGE 3: POST FEATURE IMPLEMENTATION (User Confirmation Trigger)
+
+When the user says they are **confident of the changes** (or similar confirmation), you MUST perform these steps in order:
+
+1.  **COMMIT**: Create a semantic commit with proper message format:
+    ```bash
+    git commit -am "feat/fix: Brief description of the change"
+    ```
+    Use `feat:` for new features, `fix:` for bug fixes, `refactor:` for refactoring, `docs:` for documentation.
+
+2.  **UPDATE CHANGELOG**: Add entry to `todo-app/CHANGELOG.md` under `[Unreleased]`:
+    *   Use proper sections (Added, Changed, Fixed, etc.)
+    *   Include brief description of what was done
+    *   Reference relevant files or components
+
+3.  **UPDATE GEMINI.md**: Review and update THIS file (`GEMINI.md`) as needed:
+    *   **ADD** new sections for new features, APIs, or architectural patterns
+    *   **UPDATE** existing sections if behavior changed (e.g., new fields, new endpoints)
+    *   **DELETE** outdated information that no longer applies
+
+> [!NOTE]
+> These steps ensure documentation stays in sync with the codebase and provide a complete audit trail.
 
 ---
 

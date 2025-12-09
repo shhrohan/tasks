@@ -174,7 +174,7 @@ Alpine.data('todoApp', () => ({
 
         const container = document.querySelector('.board-container');
         if (container) {
-            Drag.initLaneSortable(container, Store, () => {
+            Drag.initLaneSortable(container, this, () => {
                 console.log('[App] Lane reorder complete, callback fired');
             });
         } else {
