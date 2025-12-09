@@ -274,7 +274,11 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 ---
 
 <p align="center">
-  Made with ❤️ in 🇮🇳 India by <a href="https://github.com/shhrohan">@shhrohan</a>
+  <img src="https://img.shields.io/badge/Made%20in-India-FF9933?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1IDMiPjxwYXRoIGZpbGw9IiNGRjk5MzMiIGQ9Ik0wIDBoNXYxSDB6Ii8+PHBhdGggZmlsbD0iI0ZGRiIgZD0iTTAgMWg1djFIMHoiLz48cGF0aCBmaWxsPSIjMTM4ODA4IiBkPSJNMCAyaDV2MUgweiIvPjxjaXJjbGUgY3g9IjIuNSIgY3k9IjEuNSIgcj0iLjMiIGZpbGw9IiMwMDA4OEYiLz48L3N2Zz4=&logoColor=white" alt="Made in India"/>
+</p>
+
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/shhrohan">@shhrohan</a>
 </p>
 
 <p align="center">
