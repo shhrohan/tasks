@@ -82,13 +82,9 @@ When the user says they are **confident of the changes** (or similar confirmatio
     *   **DELETE** outdated information that no longer applies
 
 > [!CAUTION]
-> ## MERGE TO MAIN - DOUBLE CONFIRMATION REQUIRED
-> **NEVER** merge to main or push to main without **DOUBLE CONFIRMATION** from the user.
-> 1. First, ask: "Would you like me to merge to main?"
-> 2. After user says yes, ask again: "Confirming: merge dev to main and push? (yes/no)"
-> 3. Only proceed after receiving the second explicit "yes" confirmation.
-> 
-> This rule exists to prevent accidental deployments to production.
+> ## NEVER MERGE TO MAIN AUTOMATICALLY
+> **NEVER** merge to main or push to main unless the user **explicitly requests it**.
+> Do not ask or offer to merge to main. The user will tell you when they want to merge.
 
 > [!NOTE]
 > These steps ensure documentation stays in sync with the codebase and provide a complete audit trail.
