@@ -10,6 +10,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
 @Log4j2
+@SuppressWarnings("null")
 public class SseService {
 
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
