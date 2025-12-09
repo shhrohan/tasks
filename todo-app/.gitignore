@@ -1,9 +1,97 @@
+# === Build Output ===
 target/
-logs/
-data/
-.DS_Store
+build/
+out/
+bin/
+
+# === Maven ===
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# === Gradle (if used) ===
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+.gradletasknamecache
+
+# === IDE - IntelliJ IDEA ===
 .idea/
 *.iml
+*.ipr
+*.iws
+.idea_modules/
+atlassian-ide-plugin.xml
 
+# === IDE - Eclipse ===
+.classpath
+.project
+.settings/
+.metadata/
+*.launch
+.factorypath
+
+# === IDE - VS Code ===
+.vscode/
+*.code-workspace
+
+# === IDE - NetBeans ===
+nbproject/private/
+nbbuild/
+nbdist/
+nbactions.xml
+nb-configuration.xml
+
+# === OS Files ===
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# === Logs ===
+logs/
+*.log
+*.log.*
+
+# === Application Data ===
+data/
+
+# === Spring Boot ===
+HELP.md
+.sts4-cache/
+
+# === Misc ===
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+
+# === Package Files ===
+*.zip
+*.tar.gz
+*.rar
+
+# === Virtual Environments ===
+.env
+.env.local
+.env.*.local
+
+# === Temporary Files ===
+*.tmp
+*.temp
+*.swp
+*~
+
+# === Custom/Project Specific ===
 .gemini-clipboard
-.vscode
