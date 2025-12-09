@@ -56,6 +56,10 @@ Alpine.data('todoApp', () => ({
     showSaved: false,
     columns: ['TODO', 'IN_PROGRESS', 'DONE', 'BLOCKED', 'DEFERRED'],
 
+    // Task filters
+    hideDone: false,
+    showOnlyBlocked: false,
+
     // Import Store methods (modal management, API wrappers, etc.)
     ...Store,
 
@@ -265,6 +269,14 @@ Alpine.data('todoApp', () => ({
      * @returns {Array} Filtered and sorted tasks
      */
     getTasks(laneId, status) {
+        // Apply filters
+        if (this.hideDone && status === 'DONE') {
+            return []; // Hide entire DONE column when filter active
+        }
+        if (this.showOnlyBlocked && status !== 'BLOCKED') {
+            return []; // Show only BLOCKED column when filter active
+        }
+
         const tasks = this.tasks.filter(t =>
             t.swimLane && t.swimLane.id === laneId && t.status === status
         ).sort((a, b) => {

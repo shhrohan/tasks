@@ -61,6 +61,20 @@ DRAG-AND-DROP CRITICAL NOTES:
                     <i class="fa-solid" :class="areAllLanesCollapsed() ? 'fa-expand' : 'fa-compress'"></i>
                     <span x-text="areAllLanesCollapsed() ? 'Expand All' : 'Collapse All'"></span>
                 </button>
+
+                <!-- Filter Buttons -->
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm" :class="hideDone ? 'btn-success' : 'btn-outline-secondary'"
+                        @click="hideDone = !hideDone; showOnlyBlocked = false" title="Hide completed tasks">
+                        <i class="fa-solid fa-eye-slash me-1"></i>Hide Done
+                    </button>
+                    <button type="button" class="btn btn-sm"
+                        :class="showOnlyBlocked ? 'btn-danger' : 'btn-outline-secondary'"
+                        @click="showOnlyBlocked = !showOnlyBlocked; hideDone = false" title="Show only blocked tasks">
+                        <i class="fa-solid fa-ban me-1"></i>Blocked Only
+                    </button>
+                </div>
+
                 <!-- Add Swimlane Button -->
                 <button class="btn btn-primary btn-sm" @click="openSwimlaneModal()">
                     <i class="fa-solid fa-plus"></i> New Board
