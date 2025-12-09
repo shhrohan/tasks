@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
+@SuppressWarnings("null")
 public class TaskDAO {
 
     private final TaskRepository taskRepository;
