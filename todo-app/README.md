@@ -273,12 +273,25 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 ---
 
+<br/>
+<br/>
+
 <p align="center">
-  <img src="https://img.shields.io/badge/Made%20in-India-FF9933?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1IDMiPjxwYXRoIGZpbGw9IiNGRjk5MzMiIGQ9Ik0wIDBoNXYxSDB6Ii8+PHBhdGggZmlsbD0iI0ZGRiIgZD0iTTAgMWg1djFIMHoiLz48cGF0aCBmaWxsPSIjMTM4ODA4IiBkPSJNMCAyaDV2MUgweiIvPjxjaXJjbGUgY3g9IjIuNSIgY3k9IjEuNSIgcj0iLjMiIGZpbGw9IiMwMDA4OEYiLz48L3N2Zz4=&logoColor=white" alt="Made in India"/>
+  <img src="https://img.shields.io/badge/Made%20in-India-FF9933?style=for-the-badge&logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1IDMiPjxwYXRoIGZpbGw9IiNGRjk5MzMiIGQ9Ik0wIDBoNXYxSDB6Ii8%2BPHBhdGggZmlsbD0iI0ZGRiIgZD0iTTAgMWg1djFIMHoiLz48cGF0aCBmaWxsPSIjMTM4ODA4IiBkPSJNMCAyaDV2MUgweiIvPjxjaXJjbGUgY3g9IjIuNSIgY3k9IjEuNSIgcj0iLjMiIGZpbGw9IiMwMDA4OEYiLz48L3N2Zz4%3D&logoColor=white" alt="Made in India"/>
 </p>
 
 <p align="center">
   Made with ❤️ by <a href="https://github.com/shhrohan">@shhrohan</a>
+</p>
+
+<p align="center">
+  <a href="https://www.linkedin.com/in/rohanrshah/">
+    <img src="https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=flat-square&logo=linkedin&logoColor=white" alt="LinkedIn"/>
+  </a>
+  &nbsp;
+  <a href="https://github.com/shhrohan">
+    <img src="https://img.shields.io/badge/GitHub-Follow-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub"/>
+  </a>
 </p>
 
 <p align="center">
