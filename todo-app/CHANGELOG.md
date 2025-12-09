@@ -10,6 +10,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased] - 2025-12-08
 
+### Added
+- **Add Task Dialog Enhancements** (`08ecf07`)
+  - Multi-line textarea for task name/description
+  - Status dropdown with styled dark theme options
+  - Chip-based tag input system (Enter to add, click to remove)
+  - Prominent swimlane name header with purple gradient
+  - Bold, uppercase field labels for better visibility
+  
+- **Toast Notifications** (`08ecf07`)
+  - Slide-down animation from top of screen
+  - Fixed lane reorder toast not appearing (this context issue)
+  - Flush positioning with screen edge (no gap)
+  - Error toast variant with red styling
+
+- **Collapse/Expand All Lanes** button in navbar
+
+- **Lane Progress Pills** - Status distribution shown inline in swimlane headers
+
+### Fixed
+- **Lane reorder toast notification** - Toast now properly appears after lane drag
+  - Root cause: `initLaneSortable` was receiving `Store` module instead of Alpine component
+  - Fix: Pass `this` (Alpine component) to maintain reactive context
+- **Orphan HTML elements** - Removed stray `<i>`, `</button>`, `</div>` tags from index.html
+- **Dropdown overflow** - Fixed modal overflow preventing dropdown options from displaying
+
+### Documentation
+- **GEMINI.md** - Reorganized Prime Directives into 3 lifecycle stages:
+  - Stage 1: Pre-Implementation (Stop & Think, Understand Scope, Plan Approach)
+  - Stage 2: During Implementation (Browser Verification, Commit Cycle, Test Coverage)
+  - Stage 3: Post-Implementation (Commit, Update Changelog, Update GEMINI.md)
+
+### Test Fixes
   - `AsyncWriteServiceTest` - Added missing `SseService` mock
   - `TaskControllerTest` - Updated assertions for optimistic async responses
   - `SwimLaneControllerTest` - Made assertions resilient to parallel execution

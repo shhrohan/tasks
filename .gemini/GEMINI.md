@@ -188,6 +188,58 @@ The frontend was rewritten from Vanilla JS to **Alpine.js** to improve maintaina
     *   `modules/drag.js`: SortableJS integration for drag-and-drop.
     *   `index.html`: Thymeleaf template with Alpine directives.
 
+## Add Task Dialog
+
+The "Add Task" modal allows creating tasks with several fields:
+
+*   **Task Name/Description**: Multi-line `<textarea>` for detailed task descriptions.
+*   **Status Dropdown**: Select initial status (TODO, IN_PROGRESS, DONE, BLOCKED, DEFERRED).
+    *   Custom styled with dark theme gradient background.
+    *   `<option>` elements have explicit dark styling for visibility.
+*   **Tags Input**: Chip-based tag system.
+    *   Type tag name and press Enter to add.
+    *   Click tag chip to remove.
+    *   Tags stored as JSON array in `Task.tags` field.
+*   **Swimlane Header**: Purple gradient header showing which lane the task belongs to.
+
+### Modal State (`inputModal` in store.js)
+```javascript
+inputModal: {
+    open: false,
+    mode: 'SWIMLANE' | 'TASK',
+    title: '',
+    value: '',
+    laneId: null,
+    laneName: '',
+    status: 'TODO',
+    tags: [],
+    tagInput: ''
+}
+```
+
+## Notification System
+
+Toast notifications use Alpine.js transitions with custom CSS utilities:
+
+### Success Toast (`.notification-toast`)
+*   **Position**: Fixed, top center, flush with screen edge (`top: 0`).
+*   **Animation**: Slide-down from top using transform utilities.
+*   **Trigger**: `triggerSave()` sets `showSaved = true` for 1.5 seconds.
+*   **Z-index**: 10000 (above all content).
+
+### Error Toast (`.error-toast`)
+*   **Color**: Red theme for error visibility.
+*   **Trigger**: `triggerError(msg)` sets `showErrorToast = true` for 3 seconds.
+
+### CSS Transition Utilities
+```css
+.-translate-y-full { transform: translateX(-50%) translateY(-100%); }
+.translate-y-0 { transform: translateX(-50%) translateY(0); }
+```
+
+> [!IMPORTANT]
+> The toast uses `translateX(-50%)` for centering. Animation classes must preserve this!
+
 ## Real-Time Updates (SSE Architecture)
 
 The application uses Server-Sent Events for real-time synchronization:
