@@ -19,6 +19,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **TaskControllerTest parallel execution** (`3b3381e`) - Made assertions resilient to parallel test runs by checking task existence rather than exact counts/positions
 
 ### Added
+- **Task Filter Buttons** (`44d6866`) - Navbar buttons to filter tasks:
+  - "Hide Done" - Hides all completed tasks (green when active)
+  - "Blocked Only" - Shows only blocked tasks (red when active)
+
+- **Build Time Optimizations** (`44d6866`)
+  - Enabled incremental compilation for faster rebuilds
+  - Changed test parallelism from fixed 4 threads to unlimited threads per CPU core
+
 - **Add Task Dialog Enhancements** (`08ecf07`)
   - Multi-line textarea for task name/description
   - Status dropdown with styled dark theme options
