@@ -23,9 +23,6 @@ public class Task {
     @Column(nullable = false)
     private TaskStatus status;
 
-    @Column(name = "position")
-    private Integer position;
-
     // Store comments and tags as JSON strings (simple approach)
     @Lob
     private String comments; // JSON array string
