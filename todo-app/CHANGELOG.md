@@ -15,6 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Build outputs, Maven/Gradle artifacts, IDE configs (IntelliJ, Eclipse, VS Code, NetBeans)
   - OS-specific files, logs, Spring Boot, Java artifacts, environment files, temp files
 
+### Fixed
+- **TaskControllerTest parallel execution** (`3b3381e`) - Made assertions resilient to parallel test runs by checking task existence rather than exact counts/positions
+
 ### Added
 - **Add Task Dialog Enhancements** (`08ecf07`)
   - Multi-line textarea for task name/description
