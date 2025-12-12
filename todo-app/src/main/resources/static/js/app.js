@@ -59,6 +59,7 @@ Alpine.data('todoApp', () => ({
     // Task filters
     hideDone: false,
     showOnlyBlocked: false,
+    selectedTags: [], // Array of selected tags for multi-tag filtering
 
     // Import Store methods (modal management, API wrappers, etc.)
     ...Store,
@@ -277,13 +278,28 @@ Alpine.data('todoApp', () => ({
             return []; // Show only BLOCKED column when filter active
         }
 
-        const tasks = this.tasks.filter(t =>
+        let tasks = this.tasks.filter(t =>
             t.swimLane && t.swimLane.id === laneId && t.status === status
-        ).sort((a, b) => {
+        );
+
+        // Apply multi-tag filter (show tasks with ALL of the selected tags)
+        if (this.selectedTags && this.selectedTags.length > 0) {
+            tasks = tasks.filter(t => {
+                const taskTags = this.getTags(t.tags).map(tag => tag.toLowerCase());
+                // Task must have ALL selected tags (AND logic)
+                return this.selectedTags.every(selectedTag =>
+                    taskTags.includes(selectedTag.toLowerCase())
+                );
+            });
+        }
+
+        // Sort by position
+        tasks.sort((a, b) => {
             const posA = a.position !== null ? a.position : 999999;
             const posB = b.position !== null ? b.position : 999999;
             return posA - posB;
         });
+
         return tasks;
     },
 
@@ -299,6 +315,254 @@ Alpine.data('todoApp', () => ({
             return JSON.parse(tagsRaw || '[]');
         } catch {
             return [];
+        }
+    },
+
+    /**
+     * Check if a lane has any tasks matching the current tag filter
+     * Used to hide/show lanes when tag filter is active
+     * 
+     * @param {number} laneId - The swimlane ID
+     * @returns {boolean} True if lane has matching tasks or no filter active
+     */
+    laneHasMatchingTasks(laneId) {
+        // If no tags selected, always show the lane
+        if (!this.selectedTags || this.selectedTags.length === 0) {
+            return true;
+        }
+
+        // Get all tasks in this lane
+        const laneTasks = this.tasks.filter(t => t.swimLane && t.swimLane.id === laneId);
+
+        // Check if any task has ALL the selected tags
+        return laneTasks.some(task => {
+            const taskTags = this.getTags(task.tags).map(tag => tag.toLowerCase());
+            return this.selectedTags.every(selectedTag =>
+                taskTags.includes(selectedTag.toLowerCase())
+            );
+        });
+    },
+
+    /**
+     * Get all unique tags from all tasks
+     * Used to render clickable tag capsules
+     * 
+     * @returns {Array} Sorted array of unique tag strings
+     */
+    getAllUniqueTags() {
+        const tagSet = new Set();
+        this.tasks.forEach(task => {
+            const tags = this.getTags(task.tags);
+            tags.forEach(tag => tagSet.add(tag));
+        });
+        return Array.from(tagSet).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+    },
+
+    /**
+     * Toggle a tag in the selectedTags array
+     * If tag is selected, remove it; otherwise add it
+     * 
+     * @param {string} tag - Tag to toggle
+     */
+    toggleTag(tag) {
+        const index = this.selectedTags.indexOf(tag);
+        if (index > -1) {
+            // Remove tag using filter (immutable, more reliably reactive)
+            this.selectedTags = this.selectedTags.filter(t => t !== tag);
+        } else {
+            // Add tag using spread (immutable)
+            this.selectedTags = [...this.selectedTags, tag];
+        }
+        console.log('[App] selectedTags:', this.selectedTags);
+    },
+
+    /**
+     * Check if a tag is currently selected
+     * 
+     * @param {string} tag - Tag to check
+     * @returns {boolean} True if tag is in selectedTags
+     */
+    isTagSelected(tag) {
+        return this.selectedTags.includes(tag);
+    },
+
+    /**
+     * Clear all selected tags
+     */
+    clearSelectedTags() {
+        this.selectedTags = [];
+    },
+
+    // =========================================================================
+    // TASK RESIZE FEATURE
+    // =========================================================================
+
+    // Resize state
+    resizingTaskId: null,
+    resizeStartX: 0,
+    resizeStartY: 0,
+    resizeStartHeight: 0,
+    resizeLaneId: null,
+    resizeStatus: null,
+    taskSizes: {}, // { taskId: { height: px, expanded: bool } }
+    expandedColumns: {}, // { laneId: status }
+
+    /**
+     * Get inline style for task card based on resize state
+     */
+    getTaskStyle(taskId) {
+        const size = this.taskSizes[taskId];
+        if (!size) return '';
+        return `height: ${size.height}px; min-height: ${size.height}px;`;
+    },
+
+    /**
+     * Start resizing a task card
+     */
+    startResize(event, taskId, laneId, status) {
+        console.log('[App] startResize:', { taskId, laneId, status });
+
+        const card = event.target.closest('.task-card');
+        if (!card) return;
+
+        this.resizingTaskId = taskId;
+        this.resizeLaneId = laneId;
+        this.resizeStatus = status;
+        this.resizeStartX = event.clientX;
+        this.resizeStartY = event.clientY;
+        this.resizeStartHeight = card.offsetHeight;
+
+        // Store initial height if not set
+        if (!this.taskSizes[taskId]) {
+            this.taskSizes[taskId] = { height: card.offsetHeight, initialHeight: card.offsetHeight };
+        }
+
+        card.classList.add('resizing');
+
+        // Bind event handlers
+        this._boundDoResize = this.doResize.bind(this);
+        this._boundStopResize = this.stopResize.bind(this);
+
+        document.addEventListener('mousemove', this._boundDoResize);
+        document.addEventListener('mouseup', this._boundStopResize);
+    },
+
+    /**
+     * Handle resize drag
+     */
+    doResize(event) {
+        if (!this.resizingTaskId) return;
+
+        const deltaY = event.clientY - this.resizeStartY;
+        const deltaX = event.clientX - this.resizeStartX;
+
+        const taskSize = this.taskSizes[this.resizingTaskId];
+        const initialHeight = taskSize.initialHeight || this.resizeStartHeight;
+        const maxHeight = initialHeight * 2; // 2x vertical limit
+
+        // Calculate new height (vertical resize)
+        let newHeight = this.resizeStartHeight + deltaY;
+        newHeight = Math.max(initialHeight, Math.min(maxHeight, newHeight));
+
+        this.taskSizes[this.resizingTaskId] = {
+            ...taskSize,
+            height: newHeight
+        };
+
+        // Horizontal: if dragging right significantly, expand the column
+        if (deltaX > 50) {
+            this.expandColumn(this.resizeLaneId, this.resizeStatus);
+        } else if (deltaX < -50) {
+            this.shrinkColumn(this.resizeLaneId, this.resizeStatus);
+        }
+    },
+
+    /**
+     * Stop resizing
+     */
+    stopResize() {
+        console.log('[App] stopResize');
+
+        if (this.resizingTaskId) {
+            const card = document.querySelector(`[data-task-id="${this.resizingTaskId}"]`);
+            if (card) card.classList.remove('resizing');
+        }
+
+        this.resizingTaskId = null;
+        this.resizeLaneId = null;
+        this.resizeStatus = null;
+
+        document.removeEventListener('mousemove', this._boundDoResize);
+        document.removeEventListener('mouseup', this._boundStopResize);
+    },
+
+    /**
+     * Expand a column (shrink others in same lane)
+     */
+    expandColumn(laneId, status) {
+        console.log('[App] expandColumn:', { laneId, status });
+
+        const swimlaneContent = document.querySelector(`[data-lane-id="${laneId}"].swimlane-row .swimlane-content`);
+        if (!swimlaneContent) return;
+
+        swimlaneContent.classList.add('has-expanded-column');
+
+        // Mark all columns in this lane
+        const columns = swimlaneContent.querySelectorAll('.lane-column');
+        columns.forEach(col => {
+            const colStatus = col.getAttribute('data-status');
+            if (colStatus === status) {
+                col.classList.add('col-expanded');
+                col.classList.remove('col-shrunk');
+            } else {
+                col.classList.add('col-shrunk');
+                col.classList.remove('col-expanded');
+            }
+        });
+
+        this.expandedColumns[laneId] = status;
+    },
+
+    /**
+     * Shrink column back to normal
+     */
+    shrinkColumn(laneId, status) {
+        console.log('[App] shrinkColumn:', { laneId, status });
+
+        const swimlaneContent = document.querySelector(`[data-lane-id="${laneId}"].swimlane-row .swimlane-content`);
+        if (!swimlaneContent) return;
+
+        swimlaneContent.classList.remove('has-expanded-column');
+
+        const columns = swimlaneContent.querySelectorAll('.lane-column');
+        columns.forEach(col => {
+            col.classList.remove('col-expanded', 'col-shrunk');
+        });
+
+        delete this.expandedColumns[laneId];
+    },
+
+    /**
+     * Reset task size to default (double-click handler)
+     */
+    resetTaskSize(taskId) {
+        console.log('[App] resetTaskSize:', taskId);
+
+        const taskSize = this.taskSizes[taskId];
+        if (taskSize && taskSize.initialHeight) {
+            this.taskSizes[taskId] = {
+                ...taskSize,
+                height: taskSize.initialHeight
+            };
+        } else {
+            delete this.taskSizes[taskId];
+        }
+
+        // Also reset column if this was the only expanded card
+        // Find the task and its lane
+        const task = this.tasks.find(t => t.id === taskId);
+        if (task && task.swimLane) {
+            this.shrinkColumn(task.swimLane.id, task.status);
         }
     }
 }));

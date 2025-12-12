@@ -145,6 +145,48 @@ body {
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
+/* Tag Filter Bar */
+.tag-filter-bar {
+    position: sticky;
+    top: 56px;
+    /* Below navbar */
+    z-index: 999;
+    background: rgba(15, 23, 42, 0.9);
+    border-bottom: var(--glass-border);
+    backdrop-filter: blur(10px);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+}
+
+/* Tag Capsules */
+.tag-capsule {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tag-capsule:hover {
+    color: var(--text-primary);
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.4);
+    transform: translateY(-1px);
+}
+
+.tag-capsule.active {
+    color: #fff;
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    border-color: transparent;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
 /* Board Layout */
 .board-header-row {
     transform: translateZ(10px);
@@ -408,6 +450,28 @@ body {
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+    /* Resize support: ensure content fits properly */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Task card body - flex layout for proper tag alignment */
+.task-card .card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.task-card .card-title {
+    flex-shrink: 0;
+}
+
+/* Tags container - stick to bottom */
+.task-card .card-body>.d-flex.flex-wrap {
+    margin-top: auto !important;
+    flex-shrink: 0;
 }
 
 .task-card:hover {
@@ -513,9 +577,77 @@ body {
 
 .status-badge.status-deferred {
     color: var(--deferred-color);
-    border-color: rgba(245, 158, 11, 0.3);
+    border-color: rgba(245, 158, 11, 0.5);
 }
 
+/* ============================================
+   TASK CARD RESIZE FEATURE
+   ============================================ */
+
+/* Resize handle - bottom right corner */
+.resize-handle {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 14px;
+    height: 14px;
+    cursor: nwse-resize;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 15;
+}
+
+.resize-handle::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 0 10px 10px;
+    border-color: transparent transparent rgba(255, 255, 255, 0.4) transparent;
+}
+
+.task-card:hover .resize-handle {
+    opacity: 1;
+}
+
+/* Task card during resize */
+.task-card.resizing {
+    z-index: 100 !important;
+    transition: none !important;
+    box-shadow: 0 0 25px rgba(59, 130, 246, 0.5) !important;
+}
+
+/* Expanded task card */
+.task-card.expanded-height {
+    min-height: auto;
+}
+
+/* Column width classes for horizontal expansion */
+.lane-column.col-expanded {
+    flex: 2 !important;
+    max-width: none !important;
+    transition: flex 0.3s ease;
+}
+
+.lane-column.col-shrunk {
+    flex: 0.5 !important;
+    max-width: none !important;
+    transition: flex 0.3s ease;
+}
+
+/* Swimlane content flex container for column resizing */
+.swimlane-content.has-expanded-column {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+}
+
+.swimlane-content.has-expanded-column>.lane-column {
+    flex: 1;
+    transition: flex 0.3s ease;
+}
 
 /* Notification Toast (Premium Slide-Down) */
 .notification-toast {
