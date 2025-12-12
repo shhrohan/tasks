@@ -81,6 +81,11 @@ When the user says they are **confident of the changes** (or similar confirmatio
     *   **UPDATE** existing sections if behavior changed (e.g., new fields, new endpoints)
     *   **DELETE** outdated information that no longer applies
 
+> [!CAUTION]
+> ## NEVER MERGE TO MAIN AUTOMATICALLY
+> **NEVER** merge to main or push to main unless the user **explicitly requests it**.
+> Do not ask or offer to merge to main. The user will tell you when they want to merge.
+
 > [!NOTE]
 > These steps ensure documentation stays in sync with the codebase and provide a complete audit trail.
 
@@ -94,116 +99,177 @@ This is a full-stack, single-page web application for managing tasks and to-do i
 
 ### Key Features
 
-*   **3D Kanban Board**: Visually distinct swimlanes with 3D depth effects.
-*   **Interactive Statistics**: Collapsible accordion dashboard with 3D Pie and Bar charts.
-*   **Drag-and-Drop**: Intuitive task management powered by Sortable.js.
-*   **Mobile Optimized**: Responsive layout with vertical stacking and touch-friendly targets.
-*   **Glassmorphism UI**: Modern, translucent design aesthetic.
+*   **3D Kanban Board**: Visually distinct swimlanes with collapsible headers and status columns.
+*   **Status Pills**: Inline progress visualization in swimlane headers showing task distribution (percentage + count).
+*   **Drag-and-Drop**: Intuitive task management powered by Sortable.js with cross-column support.
+*   **Task Filters**: "Hide Done" and "Blocked Only" filter buttons in navbar.
+*   **Tag Filter Bar**: Sticky bar below navbar showing all unique tags as capsules for filtering tasks.
+*   **Task Card Resize**: Drag resize handle on task cards to adjust height; double-click to reset.
+*   **Toast Notifications**: Success (green) and Error (red) notifications with slide-down animations.
+*   **Optimistic Updates**: UI updates instantly, with background API sync.
+*   **Real-Time Sync**: Server-Sent Events (SSE) for multi-client synchronization.
+*   **Glassmorphism UI**: Modern, translucent dark theme design aesthetic.
 
 ## Technology Stack
 
 ### Backend
 *   **Java 21**
 *   **Spring Boot 3.3.0** (Web, Data JPA)
-*   **PostgreSQL**: Primary database (configured in `application.properties`).
+*   **PostgreSQL**: Primary database (Azure-hosted in prod, local in dev).
 *   **Maven**: Build tool.
 *   **Log4j2**: Logging framework.
 
 ### Frontend
-*   **Alpine.js (v3.x)**: Lightweight reactive framework for declarative UI.
-*   **Bootstrap 5**: UI Components, Grid, and Modals.
+*   **Alpine.js (v3.12.0)**: Lightweight reactive framework loaded via ESM.
+*   **Bootstrap 5.3.0**: UI Components, Grid system.
 *   **Axios**: HTTP client for API communication.
-*   **GSAP (v3.12.2)**: Professional animation library.
-*   **Sortable.js**: Drag-and-drop list management.
-*   **Highcharts 3D**: Interactive Charts.
-*   **Thymeleaf**: Server-side template engine (initial load).
+*   **Sortable.js (v1.15.0)**: Drag-and-drop list management.
+*   **Font Awesome 6.4.0**: Icons.
+*   **Thymeleaf**: Server-side template engine (initial load only).
 
 ## Architecture
 
 The application follows a standard layered Spring Boot architecture:
 
-1.  **Controller Layer**: REST endpoints (`TaskController`, `SwimLaneController`).
-2.  **Service Layer**: Business logic (`TaskService`, `SwimLaneService`).
-3.  **DAO Layer**: Data Access Objects (`TaskDAO`, `SwimLaneDAO`).
-4.  **Repository Layer**: Spring Data JPA interfaces (`TaskRepository`, `SwimLaneRepository`).
-5.  **Database**: PostgreSQL running on port 5432 (default).
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Controller Layer                                           │
+│  └── TaskController, SwimLaneController, SseController      │
+├─────────────────────────────────────────────────────────────┤
+│  Service Layer                                              │
+│  └── TaskService, SwimLaneService, AsyncWriteService        │
+├─────────────────────────────────────────────────────────────┤
+│  DAO Layer                                                  │
+│  └── TaskDAO, SwimLaneDAO                                   │
+├─────────────────────────────────────────────────────────────┤
+│  Repository Layer (Spring Data JPA)                         │
+│  └── TaskRepository, SwimLaneRepository                     │
+├─────────────────────────────────────────────────────────────┤
+│  Database: PostgreSQL                                       │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## Data Model
 
 ### SwimLane
-*   `id` (Long): Primary Key.
-*   `name` (String): Name of the swimlane (e.g., "Feature A").
-*   `isCompleted` (Boolean): Status of the swimlane.
-*   `isDeleted` (Boolean): Soft delete flag.
-*   `position` (Integer): Display order for lane reordering.
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | Long | Primary Key |
+| `name` | String | Name of the swimlane |
+| `isCompleted` | Boolean | Status of the swimlane |
+| `isDeleted` | Boolean | Soft delete flag |
+| `position` | Integer | Display order for lane reordering |
 
 ### Task
-*   `id` (Long): Primary Key.
-*   `name` (String): Task description.
-*   `status` (Enum): `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`, `DEFERRED`.
-*   `comments` (String/JSON): JSON array of comment objects.
-*   `tags` (String/JSON): JSON array of tag strings.
-*   `swimLane` (SwimLane): Many-to-One relationship.
-*   `position` (Integer): Order within the status column.
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | Long | Primary Key |
+| `name` | String | Task description |
+| `status` | Enum | `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`, `DEFERRED` |
+| `comments` | String (JSON) | JSON array of comment objects |
+| `tags` | String (JSON) | JSON array of tag strings |
+| `swimLane` | SwimLane | Many-to-One relationship |
+| `position` | Integer | Order within the status column |
 
 ## API Reference
 
 ### SwimLanes (`/api/swimlanes`)
-*   `GET /`: Get all swimlanes.
-*   `GET /active`: Get active swimlanes.
-*   `GET /completed`: Get completed swimlanes.
-*   `POST /`: Create a new swimlane (`{name}`).
-*   `PATCH /{id}/complete`: Mark swimlane as complete.
-*   `PATCH /{id}/uncomplete`: Reactivate swimlane.
-*   `PATCH /reorder`: Reorder swimlanes (body: `Long[]` of IDs).
-*   `DELETE /{id}`: Soft delete swimlane.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | Get all swimlanes |
+| GET | `/active` | Get active (non-completed) swimlanes |
+| GET | `/completed` | Get completed swimlanes |
+| POST | `/` | Create a new swimlane (`{name}`) |
+| PATCH | `/{id}/complete` | Mark swimlane as complete |
+| PATCH | `/{id}/uncomplete` | Reactivate swimlane |
+| PATCH | `/reorder` | Reorder swimlanes (body: `Long[]` of IDs) |
+| DELETE | `/{id}` | Soft delete swimlane |
 
 ### Tasks (`/api/tasks`)
-*   `GET /`: Get all tasks.
-*   `GET /swimlane/{swimLaneId}`: Get tasks by lane (for incremental loading).
-*   `GET /{id}`: Get specific task.
-*   `POST /`: Create a new task.
-*   `PUT /{id}`: Update task details.
-*   `DELETE /{id}`: Delete task.
-*   `PATCH /{id}/move`: Move task (params: `status`, `swimLaneId`, `position`).
-*   `POST /{id}/comments`: Add comment.
-*   `PUT /{id}/comments/{commentId}`: Update comment.
-*   `DELETE /{id}/comments/{commentId}`: Delete comment.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | Get all tasks |
+| GET | `/swimlane/{swimLaneId}` | Get tasks by lane (incremental loading) |
+| GET | `/{id}` | Get specific task |
+| POST | `/` | Create a new task |
+| PUT | `/{id}` | Update task details |
+| DELETE | `/{id}` | Delete task |
+| PATCH | `/{id}/move` | Move task (params: `status`, `swimLaneId`, `position`) |
+| POST | `/{id}/comments` | Add comment |
+| PUT | `/{id}/comments/{commentId}` | Update comment |
+| DELETE | `/{id}/comments/{commentId}` | Delete comment |
 
 ### Server-Sent Events (`/api/sse`)
-*   `GET /stream`: Subscribe to real-time updates (SSE connection).
-    *   Events: `init`, `task-updated`, `task-deleted`, `lane-updated`, `heartbeat`
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/stream` | Subscribe to real-time updates |
+
+**SSE Event Types:**
+- `init` - Initial connection established
+- `task-updated` - Task was created/modified
+- `task-deleted` - Task was deleted
+- `lane-updated` - Lane was modified
+- `heartbeat` - Keep-alive (every 30s)
 
 ## Frontend Architecture
 
-The frontend was rewritten from Vanilla JS to **Alpine.js** to improve maintainability and performance.
+### Module Structure
+```
+static/js/
+├── app.js           # Alpine.js component entry point
+└── modules/
+    ├── store.js     # State management, modals, API wrappers
+    ├── api.js       # Axios HTTP client, SSE initialization
+    └── drag.js      # SortableJS integration
+```
 
-*   **Reactive State**: `todoApp` Alpine component manages `tasks`, `swimLanes`, and `currentView`.
-*   **Declarative UI**: HTML uses `x-for`, `x-if`, and `x-model` instead of manual DOM manipulation.
-*   **Optimized Animations**: GSAP handles complex animations (ripples, transitions) instead of CSS/JS hybrids.
-*   **Modular Structure**:
-    *   `app.js`: Alpine component entry point, initialization orchestration.
-    *   `modules/store.js`: Centralized state management, modal handling, optimistic updates.
-    *   `modules/api.js`: Axios HTTP client with interceptors, SSE initialization.
-    *   `modules/drag.js`: SortableJS integration for drag-and-drop.
-    *   `index.html`: Thymeleaf template with Alpine directives.
+### Alpine.js Component (`app.js`)
 
-## Add Task Dialog
-
-The "Add Task" modal allows creating tasks with several fields:
-
-*   **Task Name/Description**: Multi-line `<textarea>` for detailed task descriptions.
-*   **Status Dropdown**: Select initial status (TODO, IN_PROGRESS, DONE, BLOCKED, DEFERRED).
-    *   Custom styled with dark theme gradient background.
-    *   `<option>` elements have explicit dark styling for visibility.
-*   **Tags Input**: Chip-based tag system.
-    *   Type tag name and press Enter to add.
-    *   Click tag chip to remove.
-    *   Tags stored as JSON array in `Task.tags` field.
-*   **Swimlane Header**: Purple gradient header showing which lane the task belongs to.
-
-### Modal State (`inputModal` in store.js)
+**Reactive State:**
 ```javascript
+{
+    lanes: [],           // Array of swimlane objects
+    tasks: [],           // Array of all task objects
+    showSaved: false,    // Success toast visibility
+    showErrorToast: false, // Error toast visibility
+    errorMessage: '',    // Current error message
+    columns: ['TODO', 'IN_PROGRESS', 'DONE', 'BLOCKED', 'DEFERRED'],
+    hideDone: false,     // Filter: hide DONE tasks
+    showOnlyBlocked: false, // Filter: show only BLOCKED tasks
+    selectedTags: [],    // Tag filter: active tag filters
+    taskSizes: {},       // Task resize: {taskId: {height: px}}
+    ...Store             // Spread Store methods
+}
+```
+
+**Key Methods:**
+- `init()` - Lifecycle hook: loads lanes, fetches tasks per lane async, sets up SSE
+- `getTasks(laneId, status)` - Filters tasks with filter support
+- `getTags(tagsRaw)` - Parses JSON tags
+- `reinitSortableForLane(laneId)` - Reinitializes Sortable after async task load
+- `getAllUniqueTags()` - Returns array of all unique tags across tasks
+- `toggleTag(tag)` - Toggles tag in selectedTags filter
+- `isTagSelected(tag)` - Returns boolean if tag is active
+- `clearSelectedTags()` - Clears all tag filters
+- `laneHasMatchingTasks(laneId)` - Returns true if lane has tasks matching filter
+- `startResize(event, taskId, laneId, status)` - Initiates resize drag
+- `getTaskStyle(taskId)` - Returns height style for resized task
+- `resetTaskSize(taskId)` - Double-click to reset task height
+
+### State Management (`store.js`)
+
+**Modal State:**
+```javascript
+modal: {
+    open: false,
+    title: '',
+    message: '',
+    type: 'info',
+    confirmText: 'Confirm',
+    action: null,
+    payload: null
+}
+
 inputModal: {
     open: false,
     mode: 'SWIMLANE' | 'TASK',
@@ -217,19 +283,27 @@ inputModal: {
 }
 ```
 
+**Key Methods:**
+- `loadData()` - Fetches lanes from API
+- `fetchLaneTasks(laneId)` - Fetches tasks for specific lane
+- `moveTaskOptimistic(...)` - Optimistic task move with rollback
+- `reorderLanesOptimistic(newIds)` - Optimistic lane reorder
+- `triggerSave()` - Shows success toast for 1.5s
+- `triggerError(msg)` / `showError(msg)` - Shows error toast for 3s
+- `getLaneStats(laneId)` - Calculates task statistics for status pills
+
 ## Notification System
 
-Toast notifications use Alpine.js transitions with custom CSS utilities:
+### Success Toast (`.notification-toast.success`)
+- **Position**: Fixed, top center (`top: 0`, `left: 50%`, `transform: translateX(-50%)`)
+- **Animation**: Slide-down from top using Alpine.js x-transition
+- **Trigger**: `triggerSave()` sets `showSaved = true` for 1.5 seconds
+- **Z-index**: 10000
 
-### Success Toast (`.notification-toast`)
-*   **Position**: Fixed, top center, flush with screen edge (`top: 0`).
-*   **Animation**: Slide-down from top using transform utilities.
-*   **Trigger**: `triggerSave()` sets `showSaved = true` for 1.5 seconds.
-*   **Z-index**: 10000 (above all content).
-
-### Error Toast (`.error-toast`)
-*   **Color**: Red theme for error visibility.
-*   **Trigger**: `triggerError(msg)` sets `showErrorToast = true` for 3 seconds.
+### Error Toast (`.notification-toast.error`)
+- **Color**: Red border and icon
+- **Animation**: Same slide-down animation
+- **Trigger**: `showError(msg)` sets `showErrorToast = true` for 3 seconds
 
 ### CSS Transition Utilities
 ```css
@@ -242,72 +316,36 @@ Toast notifications use Alpine.js transitions with custom CSS utilities:
 
 ## Real-Time Updates (SSE Architecture)
 
-The application uses Server-Sent Events for real-time synchronization:
-
 1.  **SseService**: Manages client connections with `CopyOnWriteArrayList<SseEmitter>`.
 2.  **SseController**: Exposes `/api/sse/stream` endpoint.
 3.  **AsyncWriteService**: After async DB writes, broadcasts updates via SSE.
-4.  **Frontend (api.js)**: `initSSE()` subscribes and handles `task-updated`, `task-deleted`, `lane-updated` events.
-5.  **Heartbeat**: Every 30 seconds to keep connections alive and clean up dead clients.
+4.  **Frontend (api.js)**: `initSSE()` subscribes and handles events.
+5.  **Heartbeat**: Every 30 seconds to keep connections alive.
 
 ## Async Write-Behind Architecture
 
-Database writes are optimized for perceived performance:
-
 1.  **Optimistic UI**: Frontend updates state immediately.
 2.  **Fire-and-Forget**: Service layer queues writes to `AsyncWriteService`.
-3.  **Single-Threaded Executor**: Guarantees sequential DB writes (no race conditions).
+3.  **Single-Threaded Executor**: Guarantees sequential DB writes.
 4.  **SSE Broadcast**: After DB write completes, broadcasts to all clients.
-5.  **Simulated Latency**: 100ms delay built-in to prove decoupling works.
 
-## DRAG-AND-DROP SYSTEM - COMPLETE REFERENCE
+## Drag-and-Drop System
 
-⚠️ **CRITICAL: This section contains EVERYTHING needed to understand and debug drag-drop. Read it fully before making any changes!**
-
----
-
-### ARCHITECTURE OVERVIEW
-
+### Architecture Overview
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  index.html                                                 │
-│  ├── .board-container     (Lane Sortable - reorder lanes)   │
-│  │   └── .swimlane-row    (Lane wrapper)                    │
-│  │       └── .lane-column (Task Sortable - reorder tasks)   │
-│  │           └── .task-card (Draggable item)                │
-│                                                             │
-│  app.js                                                     │
-│  ├── init()               → Loads lanes, then tasks async   │
-│  ├── setupDrag()          → Inits lane-level Sortable       │
-│  ├── initColumn(el)       → Called by x-init (may be empty) │
-│  └── reinitSortableForLane() → CRITICAL: Reinits after load │
-│                                                             │
-│  drag.js                                                    │
-│  ├── initOneColumn()      → Creates Sortable on column      │
-│  └── initLaneSortable()   → Creates Sortable on board       │
-└─────────────────────────────────────────────────────────────┘
+index.html
+├── .board-container     (Lane Sortable - reorder lanes)
+│   └── .swimlane-row    (Lane wrapper)
+│       └── .lane-column (Task Sortable - reorder tasks)
+│           └── .task-card (Draggable item)
 ```
 
----
-
-### INITIALIZATION TIMING (THE #1 CAUSE OF BUGS)
+### Critical Initialization Timing
 
 **The Problem:**
-```
-Timeline:
-─────────────────────────────────────────────────────────────►
-1. Alpine starts
-2. Lanes fetched from API
-3. HTML rendered (columns created) ← x-init fires HERE!
-4. Tasks fetched ASYNC per lane    ← Cards don't exist yet!
-5. Cards rendered in DOM           ← Cards exist NOW
-6. reinitSortableForLane() called  ← Sortable reinit with cards
-```
-
-**Why this matters:**
-- `x-init="initColumn($el)"` fires at step 3
-- Sortable is initialized on EMPTY columns (0 draggable items)
-- Drag events have no targets = nothing works
+- `x-init="initColumn($el)"` fires when column is CREATED
+- Tasks are loaded asynchronously AFTER columns exist
+- Sortable initialized on EMPTY columns = no draggable items
 
 **The Solution:**
 ```javascript
@@ -317,49 +355,7 @@ this.$nextTick(() => {
 });
 ```
 
-**Console logs to verify:**
-- `[Drag] Column has 0 task-card children` = BAD (too early)
-- `[Drag] Column has 5 task-card children` = GOOD (after reinit)
-
----
-
-### CSS 3D TRANSFORMS - THE SILENT KILLER
-
-**These CSS properties BREAK drag events:**
-
-| Property | Effect | Why It Breaks Drag |
-|----------|--------|-------------------|
-| `perspective: Npx` | Creates 3D viewport | Changes coordinate system for hit-testing |
-| `transform-style: preserve-3d` | Enables 3D for children | Children's positions calculated in 3D space |
-| `transform: translateZ(Npx)` | Moves element in Z-axis | Mouse coordinates don't match visual position |
-| `transform: rotateX/Y()` | Rotates in 3D | Click position != element position |
-
-**Symptoms:**
-- Hovering shows correct cursor (`grab`)
-- Clicking does nothing
-- `[Drag] onChoose` never fires
-- `[Event MouseDown]` logs show wrong target (parent instead of card)
-- Lane drag works, task drag doesn't
-
-**Safe Alternatives:**
-```css
-/* BAD - breaks drag */
-.task-card {
-    transform: translateZ(5px);
-    transform-style: preserve-3d;
-}
-
-/* GOOD - works with drag */
-.task-card {
-    transform: none;
-    transform-style: flat;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);  /* Use shadow for depth */
-}
-```
-
----
-
-### REQUIRED HTML ATTRIBUTES
+### Required HTML Attributes
 
 **Container (`.lane-column`):**
 ```html
@@ -374,130 +370,95 @@ this.$nextTick(() => {
 ```html
 <div class="task-card"
      :data-task-id="task.id"         <!-- REQUIRED: Identifies task -->
-     :data-status="task.status"      <!-- For visual styling -->
      draggable="true">               <!-- REQUIRED: Enables HTML5 drag -->
 ```
 
----
+### CSS 3D Transforms Warning
 
-### SORTABLE.JS CONFIGURATION
+> [!CAUTION]
+> These CSS properties BREAK drag events:
+> - `perspective`
+> - `transform-style: preserve-3d`
+> - `transform: translateZ()`
+> - `transform: rotateX/Y()`
+> 
+> Use `box-shadow` instead for depth effects.
 
-**Current settings in `drag.js`:**
-```javascript
-new Sortable(col, {
-    group: 'tasks',           // All columns share group = cross-column drag
-    animation: 150,           // Animation duration (ms)
-    delay: 0,                 // No delay for desktop
-    delayOnTouchOnly: true,   // Delay only on mobile
-    touchStartThreshold: 3,   // Pixels before drag starts on touch
-    ghostClass: 'task-ghost', // CSS class for ghost/placeholder
-    dragClass: 'task-drag',   // CSS class while dragging
-    // forceFallback: false,  // Use native HTML5 drag (default)
-});
+## Status Pills UI
+
+Swimlane headers display proportional status pills showing task distribution:
+
+```html
+<template x-if="getLaneStats(lane.id).todo > 0">
+    <div class="badge status-pill-lg"
+         :style="'flex-grow: ' + getLaneStats(lane.id).todo"
+         x-text="getLaneStats(lane.id).todoPct + '% (' + getLaneStats(lane.id).todo + ')'">
+    </div>
+</template>
 ```
 
-**When to use `forceFallback: true`:**
-- Only if native HTML5 drag has issues
-- Creates JS-based drag simulation
-- Heavier on performance
-- Usually NOT needed if CSS is correct
+**Key Points:**
+- Uses `<template x-if>` to completely remove zero-count pills from DOM
+- `flex-grow` based on task count for proportional sizing
+- Displays format: `XX% (N)` where XX is percentage and N is count
 
----
+## Tag Filter Bar
 
-### EVENT LIFECYCLE
+A sticky bar below the navbar allows filtering tasks by tags:
 
-```
-User clicks card:
-    │
-    ▼
-onChoose ─────► "[Drag] onChoose - item selected"
-    │           (If this doesn't fire, CSS is blocking events)
-    ▼
-onStart ──────► "[Drag] onStart - drag began"
-    │           (Card picked up, ghost created)
-    ▼
-onMove ───────► "[Drag] onMove - dragging" (multiple times)
-    │           (Card moving over containers)
-    ▼
-onEnd ────────► "[Drag] onEnd - drag completed"
-                (Drop happened, API call made)
+```html
+<div class="tag-filter-bar glass-panel px-4 py-2" x-show="getAllUniqueTags().length > 0">
+    <template x-for="tag in getAllUniqueTags()" :key="tag">
+        <button class="tag-capsule" :class="{'active': isTagSelected(tag)}" 
+                @click="toggleTag(tag)" x-text="tag">
+        </button>
+    </template>
+</div>
 ```
 
----
+**Key Points:**
+- Only shows when tasks have tags (`getAllUniqueTags().length > 0`)
+- Clicking a tag toggles it in `selectedTags` array
+- Active tags get `.active` class (gradient background)
+- Lanes without matching tasks are hidden via `laneHasMatchingTasks(laneId)`
+- "Clear All" button resets filter
 
-### COMPLETE DEBUG CHECKLIST
+### CSS Classes
+- `.tag-filter-bar` - Sticky positioning below navbar, glassmorphism style
+- `.tag-capsule` - Pill-shaped tag buttons with hover/active states
 
-**Step 1: Check Console on Page Load**
-```
-✓ "[App] ====== Component Initializing ======"
-✓ "[App] Loaded X lanes"
-✓ "[App] Fetching tasks for lane X"
-✓ "[App] Lane X returned Y tasks"
-✓ "[App] reinitSortableForLane called for lane X"
-✓ "[Drag] Column has Y task-card children" (Y > 0)
-✓ "[Drag] Sortable instance created successfully"
-```
+## Task Card Resize
 
-**Step 2: Click a Task Card**
-```
-✓ "[Event MouseDown]" shows cardId: "123" (not "N/A")
-✓ "[Drag] onChoose - item selected"
-```
+Task cards can be resized by dragging a corner handle:
 
-**Step 3: Drag the Card**
-```
-✓ "[Drag] onStart - drag began"
-✓ "[Drag] onMove - dragging" (while moving)
-✓ "[Drag] onEnd - drag completed"
+**HTML Structure:**
+```html
+<div class="task-card" :style="getTaskStyle(task.id)" @dblclick="resetTaskSize(task.id)">
+    <!-- Card content -->
+    <div class="resize-handle" @mousedown.stop.prevent="startResize($event, task.id, lane.id, status)">
+    </div>
+</div>
 ```
 
-**If Something Fails:**
-
-| Symptom | Cause | Fix |
-|---------|-------|-----|
-| `Column has 0 children` | Sortable init too early | Check `reinitSortableForLane()` is called |
-| `MouseDown` shows `cardId: N/A` | Click not reaching card | Check CSS stacking context, z-index |
-| `onChoose` never fires | 3D transforms blocking | Remove perspective, preserve-3d, translateZ |
-| `onStart` never fires | Missing draggable attr | Add `draggable="true"` to task-card |
-| Drag works but API fails | Wrong data-attributes | Check data-task-id, data-status, data-lane-id |
-
----
-
-### FILES REFERENCE
-
-| File | Purpose | Key Functions |
-|------|---------|---------------|
-| `static/js/app.js` | Alpine component, init orchestration | `init()`, `reinitSortableForLane()`, `initColumn()` |
-| `static/js/modules/drag.js` | Sortable configuration | `initOneColumn()`, `initLaneSortable()` |
-| `static/css/style.css` | Styling (NO 3D transforms!) | `.task-card`, `.lane-column` |
-| `templates/index.html` | HTML structure | x-init, data-attributes, draggable |
-
----
-
-### CSS CLASS REFERENCE
-
-| Class | Element | Notes |
-|-------|---------|-------|
-| `.board-container` | Outer container | Lane Sortable attached here |
-| `.swimlane-row` | Lane wrapper | Must NOT have 3D transforms |
-| `.lane-column` | Status column | Task Sortable attached here |
-| `.task-card` | Draggable task | Must have `draggable="true"` |
-| `.task-ghost` | Sortable ghost | Shows drop position |
-| `.task-drag` | Card while dragging | Applied during drag |
-| `.lane-ghost` | Lane ghost | For lane reordering |
+**Key Points:**
+- Resize handle appears on hover (bottom-right corner)
+- Drag to resize height
+- Double-click card to reset to default size
+- Sizes stored in `taskSizes` object: `{taskId: {height: px}}`
+- CSS class `.resizing` applied during drag for visual feedback
 
 ## Building and Running
 
 ### Prerequisites
 *   Java 21
 *   Maven
-*   PostgreSQL (running on localhost:5432, db: `todo_db`, user: `postgres`, pass: `Database@123`)
+*   PostgreSQL
 
 ### Running the Application
 ```bash
 mvn spring-boot:run
 ```
-The application will be available at **[http://localhost:8080](http://localhost:8080)** (Note: Port 8080).
+The application will be available at **[http://localhost:8080](http://localhost:8080)**.
 
 ### Running Tests
 ```bash
@@ -529,9 +490,3 @@ The changelog follows [Keep a Changelog](https://keepachangelog.com/) format wit
 - **Removed** - Now removed features
 - **Fixed** - Bug fixes
 - **Security** - Vulnerability fixes
-
-### Update Process
-1. Add entry under `[Unreleased]` section
-2. Include commit hash and timestamp
-3. Document issue resolution if applicable
-4. When releasing, move unreleased items to versioned section
