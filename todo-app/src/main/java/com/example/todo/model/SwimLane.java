@@ -28,4 +28,9 @@ public class SwimLane {
 
     @Column(name = "position_order")
     private Integer position;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 }
+

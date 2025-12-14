@@ -49,12 +49,14 @@ class SwimLaneTest {
 
     @Test
     void allArgsConstructor_ShouldWork() {
-        SwimLane lane = new SwimLane(1L, "Test", true, false, 10);
+        User user = new User(1L, "Test User", "test@example.com");
+        SwimLane lane = new SwimLane(1L, "Test", true, false, 10, user);
         assertEquals(1L, lane.getId());
         assertEquals("Test", lane.getName());
         assertTrue(lane.getIsCompleted());
         assertFalse(lane.getIsDeleted());
         assertEquals(10, lane.getPosition());
+        assertEquals(user, lane.getUser());
     }
 
     @Test
