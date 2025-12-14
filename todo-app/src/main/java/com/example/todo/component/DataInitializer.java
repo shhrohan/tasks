@@ -6,6 +6,7 @@ import com.example.todo.repository.UserRepository;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,10 +23,16 @@ public class DataInitializer implements ApplicationRunner {
 
     private final UserRepository userRepository;
     private final SwimLaneRepository swimLaneRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public DataInitializer(UserRepository userRepository, SwimLaneRepository swimLaneRepository) {
+    // Default password for initial setup - users should change this
+    private static final String DEFAULT_PASSWORD = "123123";
+
+    public DataInitializer(UserRepository userRepository, SwimLaneRepository swimLaneRepository,
+                          PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.swimLaneRepository = swimLaneRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -40,9 +47,17 @@ public class DataInitializer implements ApplicationRunner {
                     User user = User.builder()
                             .name("rohan")
                             .email("shah.rohan@microsoft.com")
+                            .passwordHash(passwordEncoder.encode(DEFAULT_PASSWORD))
                             .build();
                     return userRepository.save(user);
                 });
+
+        // Ensure user has a password set
+        if (defaultUser.getPasswordHash() == null || defaultUser.getPasswordHash().isEmpty()) {
+            log.info("Setting default password for user: {}", defaultUser.getEmail());
+            defaultUser.setPasswordHash(passwordEncoder.encode(DEFAULT_PASSWORD));
+            userRepository.save(defaultUser);
+        }
 
         log.info("Default user ID: {}", defaultUser.getId());
 
@@ -62,3 +77,4 @@ public class DataInitializer implements ApplicationRunner {
         log.info("Data initialization complete.");
     }
 }
+

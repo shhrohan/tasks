@@ -201,4 +201,21 @@ class SwimLaneServiceTest {
         assertEquals(0, lane3.getPosition()); // id=3 is at index 0
         verify(swimLaneDAO).saveAll(anyList());
     }
+
+    @Test
+    void reorderSwimLanes_ShouldHandleMissingLanes() {
+        // Test the null check in reorderSwimLanes - lane with id 999 doesn't exist
+        SwimLane lane1 = new SwimLane();
+        lane1.setId(1L);
+        lane1.setPosition(0);
+
+        List<Long> orderedIds = Arrays.asList(999L, 1L); // 999L doesn't exist
+        when(swimLaneDAO.findAllById(orderedIds)).thenReturn(Arrays.asList(lane1));
+
+        // Should not throw, should only update existing lane
+        swimLaneService.reorderSwimLanes(orderedIds);
+
+        assertEquals(1, lane1.getPosition()); // id=1 is at index 1 (999 is not found)
+        verify(swimLaneDAO).saveAll(anyList());
+    }
 }

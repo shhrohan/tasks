@@ -49,7 +49,7 @@ class SwimLaneTest {
 
     @Test
     void allArgsConstructor_ShouldWork() {
-        User user = new User(1L, "Test User", "test@example.com");
+        User user = new User(1L, "Test User", "test@example.com", null, null);
         SwimLane lane = new SwimLane(1L, "Test", true, false, 10, user);
         assertEquals(1L, lane.getId());
         assertEquals("Test", lane.getName());

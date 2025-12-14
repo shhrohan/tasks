@@ -3,9 +3,10 @@ package com.example.todo.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 /**
  * User entity for authentication and data ownership.
- * Designed to be extended for future login/auth features.
  */
 @Entity
 @Table(name = "users")
@@ -25,16 +26,17 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    // Future auth fields (commented out for now, will be enabled with login feature)
-    // @Column
-    // private String passwordHash;
-    
-    // @Column
-    // private String avatarUrl;
-    
-    // @Column
-    // private LocalDateTime createdAt;
-    
-    // @Column
-    // private LocalDateTime lastLoginAt;
+    @Column
+    private String passwordHash;
+
+    @Column
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 }
+

@@ -82,6 +82,24 @@ DRAG-AND-DROP CRITICAL NOTES:
                 <button class="btn btn-primary btn-sm" @click="openSwimlaneModal()">
                     <i class="fa-solid fa-plus"></i> New Board
                 </button>
+
+                <!-- User/Logout -->
+                <div class="dropdown">
+                    <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                        <i class="fa-solid fa-user me-1"></i>
+                        <span th:text="${#authentication?.name ?: 'User'}">User</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
+                        <li>
+                            <form th:action="@{/logout}" method="post" class="m-0">
+                                <button type="submit" class="dropdown-item">
+                                    <i class="fa-solid fa-sign-out-alt me-2"></i>Logout
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </nav>
