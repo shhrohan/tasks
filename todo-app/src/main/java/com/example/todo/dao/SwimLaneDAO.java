@@ -17,6 +17,7 @@ public class SwimLaneDAO {
         this.swimLaneRepository = swimLaneRepository;
     }
 
+    // Legacy methods (without user filter)
     public List<SwimLane> findByIsDeletedFalseOrderByPositionAsc() {
         return swimLaneRepository.findByIsDeletedFalseOrderByPositionAsc();
     }
@@ -27,6 +28,23 @@ public class SwimLaneDAO {
 
     public List<SwimLane> findByIsCompletedTrueAndIsDeletedFalseOrderByPositionAsc() {
         return swimLaneRepository.findByIsCompletedTrueAndIsDeletedFalseOrderByPositionAsc();
+    }
+
+    // User-filtered methods for data isolation
+    public List<SwimLane> findByUserIdAndIsDeletedFalseOrderByPositionAsc(Long userId) {
+        return swimLaneRepository.findByUserIdAndIsDeletedFalseOrderByPositionAsc(userId);
+    }
+
+    public List<SwimLane> findByUserIdAndIsCompletedFalseAndIsDeletedFalseOrderByPositionAsc(Long userId) {
+        return swimLaneRepository.findByUserIdAndIsCompletedFalseAndIsDeletedFalseOrderByPositionAsc(userId);
+    }
+
+    public List<SwimLane> findByUserIdAndIsCompletedTrueAndIsDeletedFalseOrderByPositionAsc(Long userId) {
+        return swimLaneRepository.findByUserIdAndIsCompletedTrueAndIsDeletedFalseOrderByPositionAsc(userId);
+    }
+
+    public Integer findMaxPositionByUserId(Long userId) {
+        return swimLaneRepository.findMaxPositionByUserId(userId);
     }
 
     public Integer findMaxPosition() {
@@ -53,3 +71,4 @@ public class SwimLaneDAO {
         swimLaneRepository.deleteById(id);
     }
 }
+

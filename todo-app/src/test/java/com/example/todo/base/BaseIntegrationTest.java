@@ -1,6 +1,9 @@
 package com.example.todo.base;
 
+import com.example.todo.model.User;
+import com.example.todo.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,5 +22,24 @@ public abstract class BaseIntegrationTest {
 
     @Autowired
     protected ObjectMapper objectMapper;
+
+    @Autowired
+    protected UserRepository userRepository;
+
+    protected User testUser;
+
+    @BeforeEach
+    void setUpTestUser() {
+        // Create or find the test user that matches @WithMockUser
+        testUser = userRepository.findByEmail("test@example.com")
+                .orElseGet(() -> {
+                    User user = new User();
+                    user.setEmail("test@example.com");
+                    user.setName("Test User");
+                    user.setPasswordHash("$2a$10$test");
+                    return userRepository.save(user);
+                });
+    }
 }
+
 

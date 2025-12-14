@@ -23,6 +23,7 @@ class SwimLaneControllerTest extends BaseIntegrationTest {
     void getAllSwimLanes_ShouldReturnList() throws Exception {
         SwimLane lane = new SwimLane();
         lane.setName("Test Lane For GetAll");
+        lane.setUser(testUser);
         swimLaneRepository.save(lane);
 
         mockMvc.perform(get("/api/swimlanes"))
@@ -51,6 +52,7 @@ class SwimLaneControllerTest extends BaseIntegrationTest {
         SwimLane lane = new SwimLane();
         lane.setName("To Complete");
         lane.setIsCompleted(false);
+        lane.setUser(testUser);
         lane = swimLaneRepository.save(lane);
 
         mockMvc.perform(patch("/api/swimlanes/{id}/complete", lane.getId()))
@@ -66,11 +68,13 @@ class SwimLaneControllerTest extends BaseIntegrationTest {
         SwimLane activeLane = new SwimLane();
         activeLane.setName("Active Test Lane");
         activeLane.setIsCompleted(false);
+        activeLane.setUser(testUser);
         swimLaneRepository.save(activeLane);
 
         SwimLane completedLane = new SwimLane();
         completedLane.setName("Completed Test Lane");
         completedLane.setIsCompleted(true);
+        completedLane.setUser(testUser);
         swimLaneRepository.save(completedLane);
 
         mockMvc.perform(get("/api/swimlanes/active"))
@@ -84,11 +88,13 @@ class SwimLaneControllerTest extends BaseIntegrationTest {
         SwimLane activeLane = new SwimLane();
         activeLane.setName("Active Lane For Completed Test");
         activeLane.setIsCompleted(false);
+        activeLane.setUser(testUser);
         swimLaneRepository.save(activeLane);
 
         SwimLane completedLane = new SwimLane();
         completedLane.setName("Completed Lane For Test");
         completedLane.setIsCompleted(true);
+        completedLane.setUser(testUser);
         swimLaneRepository.save(completedLane);
 
         mockMvc.perform(get("/api/swimlanes/completed"))
@@ -102,6 +108,7 @@ class SwimLaneControllerTest extends BaseIntegrationTest {
         SwimLane lane = new SwimLane();
         lane.setName("To Uncomplete");
         lane.setIsCompleted(true);
+        lane.setUser(testUser);
         lane = swimLaneRepository.save(lane);
 
         mockMvc.perform(patch("/api/swimlanes/{id}/uncomplete", lane.getId()))
@@ -116,6 +123,7 @@ class SwimLaneControllerTest extends BaseIntegrationTest {
     void deleteSwimLane_ShouldReturnOk() throws Exception {
         SwimLane lane = new SwimLane();
         lane.setName("To Delete");
+        lane.setUser(testUser);
         lane = swimLaneRepository.save(lane);
 
         mockMvc.perform(delete("/api/swimlanes/{id}", lane.getId()))
@@ -130,11 +138,13 @@ class SwimLaneControllerTest extends BaseIntegrationTest {
         SwimLane lane1 = new SwimLane();
         lane1.setName("Lane A");
         lane1.setPosition(0);
+        lane1.setUser(testUser);
         lane1 = swimLaneRepository.save(lane1);
 
         SwimLane lane2 = new SwimLane();
         lane2.setName("Lane B");
         lane2.setPosition(1);
+        lane2.setUser(testUser);
         lane2 = swimLaneRepository.save(lane2);
 
         // Reorder to B, A
@@ -144,3 +154,4 @@ class SwimLaneControllerTest extends BaseIntegrationTest {
                 .andExpect(status().isOk());
     }
 }
+

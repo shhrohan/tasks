@@ -2,13 +2,20 @@ package com.example.todo.service;
 
 import com.example.todo.dao.SwimLaneDAO;
 import com.example.todo.model.SwimLane;
+import com.example.todo.model.User;
+import com.example.todo.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,15 +33,45 @@ class SwimLaneServiceTest {
     @Mock
     private AsyncWriteService asyncWriteService;
 
-    @InjectMocks
+    @Mock
+    private UserRepository userRepository;
+
     private SwimLaneService swimLaneService;
+
+    private User testUser;
+
+    @BeforeEach
+    void setUp() {
+        swimLaneService = new SwimLaneService(swimLaneDAO, asyncWriteService, userRepository);
+        
+        // Create test user
+        testUser = new User();
+        testUser.setId(1L);
+        testUser.setEmail("test@example.com");
+        testUser.setName("Test User");
+
+        // Mock SecurityContext
+        SecurityContext securityContext = mock(SecurityContext.class);
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                "test@example.com", null, Collections.emptyList());
+        lenient().when(securityContext.getAuthentication()).thenReturn(auth);
+        SecurityContextHolder.setContext(securityContext);
+
+        // Mock UserRepository to return test user (lenient to avoid UnnecessaryStubbingException)
+        lenient().when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
 
     @Test
     void createSwimLane_ShouldSaveLane() {
         SwimLane lane = new SwimLane();
         lane.setName("New Lane");
 
-        when(swimLaneDAO.findMaxPosition()).thenReturn(5);
+        when(swimLaneDAO.findMaxPositionByUserId(testUser.getId())).thenReturn(5);
         when(swimLaneDAO.save(any(SwimLane.class))).thenReturn(lane);
 
         SwimLane result = swimLaneService.createSwimLane(lane);
@@ -42,6 +79,7 @@ class SwimLaneServiceTest {
         assertNotNull(result);
         assertEquals("New Lane", result.getName());
         assertEquals(6, result.getPosition()); // maxPos + 1
+        assertEquals(testUser, result.getUser());
         verify(swimLaneDAO).save(lane);
     }
 
@@ -50,7 +88,7 @@ class SwimLaneServiceTest {
         SwimLane lane = new SwimLane();
         lane.setName("First Lane");
 
-        when(swimLaneDAO.findMaxPosition()).thenReturn(null);
+        when(swimLaneDAO.findMaxPositionByUserId(testUser.getId())).thenReturn(null);
         when(swimLaneDAO.save(any(SwimLane.class))).thenReturn(lane);
 
         SwimLane result = swimLaneService.createSwimLane(lane);
@@ -65,6 +103,7 @@ class SwimLaneServiceTest {
         SwimLane lane = new SwimLane();
         lane.setId(laneId);
         lane.setIsCompleted(false);
+        lane.setUser(testUser);
 
         when(swimLaneDAO.findById(laneId)).thenReturn(Optional.of(lane));
 
@@ -84,11 +123,26 @@ class SwimLaneServiceTest {
     }
 
     @Test
+    void completeSwimLane_ShouldThrowException_WhenNotOwned() {
+        Long laneId = 1L;
+        SwimLane lane = new SwimLane();
+        lane.setId(laneId);
+        User otherUser = new User();
+        otherUser.setId(999L);
+        lane.setUser(otherUser);
+
+        when(swimLaneDAO.findById(laneId)).thenReturn(Optional.of(lane));
+
+        assertThrows(RuntimeException.class, () -> swimLaneService.completeSwimLane(laneId));
+    }
+
+    @Test
     void deleteSwimLane_ShouldSoftDelete() {
         Long laneId = 1L;
         SwimLane lane = new SwimLane();
         lane.setId(laneId);
         lane.setIsDeleted(false);
+        lane.setUser(testUser);
 
         when(swimLaneDAO.findById(laneId)).thenReturn(Optional.of(lane));
         swimLaneService.deleteSwimLane(laneId);
@@ -107,10 +161,26 @@ class SwimLaneServiceTest {
     }
 
     @Test
-    void getAllSwimLanes_ShouldReturnAllLanes() {
+    void deleteSwimLane_ShouldThrowException_WhenNotOwned() {
+        Long laneId = 1L;
+        SwimLane lane = new SwimLane();
+        lane.setId(laneId);
+        User otherUser = new User();
+        otherUser.setId(999L);
+        lane.setUser(otherUser);
+
+        when(swimLaneDAO.findById(laneId)).thenReturn(Optional.of(lane));
+
+        assertThrows(RuntimeException.class, () -> swimLaneService.deleteSwimLane(laneId));
+    }
+
+    @Test
+    void getAllSwimLanes_ShouldReturnAllLanesForUser() {
         SwimLane lane = new SwimLane();
         lane.setId(1L);
-        when(swimLaneDAO.findByIsDeletedFalseOrderByPositionAsc()).thenReturn(Arrays.asList(lane));
+        lane.setUser(testUser);
+        when(swimLaneDAO.findByUserIdAndIsDeletedFalseOrderByPositionAsc(testUser.getId()))
+                .thenReturn(Arrays.asList(lane));
 
         List<SwimLane> result = swimLaneService.getAllSwimLanes();
 
@@ -119,10 +189,12 @@ class SwimLaneServiceTest {
     }
 
     @Test
-    void getActiveSwimLanes_ShouldReturnActiveLanes() {
+    void getActiveSwimLanes_ShouldReturnActiveLanesForUser() {
         SwimLane lane = new SwimLane();
         lane.setId(1L);
-        when(swimLaneDAO.findByIsCompletedFalseAndIsDeletedFalseOrderByPositionAsc()).thenReturn(Arrays.asList(lane));
+        lane.setUser(testUser);
+        when(swimLaneDAO.findByUserIdAndIsCompletedFalseAndIsDeletedFalseOrderByPositionAsc(testUser.getId()))
+                .thenReturn(Arrays.asList(lane));
 
         List<SwimLane> result = swimLaneService.getActiveSwimLanes();
 
@@ -131,10 +203,12 @@ class SwimLaneServiceTest {
     }
 
     @Test
-    void getCompletedSwimLanes_ShouldReturnCompletedLanes() {
+    void getCompletedSwimLanes_ShouldReturnCompletedLanesForUser() {
         SwimLane lane = new SwimLane();
         lane.setId(1L);
-        when(swimLaneDAO.findByIsCompletedTrueAndIsDeletedFalseOrderByPositionAsc()).thenReturn(Arrays.asList(lane));
+        lane.setUser(testUser);
+        when(swimLaneDAO.findByUserIdAndIsCompletedTrueAndIsDeletedFalseOrderByPositionAsc(testUser.getId()))
+                .thenReturn(Arrays.asList(lane));
 
         List<SwimLane> result = swimLaneService.getCompletedSwimLanes();
 
@@ -148,6 +222,7 @@ class SwimLaneServiceTest {
         SwimLane lane = new SwimLane();
         lane.setId(laneId);
         lane.setIsCompleted(true);
+        lane.setUser(testUser);
 
         when(swimLaneDAO.findById(laneId)).thenReturn(Optional.of(lane));
 
@@ -167,6 +242,20 @@ class SwimLaneServiceTest {
     }
 
     @Test
+    void uncompleteSwimLane_ShouldThrowException_WhenNotOwned() {
+        Long laneId = 1L;
+        SwimLane lane = new SwimLane();
+        lane.setId(laneId);
+        User otherUser = new User();
+        otherUser.setId(999L);
+        lane.setUser(otherUser);
+
+        when(swimLaneDAO.findById(laneId)).thenReturn(Optional.of(lane));
+
+        assertThrows(RuntimeException.class, () -> swimLaneService.uncompleteSwimLane(laneId));
+    }
+
+    @Test
     void hardDeleteSwimLane_ShouldCallDeleteById() {
         Long laneId = 1L;
         doNothing().when(swimLaneDAO).deleteById(laneId);
@@ -181,14 +270,17 @@ class SwimLaneServiceTest {
         SwimLane lane1 = new SwimLane();
         lane1.setId(1L);
         lane1.setPosition(0);
+        lane1.setUser(testUser);
 
         SwimLane lane2 = new SwimLane();
         lane2.setId(2L);
         lane2.setPosition(1);
+        lane2.setUser(testUser);
 
         SwimLane lane3 = new SwimLane();
         lane3.setId(3L);
         lane3.setPosition(2);
+        lane3.setUser(testUser);
 
         List<Long> orderedIds = Arrays.asList(3L, 1L, 2L);
         when(swimLaneDAO.findAllById(orderedIds)).thenReturn(Arrays.asList(lane1, lane2, lane3));
@@ -204,18 +296,42 @@ class SwimLaneServiceTest {
 
     @Test
     void reorderSwimLanes_ShouldHandleMissingLanes() {
-        // Test the null check in reorderSwimLanes - lane with id 999 doesn't exist
         SwimLane lane1 = new SwimLane();
         lane1.setId(1L);
         lane1.setPosition(0);
+        lane1.setUser(testUser);
 
-        List<Long> orderedIds = Arrays.asList(999L, 1L); // 999L doesn't exist
+        List<Long> orderedIds = Arrays.asList(999L, 1L);
         when(swimLaneDAO.findAllById(orderedIds)).thenReturn(Arrays.asList(lane1));
 
-        // Should not throw, should only update existing lane
         swimLaneService.reorderSwimLanes(orderedIds);
 
-        assertEquals(1, lane1.getPosition()); // id=1 is at index 1 (999 is not found)
+        assertEquals(1, lane1.getPosition());
+        verify(swimLaneDAO).saveAll(anyList());
+    }
+
+    @Test
+    void reorderSwimLanes_ShouldFilterOutOtherUsersLanes() {
+        SwimLane myLane = new SwimLane();
+        myLane.setId(1L);
+        myLane.setPosition(0);
+        myLane.setUser(testUser);
+
+        SwimLane otherLane = new SwimLane();
+        otherLane.setId(2L);
+        otherLane.setPosition(1);
+        User otherUser = new User();
+        otherUser.setId(999L);
+        otherLane.setUser(otherUser);
+
+        List<Long> orderedIds = Arrays.asList(2L, 1L);
+        when(swimLaneDAO.findAllById(orderedIds)).thenReturn(Arrays.asList(myLane, otherLane));
+
+        swimLaneService.reorderSwimLanes(orderedIds);
+
+        // Only myLane should be reordered (index 1 in orderedIds)
+        assertEquals(1, myLane.getPosition());
         verify(swimLaneDAO).saveAll(anyList());
     }
 }
+
