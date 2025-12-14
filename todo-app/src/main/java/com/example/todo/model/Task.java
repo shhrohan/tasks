@@ -4,7 +4,11 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "tasks")
+@Table(name = "tasks", indexes = {
+    @Index(name = "idx_tasks_swim_lane_id", columnList = "swim_lane_id"),
+    @Index(name = "idx_tasks_status", columnList = "status"),
+    @Index(name = "idx_tasks_lane_status_position", columnList = "swim_lane_id, status, position_order")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -37,3 +41,4 @@ public class Task {
     @Column(name = "position_order")
     private Integer position;
 }
+

@@ -9,7 +9,9 @@ import java.time.LocalDateTime;
  * User entity for authentication and data ownership.
  */
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+    @Index(name = "idx_users_email", columnList = "email", unique = true)
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -39,5 +41,6 @@ public class User {
         }
     }
 }
+
 
 
