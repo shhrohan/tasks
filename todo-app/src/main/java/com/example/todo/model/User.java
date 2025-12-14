@@ -26,10 +26,10 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column
+    @Column(name = "password_hash")
     private String passwordHash;
 
-    @Column
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @PrePersist
@@ -39,4 +39,5 @@ public class User {
         }
     }
 }
+
 

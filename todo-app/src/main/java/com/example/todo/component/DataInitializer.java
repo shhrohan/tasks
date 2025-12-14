@@ -52,7 +52,7 @@ public class DataInitializer implements ApplicationRunner {
                     return userRepository.save(user);
                 });
 
-        // Ensure user has a password set
+        // Ensure user has a password set (only if null or empty)
         if (defaultUser.getPasswordHash() == null || defaultUser.getPasswordHash().isEmpty()) {
             log.info("Setting default password for user: {}", defaultUser.getEmail());
             defaultUser.setPasswordHash(passwordEncoder.encode(DEFAULT_PASSWORD));
