@@ -333,5 +333,61 @@ class SwimLaneServiceTest {
         assertEquals(1, myLane.getPosition());
         verify(swimLaneDAO).saveAll(anyList());
     }
+
+    @Test
+    void completeSwimLane_ShouldThrowException_WhenOwnerIsNull() {
+        Long laneId = 1L;
+        SwimLane lane = new SwimLane();
+        lane.setId(laneId);
+        lane.setUser(null); // No owner
+
+        when(swimLaneDAO.findById(laneId)).thenReturn(Optional.of(lane));
+
+        assertThrows(RuntimeException.class, () -> swimLaneService.completeSwimLane(laneId));
+    }
+
+    @Test
+    void uncompleteSwimLane_ShouldThrowException_WhenOwnerIsNull() {
+        Long laneId = 1L;
+        SwimLane lane = new SwimLane();
+        lane.setId(laneId);
+        lane.setUser(null); // No owner
+
+        when(swimLaneDAO.findById(laneId)).thenReturn(Optional.of(lane));
+
+        assertThrows(RuntimeException.class, () -> swimLaneService.uncompleteSwimLane(laneId));
+    }
+
+    @Test
+    void deleteSwimLane_ShouldThrowException_WhenOwnerIsNull() {
+        Long laneId = 1L;
+        SwimLane lane = new SwimLane();
+        lane.setId(laneId);
+        lane.setUser(null); // No owner
+
+        when(swimLaneDAO.findById(laneId)).thenReturn(Optional.of(lane));
+
+        assertThrows(RuntimeException.class, () -> swimLaneService.deleteSwimLane(laneId));
+    }
+
+    @Test
+    void getCurrentUser_ShouldThrowException_WhenNoAuthentication() {
+        // Clear the security context to simulate no authentication
+        SecurityContextHolder.clearContext();
+        SecurityContext emptyContext = mock(SecurityContext.class);
+        when(emptyContext.getAuthentication()).thenReturn(null);
+        SecurityContextHolder.setContext(emptyContext);
+
+        assertThrows(RuntimeException.class, () -> swimLaneService.getAllSwimLanes());
+    }
+
+    @Test
+    void getCurrentUser_ShouldThrowException_WhenUserNotFound() {
+        // Override the mock to return empty
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () -> swimLaneService.getAllSwimLanes());
+    }
 }
+
 
