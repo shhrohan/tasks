@@ -332,6 +332,17 @@
             </div>
         </div>
     </div>
+
+    <script>
+        // Prevent back button navigation to authenticated pages
+        // Replace the current history state so back button doesn't work
+        if (window.history && window.history.pushState) {
+            window.history.pushState(null, '', window.location.href);
+            window.onpopstate = function () {
+                window.history.pushState(null, '', window.location.href);
+            };
+        }
+    </script>
 </body>
 
 </html>

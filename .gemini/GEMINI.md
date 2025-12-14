@@ -42,6 +42,11 @@ While actively coding:
 *   **ALWAYS** reuse the already open browser tab.
 *   **NEVER** open a new tab for localhost.
 
+### 2.2.1 TERMINAL USAGE
+*   **NEVER** run multiple terminal sessions in parallel.
+*   **ALWAYS** wait for the previous terminal command to complete before starting a new one.
+*   **KILL** existing running processes (like `spring-boot:run`) before starting new ones.
+
 ### 2.3 COMMIT & RESTART CYCLE
 *   **VALIDATION FIRST**: Before committing, you MUST:
     1.  Apply changes.

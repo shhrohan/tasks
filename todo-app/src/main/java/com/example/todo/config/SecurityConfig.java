@@ -10,6 +10,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.header.writers.CacheControlHeadersWriter;
 
 @Configuration
 @EnableWebSecurity
@@ -27,6 +28,10 @@ public class SecurityConfig {
             .csrf(csrf -> csrf
                 .ignoringRequestMatchers("/api/**") // Disable CSRF for API endpoints
             )
+            .headers(headers -> headers
+                // Prevent caching of pages to stop back button issues
+                .cacheControl(cache -> {})
+            )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/login", "/register", "/css/**", "/js/**", "/favicon.png", "/error").permitAll()
                 .requestMatchers("/api/sse/**").permitAll() // SSE needs to be accessible
@@ -42,7 +47,13 @@ public class SecurityConfig {
             .logout(logout -> logout
                 .logoutUrl("/logout")
                 .logoutSuccessUrl("/login?logout=true")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
                 .permitAll()
+            )
+            .sessionManagement(session -> session
+                .maximumSessions(1) // One session per user
+                .expiredUrl("/login?expired=true")
             )
             .userDetailsService(userDetailsService);
 
@@ -59,3 +70,4 @@ public class SecurityConfig {
         return authConfig.getAuthenticationManager();
     }
 }
+
