@@ -493,6 +493,17 @@ DRAG-AND-DROP CRITICAL NOTES:
         // SESSION MANAGEMENT
         // ============================================
 
+        // Log session-based login
+        (function logSessionLogin() {
+            const sessionId = document.cookie.split(';').find(c => c.trim().startsWith('JSESSIONID='));
+            if (sessionId) {
+                console.log('[Session] User logged in using session cookie:', sessionId.trim());
+                console.log('[Session] Login timestamp:', new Date().toISOString());
+            } else {
+                console.log('[Session] No session cookie found - fresh login');
+            }
+        })();
+
         // 1. Prevent back button navigation to login page
         if (window.history && window.history.pushState) {
             window.history.pushState(null, '', window.location.href);
