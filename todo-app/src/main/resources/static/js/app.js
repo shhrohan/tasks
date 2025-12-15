@@ -61,6 +61,9 @@ Alpine.data('todoApp', () => ({
     showOnlyBlocked: false,
     selectedTags: [], // Array of selected tags for multi-tag filtering
 
+    // Loading state for skeleton loaders
+    isLoading: true,  // Shows skeletons until tasks load
+
     // Import Store methods (modal management, API wrappers, etc.)
     ...Store,
 
@@ -85,58 +88,75 @@ Alpine.data('todoApp', () => ({
         }, true); // Capture phase
 
         // ---------------------------------------------------------------------
-        // STEP 1: Load Lanes
-        // Lanes must load first so we know which tasks to fetch
+        // STEP 1: Load Lanes and Tasks
+        // Use server-side initial data if available (reduces CLS)
+        // Falls back to async API fetch if not available
         // ---------------------------------------------------------------------
         try {
-            console.log('[App] Step 1: Loading lanes from API...');
-            const data = await Store.loadData();
-            this.lanes = data.lanes;
-            console.log(`[App] Loaded ${this.lanes.length} lanes:`, this.lanes.map(l => l.name));
+            // Check for server-side initial data (embedded by Thymeleaf)
+            if (window.__INITIAL_DATA__) {
+                console.log('[App] Step 1: Using server-side initial data (no async fetch!)');
+                let initialData = window.__INITIAL_DATA__;
 
-            // -----------------------------------------------------------------
-            // STEP 2: Load Tasks Per Lane (ASYNC - runs in parallel)
-            // IMPORTANT: Tasks are fetched asynchronously per lane.
-            // The HTML columns are already rendered (x-init already fired!)
-            // So we MUST reinitialize Sortable after each lane's tasks load.
-            // -----------------------------------------------------------------
-            console.log('[App] Step 2: Starting incremental task fetch...');
+                // Parse if string (Thymeleaf serializes as JSON string)
+                if (typeof initialData === 'string') {
+                    initialData = JSON.parse(initialData);
+                }
 
-            this.lanes.forEach(async (lane) => {
-                try {
-                    console.log(`[App] Fetching tasks for lane ${lane.id} "${lane.name}"...`);
-                    const newTasks = await Store.fetchLaneTasks(lane.id);
-                    console.log(`[App] Lane ${lane.id} returned ${newTasks.length} tasks`);
+                this.lanes = initialData.lanes || [];
+                this.tasks = initialData.tasks || [];
 
-                    // Update reactive array (Alpine detects this change)
-                    const existingIds = new Set(newTasks.map(t => t.id));
-                    this.tasks = this.tasks.filter(t =>
-                        !((t.swimLane && t.swimLane.id === lane.id) || existingIds.has(t.id))
-                    );
-                    this.tasks.push(...newTasks);
+                console.log(`[App] Loaded ${this.lanes.length} lanes and ${this.tasks.length} tasks from initial data`);
 
-                    // Mark lane as loaded and auto-expand if tasks exist
-                    const localLane = this.lanes.find(l => l.id === lane.id);
-                    if (localLane) {
-                        localLane.loading = false;
-                        if (newTasks.length > 0) {
-                            localLane.collapsed = false;
-                        }
-                    }
+                // Expand lanes that have tasks
+                this.lanes.forEach(lane => {
+                    const laneTasks = this.tasks.filter(t => t.swimLane && t.swimLane.id === lane.id);
+                    lane.loading = false;
+                    lane.collapsed = laneTasks.length === 0;
+                });
 
-                    // ---------------------------------------------------------
-                    // CRITICAL: Reinitialize Sortable AFTER tasks are rendered
-                    // $nextTick waits for Alpine to update the DOM
-                    // ---------------------------------------------------------
-                    this.$nextTick(() => {
-                        console.log(`[App] DOM updated for lane ${lane.id}, reinitializing Sortable...`);
+                // Initialize Sortable after DOM renders
+                this.$nextTick(() => {
+                    this.lanes.forEach(lane => {
                         this.reinitSortableForLane(lane.id);
                     });
+                });
 
-                } catch (e) {
-                    console.error(`[App] Error fetching tasks for lane ${lane.id}:`, e);
-                }
-            });
+                this.isLoading = false;
+
+            } else {
+                // Fallback: Async API fetch (slower, causes CLS)
+                console.log('[App] Step 1: No initial data, falling back to API fetch...');
+                const data = await Store.loadData();
+                this.lanes = data.lanes;
+                console.log(`[App] Loaded ${this.lanes.length} lanes:`, this.lanes.map(l => l.name));
+
+                // Load tasks per lane
+                console.log('[App] Step 2: Starting incremental task fetch...');
+                const lanePromises = this.lanes.map(async (lane) => {
+                    try {
+                        const newTasks = await Store.fetchLaneTasks(lane.id);
+                        this.tasks.push(...newTasks);
+
+                        const localLane = this.lanes.find(l => l.id === lane.id);
+                        if (localLane) {
+                            localLane.loading = false;
+                            localLane.collapsed = newTasks.length === 0;
+                        }
+
+                        this.$nextTick(() => {
+                            this.reinitSortableForLane(lane.id);
+                        });
+                    } catch (e) {
+                        console.error(`[App] Error fetching tasks for lane ${lane.id}:`, e);
+                    }
+                });
+
+                Promise.all(lanePromises).then(() => {
+                    console.log('[App] All lanes loaded');
+                    this.isLoading = false;
+                });
+            }
 
         } catch (e) {
             console.error('[App] Failed to initialize:', e);

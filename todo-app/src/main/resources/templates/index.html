@@ -37,17 +37,40 @@ DRAG-AND-DROP CRITICAL NOTES:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Task Board</title>
 
+    <!-- Preconnect to CDNs for faster resource loading -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+
+    <!-- Preload critical CSS -->
+    <link rel="preload" href="/css/style.css" as="style">
+
     <!-- CSS Dependencies -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 
-    <!-- Custom CSS (v11 matched) -->
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/style.css">
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/favicon.png">
 </head>
+
+<!-- Initial Data: Server-side rendered to eliminate async loading CLS -->
+<script th:if="${initialDataJson != null}" th:inline="javascript">
+    (function () {
+        try {
+            var rawData = /*[[${initialDataJson}]]*/ '{"lanes":[],"tasks":[]}';
+            window.__INITIAL_DATA__ = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+            console.log('[Init] Server-side data loaded');
+        } catch (e) {
+            console.error('[Init] Failed to parse initial data:', e);
+            window.__INITIAL_DATA__ = null;
+        }
+    })();
+</script>
 
 <body class="bg-dark text-white" x-data="todoApp">
 
@@ -252,6 +275,8 @@ DRAG-AND-DROP CRITICAL NOTES:
                                             - data-task-id is REQUIRED for identifying moved task
                                             - DO NOT add 3D transforms (translateZ, rotateX) - breaks drag!
                                         -->
+
+                                        <!-- TASK CARDS (Draggable Items) -->
                                         <template x-for="task in getTasks(lane.id, status)" :key="task.id">
                                             <div class="card task-card mb-2" :data-task-id="task.id"
                                                 :data-status="task.status" draggable="true"
@@ -481,66 +506,66 @@ DRAG-AND-DROP CRITICAL NOTES:
                     }
                 });
                 console.warn('=== END DIAGNOSTIC ===\\n\\n');
-            }, 5000);
-        })();
+         , 5
+            })();
     </script>
 
     <!-- Bootstrap Bundle JS for dropdown functionality -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // ============================================
-        // SESSION MANAGEMENT
-        // ============================================
+            // ============================================
+            // SESSION MANAGEMENT
+            // ============================================
 
-        // Log session-based login
-        // Note: JSESSIONID is HttpOnly (can't be read by JavaScript for security)
-        // If user is on this page, they are authenticated
-        (function logSessionLogin() {
-            console.log('[Session] User authenticated - page loaded successfully');
-            console.log('[Session] Login timestamp:', new Date().toISOString());
-        })();
+            // Log session-based login
+            // Note: JSESSIONID is HttpOnly (can't be read by JavaScript for security)
+            // If user is on this page, they are authenticated
+            (function logSessionLogin() {
+                console.log('[Session] User authenticated - page loaded successfully');
+                console.log('[Session] Login timestamp:', new Date().toISOString());
+            })();
 
-        // 1. Prevent back button navigation to login page
-        if (window.history && window.history.pushState) {
-            window.history.pushState(null, '', window.location.href);
-            window.onpopstate = function () {
+            // 1. Prevent back button navigation to login page
+            if (window.history && window.history.pushState) {
                 window.history.pushState(null, '', window.location.href);
-            };
-        }
-
-        // 2. Auto-logout at end of calendar day (midnight)
-        (function setupEODLogout() {
-            const now = new Date();
-            const midnight = new Date();
-            midnight.setHours(23, 59, 59, 999);
-
-            const msUntilMidnight = midnight.getTime() - now.getTime();
-
-            console.log('[Session] Auto-logout scheduled at midnight. Time remaining:',
-                Math.round(msUntilMidnight / 60000), 'minutes');
-
-            // Store login date in sessionStorage
-            const loginDate = sessionStorage.getItem('loginDate');
-            const today = now.toDateString();
-
-            if (loginDate && loginDate !== today) {
-                // It's a new day since login, log out immediately
-                console.log('[Session] New calendar day detected. Logging out...');
-                window.location.href = '/logout';
-                return;
+                window.onpopstate = function () {
+                    window.history.pushState(null, '', window.location.href);
+                };
             }
 
-            // Store today's date
-            sessionStorage.setItem('loginDate', today);
+            // 2. Auto-logout at end of calendar day (midnight)
+            (function setupEODLogout() {
+                const now = new Date();
+                const midnight = new Date();
+                midnight.setHours(23, 59, 59, 999);
 
-            // Schedule logout at midnight
-            setTimeout(function () {
-                console.log('[Session] End of day reached. Logging out...');
-                sessionStorage.removeItem('loginDate');
-                window.location.href = '/logout';
-            }, msUntilMidnight);
-        })();
+                const msUntilMidnight = midnight.getTime() - now.getTime();
+
+                console.log('[Session] Auto-logout scheduled at midnight. Time remaining:',
+                    Math.round(msUntilMidnight / 60000), 'minutes');
+
+                // Store login date in sessionStorage
+                const loginDate = sessionStorage.getItem('loginDate');
+                const today = now.toDateString();
+
+                if (loginDate && loginDate !== today) {
+                    // It's a new day since login, log out immediately
+                    console.log('[Session] New calendar day detected. Logging out...');
+                    window.location.href = '/logout';
+                    return;
+                }
+
+                // Store today's date
+                sessionStorage.setItem('loginDate', today);
+
+                // Schedule logout at midnight
+                setTimeout(function () {
+                    console.log('[Session] End of day reached. Logging out...');
+                    sessionStorage.removeItem('loginDate');
+                    window.location.href = '/logout';
+                }, msUntilMidnight);
+            })();
     </script>
 </body>
 
