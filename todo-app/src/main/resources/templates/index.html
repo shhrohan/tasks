@@ -325,7 +325,7 @@ DRAG-AND-DROP CRITICAL NOTES:
                                                 :data-status="task.status" draggable="true"
                                                 :style="getTaskStyle(task.id)" @dblclick="resetTaskSize(task.id)">
                                                 <div class="card-body p-2 d-flex flex-column">
-                                                    <h6 class="card-title text-white mb-1" x-text="task.name"></h6>
+                                                    <p class="h6 card-title text-white mb-1" x-text="task.name"></p>
                                                     <!-- Tags: Bottom Right -->
                                                     <div class="d-flex flex-wrap gap-1 mt-2 ms-auto">
                                                         <template x-for="tag in getTags(task.tags)" :key="tag">

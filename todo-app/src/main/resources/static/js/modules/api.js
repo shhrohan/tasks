@@ -227,8 +227,73 @@ export const Api = {
     },
 
     // =========================================================================
-    // SERVER-SENT EVENTS (SSE)
+    // SERVER-SENT EVENTS (SSE) with Connection Status Tracking
     // =========================================================================
+
+    /** Connection state */
+    isConnected: true,
+    reconnectAttempts: 0,
+    maxReconnectAttempts: 10,
+
+    /**
+     * Show connection lost overlay
+     */
+    showConnectionLostOverlay() {
+        let overlay = document.getElementById('connection-lost-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'connection-lost-overlay';
+            overlay.innerHTML = `
+                <div class="connection-lost-content">
+                    <i class="fa-solid fa-wifi-slash fa-3x mb-3"></i>
+                    <h4>Connection Lost</h4>
+                    <p class="text-secondary mb-2">Attempting to reconnect...</p>
+                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                        <span class="visually-hidden">Reconnecting...</span>
+                    </div>
+                    <p class="text-muted small mt-2" id="reconnect-status"></p>
+                </div>
+            `;
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.85);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 99999;
+                color: white;
+                text-align: center;
+            `;
+            document.body.appendChild(overlay);
+        }
+        overlay.style.display = 'flex';
+        console.log('[SSE] Connection lost overlay shown');
+    },
+
+    /**
+     * Hide connection lost overlay
+     */
+    hideConnectionLostOverlay() {
+        const overlay = document.getElementById('connection-lost-overlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+        console.log('[SSE] Connection restored, overlay hidden');
+    },
+
+    /**
+     * Update reconnect status message
+     */
+    updateReconnectStatus(message) {
+        const statusEl = document.getElementById('reconnect-status');
+        if (statusEl) {
+            statusEl.textContent = message;
+        }
+    },
 
     /**
      * Initialize SSE connection for real-time updates
@@ -242,6 +307,9 @@ export const Api = {
 
         eventSource.onopen = () => {
             console.log('[SSE] Connection established');
+            this.isConnected = true;
+            this.reconnectAttempts = 0;
+            this.hideConnectionLostOverlay();
         };
 
         eventSource.addEventListener('task-updated', (e) => {
@@ -263,9 +331,23 @@ export const Api = {
         });
 
         eventSource.onerror = (e) => {
-            console.error('[SSE] Connection error, will reconnect in 5s...', e);
+            console.error('[SSE] Connection error', e);
+            this.isConnected = false;
+            this.reconnectAttempts++;
             eventSource.close();
-            setTimeout(() => this.initSSE(onTaskUpdate, onTaskDelete, onLaneUpdate), 5000);
+
+            // Show overlay on first disconnect
+            this.showConnectionLostOverlay();
+
+            if (this.reconnectAttempts <= this.maxReconnectAttempts) {
+                const delay = Math.min(5000 * this.reconnectAttempts, 30000); // Max 30s
+                this.updateReconnectStatus(`Attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}... (${delay / 1000}s)`);
+                console.log(`[SSE] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
+                setTimeout(() => this.initSSE(onTaskUpdate, onTaskDelete, onLaneUpdate), delay);
+            } else {
+                this.updateReconnectStatus('Connection failed. Please refresh the page.');
+                console.error('[SSE] Max reconnect attempts reached');
+            }
         };
 
         return eventSource;
