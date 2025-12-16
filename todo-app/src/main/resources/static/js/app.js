@@ -93,69 +93,52 @@ Alpine.data('todoApp', () => ({
         // Falls back to async API fetch if not available
         // ---------------------------------------------------------------------
         try {
-            // Check for server-side initial data (embedded by Thymeleaf)
-            if (window.__INITIAL_DATA__) {
-                console.log('[App] Step 1: Using server-side initial data (no async fetch!)');
-                let initialData = window.__INITIAL_DATA__;
+            // Check for server-side initial data (embedded in script#initial-data)
+            const dataScript = document.getElementById('initial-data');
+            console.log('[App] DEBUG: Looking for #initial-data script tag...');
+            console.log('[App] DEBUG: dataScript element:', dataScript);
 
-                // Parse if string (Thymeleaf serializes as JSON string)
-                if (typeof initialData === 'string') {
-                    initialData = JSON.parse(initialData);
-                }
+            if (dataScript) {
+                console.log('[App] Step 1: Found server-side initial data, parsing...');
+                const rawJson = dataScript.textContent;
+                console.log('[App] DEBUG: Raw JSON length:', rawJson ? rawJson.length : 0);
+                console.log('[App] DEBUG: First 200 chars:', rawJson ? rawJson.substring(0, 200) : 'null');
 
-                this.lanes = initialData.lanes || [];
-                this.tasks = initialData.tasks || [];
+                try {
+                    const initialData = JSON.parse(rawJson);
+                    console.log('[App] DEBUG: JSON parsed successfully');
 
-                console.log(`[App] Loaded ${this.lanes.length} lanes and ${this.tasks.length} tasks from initial data`);
+                    this.lanes = initialData.lanes || [];
+                    this.tasks = initialData.tasks || [];
 
-                // Expand lanes that have tasks
-                this.lanes.forEach(lane => {
-                    const laneTasks = this.tasks.filter(t => t.swimLane && t.swimLane.id === lane.id);
-                    lane.loading = false;
-                    lane.collapsed = laneTasks.length === 0;
-                });
+                    console.log(`[App] Loaded ${this.lanes.length} lanes and ${this.tasks.length} tasks from initial data`);
 
-                // Initialize Sortable after DOM renders
-                this.$nextTick(() => {
+                    // Expand lanes that have tasks
                     this.lanes.forEach(lane => {
-                        this.reinitSortableForLane(lane.id);
+                        const laneTasks = this.tasks.filter(t => t.swimLane && t.swimLane.id === lane.id);
+                        lane.loading = false;
+                        lane.collapsed = laneTasks.length === 0;
                     });
-                });
 
-                this.isLoading = false;
+                    // Initialize Sortable after DOM renders
+                    this.$nextTick(() => {
+                        this.lanes.forEach(lane => {
+                            this.reinitSortableForLane(lane.id);
+                        });
+                    });
+
+                    this.isLoading = false;
+
+                } catch (parseError) {
+                    console.error('[App] DEBUG: JSON parse failed:', parseError);
+                    console.log('[App] Falling back to API fetch due to parse error...');
+                    await this.loadViaApi();
+                }
 
             } else {
                 // Fallback: Async API fetch (slower, causes CLS)
-                console.log('[App] Step 1: No initial data, falling back to API fetch...');
-                const data = await Store.loadData();
-                this.lanes = data.lanes;
-                console.log(`[App] Loaded ${this.lanes.length} lanes:`, this.lanes.map(l => l.name));
-
-                // Load tasks per lane
-                console.log('[App] Step 2: Starting incremental task fetch...');
-                const lanePromises = this.lanes.map(async (lane) => {
-                    try {
-                        const newTasks = await Store.fetchLaneTasks(lane.id);
-                        this.tasks.push(...newTasks);
-
-                        const localLane = this.lanes.find(l => l.id === lane.id);
-                        if (localLane) {
-                            localLane.loading = false;
-                            localLane.collapsed = newTasks.length === 0;
-                        }
-
-                        this.$nextTick(() => {
-                            this.reinitSortableForLane(lane.id);
-                        });
-                    } catch (e) {
-                        console.error(`[App] Error fetching tasks for lane ${lane.id}:`, e);
-                    }
-                });
-
-                Promise.all(lanePromises).then(() => {
-                    console.log('[App] All lanes loaded');
-                    this.isLoading = false;
-                });
+                console.log('[App] Step 1: No initial data script found, falling back to API fetch...');
+                await this.loadViaApi();
             }
 
         } catch (e) {
@@ -182,6 +165,41 @@ Alpine.data('todoApp', () => ({
         );
 
         console.log('[App] ====== Initialization Complete ======');
+    },
+
+    /**
+     * Fallback: Load data via async API calls (slower, causes CLS)
+     * Used when server-side initial data is not available or fails to parse
+     */
+    async loadViaApi() {
+        console.log('[App] loadViaApi: Starting async API fetch...');
+        const data = await Store.loadData();
+        this.lanes = data.lanes;
+        console.log(`[App] Loaded ${this.lanes.length} lanes via API`);
+
+        // Load tasks per lane
+        const lanePromises = this.lanes.map(async (lane) => {
+            try {
+                const newTasks = await Store.fetchLaneTasks(lane.id);
+                this.tasks.push(...newTasks);
+
+                const localLane = this.lanes.find(l => l.id === lane.id);
+                if (localLane) {
+                    localLane.loading = false;
+                    localLane.collapsed = newTasks.length === 0;
+                }
+
+                this.$nextTick(() => {
+                    this.reinitSortableForLane(lane.id);
+                });
+            } catch (e) {
+                console.error(`[App] Error fetching tasks for lane ${lane.id}:`, e);
+            }
+        });
+
+        await Promise.all(lanePromises);
+        console.log('[App] All lanes loaded via API');
+        this.isLoading = false;
     },
 
     // =========================================================================
