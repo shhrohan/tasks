@@ -44,9 +44,13 @@ public class SwimLaneService {
 
     @Cacheable(value = "lanes", key = "#root.target.currentUserId")
     public List<SwimLane> getAllSwimLanes() {
+        long start = System.currentTimeMillis();
         User user = getCurrentUser();
         log.info("[CACHE MISS] Fetching swimlanes for user: {} (id={})", user.getEmail(), user.getId());
-        return swimLaneDAO.findByUserIdAndIsDeletedFalseOrderByPositionAsc(user.getId());
+        List<SwimLane> result = swimLaneDAO.findByUserIdAndIsDeletedFalseOrderByPositionAsc(user.getId());
+        log.info("[TIMING] getAllSwimLanes() completed in {}ms, returned {} lanes", System.currentTimeMillis() - start,
+                result.size());
+        return result;
     }
 
     public Long getCurrentUserId() {
@@ -55,9 +59,14 @@ public class SwimLaneService {
 
     @Cacheable(value = "lanes", key = "'active-' + #root.target.currentUserId")
     public List<SwimLane> getActiveSwimLanes() {
+        long start = System.currentTimeMillis();
         User user = getCurrentUser();
         log.info("[CACHE MISS] Fetching ACTIVE swimlanes for user: {} (id={})", user.getEmail(), user.getId());
-        return swimLaneDAO.findByUserIdAndIsCompletedFalseAndIsDeletedFalseOrderByPositionAsc(user.getId());
+        List<SwimLane> result = swimLaneDAO
+                .findByUserIdAndIsCompletedFalseAndIsDeletedFalseOrderByPositionAsc(user.getId());
+        log.info("[TIMING] getActiveSwimLanes() completed in {}ms, returned {} lanes",
+                System.currentTimeMillis() - start, result.size());
+        return result;
     }
 
     public List<SwimLane> getCompletedSwimLanes() {

@@ -35,15 +35,23 @@ public class TaskService {
 
     @Cacheable(value = "tasks")
     public List<Task> getAllTasks() {
+        long start = System.currentTimeMillis();
         log.info("[CACHE MISS] Fetching all tasks from database");
-        return taskDAO.findAll();
+        List<Task> result = taskDAO.findAll();
+        log.info("[TIMING] getAllTasks() completed in {}ms, returned {} tasks", System.currentTimeMillis() - start,
+                result.size());
+        return result;
     }
 
     @Cacheable(value = "tasksByLane", key = "#swimLaneId")
     @Transactional(readOnly = true)
     public List<Task> getTasksBySwimLaneId(Long swimLaneId) {
+        long start = System.currentTimeMillis();
         log.info("[CACHE MISS] Fetching tasks for lane {} from database", swimLaneId);
-        return taskDAO.findBySwimLaneId(swimLaneId);
+        List<Task> result = taskDAO.findBySwimLaneId(swimLaneId);
+        log.info("[TIMING] getTasksBySwimLaneId({}) completed in {}ms, returned {} tasks", swimLaneId,
+                System.currentTimeMillis() - start, result.size());
+        return result;
     }
 
     public Optional<Task> getTask(Long id) {
