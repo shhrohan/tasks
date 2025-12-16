@@ -52,6 +52,7 @@ public class TaskService {
 
     @CacheEvict(value = { "tasks", "tasksByLane" }, allEntries = true)
     public Task createTask(Task task) {
+        log.info("[CACHE EVICT] Invalidating 'tasks' cache - creating new task");
         log.debug("Creating task: {}", task);
         // Ensure default status if not set
         if (task.getStatus() == null) {
@@ -89,6 +90,7 @@ public class TaskService {
 
     @CacheEvict(value = { "tasks", "tasksByLane" }, allEntries = true)
     public void deleteTask(Long id) {
+        log.info("[CACHE EVICT] Invalidating 'tasks' cache - deleting task {}", id);
         log.info("Delegating DELETE for task {} to Async Service", id);
         asyncWriteService.deleteTask(id);
         log.info("Returning immediate response to UI for delete task {}", id);
@@ -97,6 +99,7 @@ public class TaskService {
     @CacheEvict(value = { "tasks", "tasksByLane" }, allEntries = true)
     @Transactional
     public Task moveTask(Long id, TaskStatus newStatus, Long swimLaneId, Integer position) {
+        log.info("[CACHE EVICT] Invalidating 'tasks' cache - moving task {}", id);
         log.info("Delegating MOVE for task {} to Async Service (status={}, lane={}, position={})", id, newStatus,
                 swimLaneId, position);
 

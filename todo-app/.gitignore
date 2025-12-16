@@ -95,3 +95,7 @@ HELP.md
 
 # === Custom/Project Specific ===
 .gemini-clipboard
+
+# === Node.js (build tools only) ===
+node_modules/
+package-lock.json

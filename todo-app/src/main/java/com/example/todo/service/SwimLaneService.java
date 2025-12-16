@@ -53,8 +53,10 @@ public class SwimLaneService {
         return getCurrentUser().getId();
     }
 
+    @Cacheable(value = "lanes", key = "'active-' + #root.target.currentUserId")
     public List<SwimLane> getActiveSwimLanes() {
         User user = getCurrentUser();
+        log.info("[CACHE MISS] Fetching ACTIVE swimlanes for user: {} (id={})", user.getEmail(), user.getId());
         return swimLaneDAO.findByUserIdAndIsCompletedFalseAndIsDeletedFalseOrderByPositionAsc(user.getId());
     }
 
@@ -65,6 +67,7 @@ public class SwimLaneService {
 
     @CacheEvict(value = { "lanes", "userLanes" }, allEntries = true)
     public SwimLane createSwimLane(SwimLane swimLane) {
+        log.info("[CACHE EVICT] Invalidating 'lanes' cache - creating new swimlane");
         User user = getCurrentUser();
         swimLane.setUser(user);
 
@@ -119,6 +122,7 @@ public class SwimLaneService {
 
     @CacheEvict(value = { "lanes", "userLanes" }, allEntries = true)
     public void deleteSwimLane(Long id) {
+        log.info("[CACHE EVICT] Invalidating 'lanes' cache - deleting swimlane {}", id);
         User user = getCurrentUser();
         log.debug("Soft deleting swimlane {}", id);
         SwimLane swimLane = swimLaneDAO.findById(id)
@@ -144,6 +148,7 @@ public class SwimLaneService {
 
     @CacheEvict(value = { "lanes", "userLanes" }, allEntries = true)
     public void reorderSwimLanes(List<Long> orderedIds) {
+        log.info("[CACHE EVICT] Invalidating 'lanes' cache - reordering lanes");
         User user = getCurrentUser();
         List<SwimLane> lanes = swimLaneDAO.findAllById(orderedIds);
 
