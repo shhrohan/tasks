@@ -4,6 +4,8 @@ import com.example.todo.dao.SwimLaneDAO;
 import com.example.todo.model.SwimLane;
 import com.example.todo.model.User;
 import com.example.todo.repository.UserRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -20,8 +22,8 @@ public class SwimLaneService {
     private final AsyncWriteService asyncWriteService;
     private final UserRepository userRepository;
 
-    public SwimLaneService(SwimLaneDAO swimLaneDAO, AsyncWriteService asyncWriteService, 
-                          UserRepository userRepository) {
+    public SwimLaneService(SwimLaneDAO swimLaneDAO, AsyncWriteService asyncWriteService,
+            UserRepository userRepository) {
         this.swimLaneDAO = swimLaneDAO;
         this.asyncWriteService = asyncWriteService;
         this.userRepository = userRepository;
@@ -40,10 +42,15 @@ public class SwimLaneService {
                 .orElseThrow(() -> new RuntimeException("User not found: " + email));
     }
 
+    @Cacheable(value = "lanes", key = "#root.target.currentUserId")
     public List<SwimLane> getAllSwimLanes() {
         User user = getCurrentUser();
-        log.info("Fetching swimlanes for user: {} (id={})", user.getEmail(), user.getId());
+        log.info("[CACHE MISS] Fetching swimlanes for user: {} (id={})", user.getEmail(), user.getId());
         return swimLaneDAO.findByUserIdAndIsDeletedFalseOrderByPositionAsc(user.getId());
+    }
+
+    public Long getCurrentUserId() {
+        return getCurrentUser().getId();
     }
 
     public List<SwimLane> getActiveSwimLanes() {
@@ -56,10 +63,11 @@ public class SwimLaneService {
         return swimLaneDAO.findByUserIdAndIsCompletedTrueAndIsDeletedFalseOrderByPositionAsc(user.getId());
     }
 
+    @CacheEvict(value = { "lanes", "userLanes" }, allEntries = true)
     public SwimLane createSwimLane(SwimLane swimLane) {
         User user = getCurrentUser();
         swimLane.setUser(user);
-        
+
         // Set position to max + 1 for this user
         Integer maxPos = swimLaneDAO.findMaxPositionByUserId(user.getId());
         swimLane.setPosition(maxPos == null ? 0 : maxPos + 1);
@@ -75,13 +83,13 @@ public class SwimLaneService {
                     log.error("SwimLane not found with id: {}", id);
                     return new RuntimeException("SwimLane not found");
                 });
-        
+
         // Security check: ensure user owns this swimlane
         if (swimLane.getUser() == null || !swimLane.getUser().getId().equals(user.getId())) {
             log.error("User {} attempted to complete swimlane {} owned by another user", user.getEmail(), id);
             throw new RuntimeException("Access denied: You don't own this swimlane");
         }
-        
+
         swimLane.setIsCompleted(true);
         log.info("Delegating COMPLETE for swimlane {} to Async Service", id);
         asyncWriteService.saveSwimLane(swimLane);
@@ -96,19 +104,20 @@ public class SwimLaneService {
                     log.error("SwimLane not found with id: {}", id);
                     return new RuntimeException("SwimLane not found");
                 });
-        
+
         // Security check: ensure user owns this swimlane
         if (swimLane.getUser() == null || !swimLane.getUser().getId().equals(user.getId())) {
             log.error("User {} attempted to uncomplete swimlane {} owned by another user", user.getEmail(), id);
             throw new RuntimeException("Access denied: You don't own this swimlane");
         }
-        
+
         swimLane.setIsCompleted(false);
         log.info("Delegating UNCOMPLETE for swimlane {} to Async Service", id);
         asyncWriteService.saveSwimLane(swimLane);
         return swimLane;
     }
 
+    @CacheEvict(value = { "lanes", "userLanes" }, allEntries = true)
     public void deleteSwimLane(Long id) {
         User user = getCurrentUser();
         log.debug("Soft deleting swimlane {}", id);
@@ -117,13 +126,13 @@ public class SwimLaneService {
                     log.error("SwimLane not found with id: {}", id);
                     return new RuntimeException("SwimLane not found");
                 });
-        
+
         // Security check: ensure user owns this swimlane
         if (swimLane.getUser() == null || !swimLane.getUser().getId().equals(user.getId())) {
             log.error("User {} attempted to delete swimlane {} owned by another user", user.getEmail(), id);
             throw new RuntimeException("Access denied: You don't own this swimlane");
         }
-        
+
         swimLane.setIsDeleted(true);
         log.info("Delegating DELETE for swimlane {} to Async Service", id);
         asyncWriteService.saveSwimLane(swimLane);
@@ -133,15 +142,16 @@ public class SwimLaneService {
         swimLaneDAO.deleteById(id);
     }
 
+    @CacheEvict(value = { "lanes", "userLanes" }, allEntries = true)
     public void reorderSwimLanes(List<Long> orderedIds) {
         User user = getCurrentUser();
         List<SwimLane> lanes = swimLaneDAO.findAllById(orderedIds);
-        
+
         // Filter to only lanes owned by current user
         lanes = lanes.stream()
                 .filter(lane -> lane.getUser() != null && lane.getUser().getId().equals(user.getId()))
                 .collect(java.util.stream.Collectors.toList());
-        
+
         // Create a map for O(1) lookup
         java.util.Map<Long, SwimLane> laneMap = lanes.stream()
                 .collect(java.util.stream.Collectors.toMap(SwimLane::getId, java.util.function.Function.identity()));
@@ -156,4 +166,3 @@ public class SwimLaneService {
         swimLaneDAO.saveAll(lanes);
     }
 }
-

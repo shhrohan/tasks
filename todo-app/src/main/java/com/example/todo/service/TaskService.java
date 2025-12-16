@@ -5,6 +5,8 @@ import com.example.todo.dao.TaskDAO;
 import com.example.todo.model.SwimLane;
 import com.example.todo.model.Task;
 import com.example.todo.model.TaskStatus;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,12 +33,16 @@ public class TaskService {
         this.objectMapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
+    @Cacheable(value = "tasks")
     public List<Task> getAllTasks() {
+        log.info("[CACHE MISS] Fetching all tasks from database");
         return taskDAO.findAll();
     }
 
+    @Cacheable(value = "tasksByLane", key = "#swimLaneId")
     @Transactional(readOnly = true)
     public List<Task> getTasksBySwimLaneId(Long swimLaneId) {
+        log.info("[CACHE MISS] Fetching tasks for lane {} from database", swimLaneId);
         return taskDAO.findBySwimLaneId(swimLaneId);
     }
 
@@ -44,6 +50,7 @@ public class TaskService {
         return taskDAO.findById(id);
     }
 
+    @CacheEvict(value = { "tasks", "tasksByLane" }, allEntries = true)
     public Task createTask(Task task) {
         log.debug("Creating task: {}", task);
         // Ensure default status if not set
@@ -80,12 +87,14 @@ public class TaskService {
                 });
     }
 
+    @CacheEvict(value = { "tasks", "tasksByLane" }, allEntries = true)
     public void deleteTask(Long id) {
         log.info("Delegating DELETE for task {} to Async Service", id);
         asyncWriteService.deleteTask(id);
         log.info("Returning immediate response to UI for delete task {}", id);
     }
 
+    @CacheEvict(value = { "tasks", "tasksByLane" }, allEntries = true)
     @Transactional
     public Task moveTask(Long id, TaskStatus newStatus, Long swimLaneId, Integer position) {
         log.info("Delegating MOVE for task {} to Async Service (status={}, lane={}, position={})", id, newStatus,
