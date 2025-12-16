@@ -10,7 +10,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.header.writers.CacheControlHeadersWriter;
 
 @Configuration
 @EnableWebSecurity
@@ -25,37 +24,34 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/api/**") // Disable CSRF for API endpoints
-            )
-            .headers(headers -> headers
-                // Prevent caching of pages to stop back button issues
-                .cacheControl(cache -> {})
-            )
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/login", "/register", "/css/**", "/js/**", "/favicon.png", "/error").permitAll()
-                .requestMatchers("/api/sse/**").permitAll() // SSE needs to be accessible
-                .anyRequest().authenticated()
-            )
-            .formLogin(form -> form
-                .loginPage("/login")
-                .loginProcessingUrl("/login")
-                .defaultSuccessUrl("/", true)
-                .failureUrl("/login?error=true")
-                .permitAll()
-            )
-            .logout(logout -> logout
-                .logoutUrl("/logout")
-                .logoutSuccessUrl("/login?logout=true")
-                .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID")
-                .permitAll()
-            )
-            .sessionManagement(session -> session
-                .maximumSessions(1) // One session per user
-                .expiredUrl("/login?expired=true")
-            )
-            .userDetailsService(userDetailsService);
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/api/**") // Disable CSRF for API endpoints
+                )
+                .headers(headers -> headers
+                        // Prevent caching of pages to stop back button issues
+                        .cacheControl(cache -> {
+                        }))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/login", "/register", "/css/**", "/js/**", "/favicon.png", "/error")
+                        .permitAll()
+                        .requestMatchers("/api/sse/**").permitAll() // SSE needs to be accessible
+                        .anyRequest().authenticated())
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .loginProcessingUrl("/login")
+                        .defaultSuccessUrl("/", true)
+                        .failureUrl("/login?error=true")
+                        .permitAll())
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login?logout=true")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
+                        .permitAll())
+                .sessionManagement(session -> session
+                        .maximumSessions(1) // One session per user
+                        .expiredUrl("/login?expired=true"))
+                .userDetailsService(userDetailsService);
 
         return http.build();
     }
@@ -70,4 +66,3 @@ public class SecurityConfig {
         return authConfig.getAuthenticationManager();
     }
 }
-
