@@ -56,6 +56,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Stage 1: Pre-Implementation (Stop & Think, Understand Scope, Plan Approach)
   - Stage 2: During Implementation (Browser Verification, Commit Cycle, Test Coverage)
   - Stage 3: Post-Implementation (Commit, Update Changelog, Update GEMINI.md)
+- **GEMINI.md** - Added Backend Performance Optimizations section documenting:
+  - Async Write-Behind Pattern (`AsyncWriteService.java`)
+  - Spring Cache integration (`@Cacheable`, `@CacheEvict`)
+  - HikariCP connection pool configuration
+  - Database indexes (7 composite indexes on SwimLane, Task, User entities)
+  - Bulk UPDATE queries for position shifts
+  - Gzip compression settings
+  - Open-in-view disabled for N+1 prevention
 
 ### Test Fixes
   - `AsyncWriteServiceTest` - Added missing `SseService` mock
