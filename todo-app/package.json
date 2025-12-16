@@ -1,16 +1,20 @@
 {
   "name": "todo-app",
   "version": "1.0.0",
-  "description": "Spring Boot Todo App with minified JS",
+  "description": "Spring Boot Todo App with minified JS and CSS",
   "scripts": {
-    "minify": "npm run minify:app && npm run minify:store && npm run minify:api && npm run minify:drag",
+    "minify:js": "npm run minify:app && npm run minify:store && npm run minify:api && npm run minify:drag",
     "minify:app": "terser src/main/resources/static/js/app.js -o src/main/resources/static/js/app.min.js -c -m",
     "minify:store": "terser src/main/resources/static/js/modules/store.js -o src/main/resources/static/js/modules/store.min.js -c -m",
     "minify:api": "terser src/main/resources/static/js/modules/api.js -o src/main/resources/static/js/modules/api.min.js -c -m",
     "minify:drag": "terser src/main/resources/static/js/modules/drag.js -o src/main/resources/static/js/modules/drag.min.js -c -m",
-    "build": "npm run minify"
+    "minify:css": "cleancss -o src/main/resources/static/css/style.min.css src/main/resources/static/css/style.css",
+    "purge:fa": "node scripts/purge-fa.js",
+    "build": "npm run minify:js && npm run minify:css && npm run purge:fa"
   },
   "devDependencies": {
+    "clean-css-cli": "^5.6.3",
+    "purgecss": "^7.0.2",
     "terser": "^5.44.1"
   }
 }

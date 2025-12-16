@@ -87,21 +87,21 @@ DRAG-AND-DROP CRITICAL NOTES:
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
 
     <!-- Preload critical CSS -->
-    <link rel="preload" href="/css/style.css" as="style">
+    <link rel="preload" href="/css/style.min.css" as="style">
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
 
     <!-- Critical CSS (render-blocking, needed for initial paint) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/style.min.css">
 
     <!-- Non-critical CSS (async load with media trick) -->
-    <!-- Font Awesome - Self-hosted with font-display: swap -->
-    <link rel="stylesheet" href="/css/fontawesome.css" media="print" onload="this.media='all'">
+    <!-- Font Awesome - Purged to only used icons (90% smaller) -->
+    <link rel="stylesheet" href="/css/fontawesome.purged.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" media="print"
         onload="this.media='all'">
     <!-- Fallback for no-JS -->
     <noscript>
-        <link rel="stylesheet" href="/css/fontawesome.css">
+        <link rel="stylesheet" href="/css/fontawesome.purged.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     </noscript>
 
@@ -190,7 +190,8 @@ DRAG-AND-DROP CRITICAL NOTES:
         </div>
     </div>
 
-    <div class="container-fluid px-4 pb-5">
+    <!-- Main Content Area (accessibility landmark) -->
+    <main class="container-fluid px-4 pb-5" role="main">
 
         <!-- Dashboard Layout -->
         <div class="dashboard-layout position-relative">
@@ -355,161 +356,163 @@ DRAG-AND-DROP CRITICAL NOTES:
         </div>
         <!-- End Dashboard Layout -->
 
-    </div>
-
-    <!-- Modals -->
-
-    <!-- Notifications -->
-    <!-- Saved Notification -->
-    <div class="notification-toast success" x-show="showSaved" x-cloak
-        x-transition:enter="transition ease-out duration-300"
-        x-transition:enter-start="opacity-0 transform -translate-y-full"
-        x-transition:enter-end="opacity-100 transform translate-y-0"
-        x-transition:leave="transition ease-in duration-200"
-        x-transition:leave-start="opacity-100 transform translate-y-0"
-        x-transition:leave-end="opacity-0 transform -translate-y-full">
-        <div class="notification-content">
-            <div class="notification-icon">
-                <i class="fas fa-check"></i>
-            </div>
-            <span>Saved!</span>
         </div>
-    </div>
 
-    <!-- Error Notification -->
-    <div class="notification-toast error" x-show="showErrorToast" x-cloak
-        x-transition:enter="transition ease-out duration-300"
-        x-transition:enter-start="opacity-0 transform -translate-y-full"
-        x-transition:enter-end="opacity-100 transform translate-y-0"
-        x-transition:leave="transition ease-in duration-200"
-        x-transition:leave-start="opacity-100 transform translate-y-0"
-        x-transition:leave-end="opacity-0 transform -translate-y-full">
-        <div class="notification-content">
-            <div class="notification-icon error">
-                <i class="fas fa-exclamation-triangle"></i>
-            </div>
-            <span x-text="errorMessage"></span>
-        </div>
-    </div>
+        <!-- Modals -->
 
-    <!-- ============================================== -->
-    <!-- CUSTOM MODALS (Fixed Overlay)                  -->
-    <!-- ============================================== -->
-
-    <!-- ============================================== -->
-    <!-- CUSTOM MODALS (Fixed Overlay)                  -->
-    <!-- ============================================== -->
-
-    <!-- 1. General Confirmation Modal -->
-    <div class="custom-modal-overlay" x-show="modal.open" x-transition.opacity :class="{ 'active': modal.open }"
-        style="display: none !important;" x-init="$el.style.display = ''">
-        <div class="custom-modal-card" @click.outside="closeModal()">
-            <div class="custom-modal-header">
-                <h3 class="custom-modal-title" x-text="modal.title">Confirm</h3>
-                <button type="button" class="custom-modal-close" @click="closeModal()">&times;</button>
-            </div>
-            <div class="custom-modal-body">
-                <p class="mb-0" x-text="modal.message"></p>
-            </div>
-            <div class="custom-modal-footer">
-                <button type="button" class="btn btn-secondary" @click="closeModal()">Cancel</button>
-                <button type="button" class="btn" :class="'btn-' + modal.type" @click="confirmModalAction()"
-                    x-text="modal.confirmText"></button>
+        <!-- Notifications -->
+        <!-- Saved Notification -->
+        <div class="notification-toast success" x-show="showSaved" x-cloak
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 transform -translate-y-full"
+            x-transition:enter-end="opacity-100 transform translate-y-0"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 transform translate-y-0"
+            x-transition:leave-end="opacity-0 transform -translate-y-full">
+            <div class="notification-content">
+                <div class="notification-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <span>Saved!</span>
             </div>
         </div>
-    </div>
 
-    <!-- 2. Input Modal (Task/Swimlane) -->
-    <div class="custom-modal-overlay" x-show="inputModal.open" x-transition.opacity
-        :class="{ 'active': inputModal.open }" style="display: none !important;" x-init="$el.style.display = ''">
-        <div class="custom-modal-card" @click.outside="closeInputModal()">
+        <!-- Error Notification -->
+        <div class="notification-toast error" x-show="showErrorToast" x-cloak
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 transform -translate-y-full"
+            x-transition:enter-end="opacity-100 transform translate-y-0"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 transform translate-y-0"
+            x-transition:leave-end="opacity-0 transform -translate-y-full">
+            <div class="notification-content">
+                <div class="notification-icon error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <span x-text="errorMessage"></span>
+            </div>
+        </div>
 
-            <!-- Swimlane Header (Task mode only) - Top colored bar -->
-            <template x-if="inputModal.mode === 'TASK' && inputModal.laneName">
-                <div class="px-4 py-3" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="fa-solid fa-layer-group text-white" style="font-size: 1.2rem;"></i>
-                        <span class="text-white fw-bold" style="font-size: 1.25rem;"
-                            x-text="inputModal.laneName"></span>
+        <!-- ============================================== -->
+        <!-- CUSTOM MODALS (Fixed Overlay)                  -->
+        <!-- ============================================== -->
+
+        <!-- ============================================== -->
+        <!-- CUSTOM MODALS (Fixed Overlay)                  -->
+        <!-- ============================================== -->
+
+        <!-- 1. General Confirmation Modal -->
+        <div class="custom-modal-overlay" x-show="modal.open" x-transition.opacity :class="{ 'active': modal.open }"
+            style="display: none !important;" x-init="$el.style.display = ''">
+            <div class="custom-modal-card" @click.outside="closeModal()">
+                <div class="custom-modal-header">
+                    <h3 class="custom-modal-title" x-text="modal.title">Confirm</h3>
+                    <button type="button" class="custom-modal-close" @click="closeModal()">&times;</button>
+                </div>
+                <div class="custom-modal-body">
+                    <p class="mb-0" x-text="modal.message"></p>
+                </div>
+                <div class="custom-modal-footer">
+                    <button type="button" class="btn btn-secondary" @click="closeModal()">Cancel</button>
+                    <button type="button" class="btn" :class="'btn-' + modal.type" @click="confirmModalAction()"
+                        x-text="modal.confirmText"></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Input Modal (Task/Swimlane) -->
+        <div class="custom-modal-overlay" x-show="inputModal.open" x-transition.opacity
+            :class="{ 'active': inputModal.open }" style="display: none !important;" x-init="$el.style.display = ''">
+            <div class="custom-modal-card" @click.outside="closeInputModal()">
+
+                <!-- Swimlane Header (Task mode only) - Top colored bar -->
+                <template x-if="inputModal.mode === 'TASK' && inputModal.laneName">
+                    <div class="px-4 py-3" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-layer-group text-white" style="font-size: 1.2rem;"></i>
+                            <span class="text-white fw-bold" style="font-size: 1.25rem;"
+                                x-text="inputModal.laneName"></span>
+                        </div>
                     </div>
-                </div>
-            </template>
+                </template>
 
-            <!-- Modal Title Header (only for non-task mode, i.e., swimlane creation) -->
-            <template x-if="inputModal.mode !== 'TASK'">
-                <div class="px-4 py-2 border-bottom border-secondary d-flex justify-content-between align-items-center">
-                    <span class="text-secondary fw-semibold text-uppercase"
-                        style="font-size: 0.85rem; letter-spacing: 0.05em;" x-text="inputModal.title"></span>
-                    <button type="button" class="btn-close btn-close-white" style="font-size: 0.7rem;"
-                        @click="closeInputModal()"></button>
-                </div>
-            </template>
+                <!-- Modal Title Header (only for non-task mode, i.e., swimlane creation) -->
+                <template x-if="inputModal.mode !== 'TASK'">
+                    <div
+                        class="px-4 py-2 border-bottom border-secondary d-flex justify-content-between align-items-center">
+                        <span class="text-secondary fw-semibold text-uppercase"
+                            style="font-size: 0.85rem; letter-spacing: 0.05em;" x-text="inputModal.title"></span>
+                        <button type="button" class="btn-close btn-close-white" style="font-size: 0.7rem;"
+                            @click="closeInputModal()"></button>
+                    </div>
+                </template>
 
 
-            <div class="custom-modal-body">
-                <!-- Name Field (Always shown) -->
-                <div class="mb-3">
-                    <label class="form-label text-light text-uppercase fw-bold mb-2"
-                        style="font-size: 0.9rem; letter-spacing: 0.05em;">Name / Description</label>
-                    <textarea class="form-control form-control-lg bg-dark text-white border-secondary"
-                        placeholder="Enter name or description..." x-model="inputModal.value" x-ref="inputField"
-                        rows="3" style="resize: vertical;"></textarea>
-                </div>
+                <div class="custom-modal-body">
+                    <!-- Name Field (Always shown) -->
+                    <div class="mb-3">
+                        <label class="form-label text-light text-uppercase fw-bold mb-2"
+                            style="font-size: 0.9rem; letter-spacing: 0.05em;">Name / Description</label>
+                        <textarea class="form-control form-control-lg bg-dark text-white border-secondary"
+                            placeholder="Enter name or description..." x-model="inputModal.value" x-ref="inputField"
+                            rows="3" style="resize: vertical;"></textarea>
+                    </div>
 
-                <!-- Task-specific fields -->
-                <template x-if="inputModal.mode === 'TASK'">
-                    <div>
-                        <!-- Status Dropdown -->
-                        <div class="mb-3">
-                            <label class="form-label text-light text-uppercase fw-bold mb-2"
-                                style="font-size: 0.9rem; letter-spacing: 0.05em;">Status</label>
-                            <select class="form-select text-white" x-model="inputModal.status" style="background: linear-gradient(180deg, #2d3748 0%, #1a202c 100%); 
+                    <!-- Task-specific fields -->
+                    <template x-if="inputModal.mode === 'TASK'">
+                        <div>
+                            <!-- Status Dropdown -->
+                            <div class="mb-3">
+                                <label class="form-label text-light text-uppercase fw-bold mb-2"
+                                    style="font-size: 0.9rem; letter-spacing: 0.05em;">Status</label>
+                                <select class="form-select text-white" x-model="inputModal.status" style="background: linear-gradient(180deg, #2d3748 0%, #1a202c 100%); 
                                        border: 1px solid #4a5568; 
                                        border-radius: 8px; 
                                        padding: 12px 16px; 
                                        font-size: 1rem;
                                        cursor: pointer;">
-                                <template x-for="col in columns" :key="col">
-                                    <option :value="col" x-text="col.replace('_', ' ')"></option>
-                                </template>
-                            </select>
-                        </div>
-
-                        <!-- Tags Input with Chips -->
-                        <div class="mb-3">
-                            <label class="form-label text-light text-uppercase fw-bold mb-2"
-                                style="font-size: 0.9rem; letter-spacing: 0.05em;">Tags <span
-                                    class="text-muted fw-normal">(press Enter to add)</span></label>
-
-                            <!-- Tag Chips Display -->
-                            <div class="d-flex flex-wrap gap-2 mb-2" x-show="inputModal.tags.length > 0">
-                                <template x-for="(tag, index) in inputModal.tags" :key="index">
-                                    <span class="badge bg-primary d-flex align-items-center gap-1 py-2 px-3"
-                                        style="font-size: 0.9rem;">
-                                        <span x-text="tag"></span>
-                                        <button type="button" class="btn-close btn-close-white ms-1"
-                                            style="font-size: 0.6rem;" @click="removeTag(index)"
-                                            aria-label="Remove tag"></button>
-                                    </span>
-                                </template>
+                                    <template x-for="col in columns" :key="col">
+                                        <option :value="col" x-text="col.replace('_', ' ')"></option>
+                                    </template>
+                                </select>
                             </div>
 
-                            <!-- Tag Input Field -->
-                            <input type="text" class="form-control bg-dark text-white border-secondary"
-                                placeholder="Type a tag and press Enter..." x-model="inputModal.tagInput"
-                                @keydown.enter.prevent="addTag()">
+                            <!-- Tags Input with Chips -->
+                            <div class="mb-3">
+                                <label class="form-label text-light text-uppercase fw-bold mb-2"
+                                    style="font-size: 0.9rem; letter-spacing: 0.05em;">Tags <span
+                                        class="text-muted fw-normal">(press Enter to add)</span></label>
+
+                                <!-- Tag Chips Display -->
+                                <div class="d-flex flex-wrap gap-2 mb-2" x-show="inputModal.tags.length > 0">
+                                    <template x-for="(tag, index) in inputModal.tags" :key="index">
+                                        <span class="badge bg-primary d-flex align-items-center gap-1 py-2 px-3"
+                                            style="font-size: 0.9rem;">
+                                            <span x-text="tag"></span>
+                                            <button type="button" class="btn-close btn-close-white ms-1"
+                                                style="font-size: 0.6rem;" @click="removeTag(index)"
+                                                aria-label="Remove tag"></button>
+                                        </span>
+                                    </template>
+                                </div>
+
+                                <!-- Tag Input Field -->
+                                <input type="text" class="form-control bg-dark text-white border-secondary"
+                                    placeholder="Type a tag and press Enter..." x-model="inputModal.tagInput"
+                                    @keydown.enter.prevent="addTag()">
+                            </div>
                         </div>
-                    </div>
-                </template>
-            </div>
-            <div class="custom-modal-footer">
-                <button type="button" class="btn btn-secondary" @click="closeInputModal()">Cancel</button>
-                <button type="button" class="btn btn-primary" @click="submitInputModal()">Save</button>
+                    </template>
+                </div>
+                <div class="custom-modal-footer">
+                    <button type="button" class="btn btn-secondary" @click="closeInputModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" @click="submitInputModal()">Save</button>
+                </div>
             </div>
         </div>
-    </div>
 
 
+    </main>
 
     <!-- JS Dependencies -->
     <script defer src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
