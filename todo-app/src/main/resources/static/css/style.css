@@ -63,21 +63,6 @@
 }
 
 /* ============================================
-   FONT DISPLAY OPTIMIZATION
-   Override Font Awesome to use font-display: swap
-   Prevents invisible text during font loading
-   ============================================ */
-@font-face {
-    font-family: 'Font Awesome 6 Free';
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'Font Awesome 6 Brands';
-    font-display: swap;
-}
-
-/* ============================================
    SKELETON LOADERS (reduces CLS during load)
    ============================================ */
 

@@ -52,13 +52,13 @@ DRAG-AND-DROP CRITICAL NOTES:
     <link rel="stylesheet" href="/css/style.css">
 
     <!-- Non-critical CSS (async load with media trick) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-        media="print" onload="this.media='all'">
+    <!-- Font Awesome - Self-hosted with font-display: swap -->
+    <link rel="stylesheet" href="/css/fontawesome.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" media="print"
         onload="this.media='all'">
     <!-- Fallback for no-JS -->
     <noscript>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <link rel="stylesheet" href="/css/fontawesome.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     </noscript>
 
