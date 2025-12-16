@@ -124,6 +124,60 @@ This is a full-stack, single-page web application for managing tasks and to-do i
 *   **Highcharts 3D**: Interactive Charts.
 *   **Thymeleaf**: Server-side template engine (initial load).
 
+## Backend Performance Optimizations
+
+The application implements several latency reduction strategies:
+
+### Async Write-Behind Pattern
+- **File**: `AsyncWriteService.java`
+- Database writes are decoupled from HTTP responses via `@Async("asyncWriteExecutor")`
+- Single-threaded executor ensures sequential writes without race conditions
+- API returns immediately (~5ms) while DB writes happen in background (~100-500ms)
+- SSE broadcasts notify clients after DB commit completes
+
+### Caching Layer
+| Service | Cache Name | Key |
+|---------|------------|-----|
+| `TaskService` | `tasks` | All tasks |
+| `TaskService` | `tasksByLane` | `swimLaneId` |
+| `SwimLaneService` | `lanes` | `currentUserId` |
+
+Cache is evicted via `@CacheEvict` on create/delete operations.
+
+### HikariCP Connection Pool
+```properties
+spring.datasource.hikari.maximum-pool-size=10
+spring.datasource.hikari.minimum-idle=5
+spring.datasource.hikari.connection-timeout=20000
+```
+
+### Database Indexes
+| Entity | Index | Columns |
+|--------|-------|---------|
+| `SwimLane` | `idx_swim_lanes_user_id` | `user_id` |
+| `SwimLane` | `idx_swim_lanes_user_deleted_position` | `user_id, is_deleted, position_order` |
+| `SwimLane` | `idx_swim_lanes_user_completed_deleted` | `user_id, is_completed, is_deleted, position_order` |
+| `Task` | `idx_tasks_swim_lane_id` | `swim_lane_id` |
+| `Task` | `idx_tasks_status` | `status` |
+| `Task` | `idx_tasks_lane_status_position` | `swim_lane_id, status, position_order` |
+
+### Bulk UPDATE Queries
+Position shifts use single bulk UPDATE instead of N individual saves:
+```java
+@Query("UPDATE Task t SET t.position = t.position + 1 WHERE ...")
+int shiftPositionsDown(...);
+```
+
+### Gzip Compression
+```properties
+server.compression.enabled=true
+server.compression.min-response-size=1024
+```
+
+### Other Optimizations
+- `spring.jpa.open-in-view=false` - Prevents N+1 lazy loading issues
+- Optimistic UI updates with SSE-based eventual consistency
+
 ## Building and Running
 
 ### Prerequisites
