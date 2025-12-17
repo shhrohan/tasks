@@ -20,14 +20,10 @@ import java.util.List;
 public class CacheWarmupService {
 
     private final UserDAO userDAO;
-    private final SwimLaneService swimLaneService;
     private final TaskService taskService;
 
-    public CacheWarmupService(UserDAO userDAO,
-            SwimLaneService swimLaneService,
-            TaskService taskService) {
+    public CacheWarmupService(UserDAO userDAO, TaskService taskService) {
         this.userDAO = userDAO;
-        this.swimLaneService = swimLaneService;
         this.taskService = taskService;
     }
 
@@ -44,12 +40,11 @@ public class CacheWarmupService {
             List<User> users = userDAO.findAll();
             log.info("[CACHE WARMUP] Found {} users to pre-warm caches for", users.size());
 
-            // Pre-warm lanes cache for each user
-            // Note: This requires executing in the context of each user
-            // For now, just pre-warm the global tasks cache
+            // Pre-warm the global tasks cache
             log.info("[CACHE WARMUP] Pre-warming tasks cache...");
+            long start = System.currentTimeMillis();
             int taskCount = taskService.getAllTasks().size();
-            log.info("[CACHE WARMUP] Cached {} tasks", taskCount);
+            log.info("[CACHE WARMUP] Cached {} tasks in {}ms", taskCount, System.currentTimeMillis() - start);
 
             log.info("[CACHE WARMUP] ====== Cache pre-warming complete ======");
         } catch (Exception e) {

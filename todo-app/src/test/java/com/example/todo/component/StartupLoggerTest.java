@@ -1,14 +1,10 @@
 package com.example.todo.component;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.springframework.core.env.Environment;
 
 import javax.sql.DataSource;
-import java.io.IOException;
 import java.lang.reflect.Method;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -144,4 +140,3 @@ class StartupLoggerTest {
         return new StartupLogger(env, dataSource);
     }
 }
-

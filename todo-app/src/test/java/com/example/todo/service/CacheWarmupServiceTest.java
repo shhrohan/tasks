@@ -13,7 +13,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 import static org.mockito.Mockito.*;
 
@@ -22,9 +21,6 @@ class CacheWarmupServiceTest {
 
     @Mock
     private UserDAO userDAO;
-
-    @Mock
-    private SwimLaneService swimLaneService;
 
     @Mock
     private TaskService taskService;
