@@ -2,6 +2,10 @@ package com.example.todo.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "tasks", indexes = {
@@ -26,9 +30,10 @@ public class Task {
     @Column(nullable = false)
     private TaskStatus status;
 
-    // Store comments and tags as JSON strings (simple approach)
-    @Lob
-    private String comments; // JSON array string
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JsonManagedReference
+    @Builder.Default
+    private List<Comment> comments = new ArrayList<>();
 
     @Lob
     private String tags; // JSON array string
@@ -41,4 +46,3 @@ public class Task {
     @Column(name = "position_order")
     private Integer position;
 }
-

@@ -541,6 +541,14 @@ body {
     cursor: grab;
 }
 
+/* Task card keyboard selection */
+.task-card.task-selected {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.4), 0 5px 15px rgba(0, 0, 0, 0.2);
+    z-index: 25;
+}
+
 .task-card:active,
 .task-card.sortable-chosen,
 .task-card.sortable-drag {
@@ -2157,4 +2165,113 @@ body {
     .mobile-sidebar-toggle {
         display: none !important;
     }
+}
+
+/* ============================================
+   TASK DETAIL PANE (Desktop Only Sidebar)
+   ============================================ */
+
+.task-detail-pane {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 450px;
+    height: 100vh;
+    z-index: 1050;
+    /* Above navbar but below task creation modal */
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(20px);
+    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.6);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Hide detail pane on mobile by default (safeguard) */
+@media (max-width: 991.98px) {
+    .task-detail-pane {
+        display: none !important;
+    }
+}
+
+.detail-header {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.comment-item {
+    background: rgba(15, 23, 42, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    transition: all 0.2s ease;
+}
+
+.comment-item:hover {
+    transform: translateX(4px);
+    border-color: rgba(59, 130, 246, 0.3) !important;
+    background: rgba(15, 23, 42, 0.6) !important;
+}
+
+.detail-footer {
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(5px);
+}
+
+/* Status Badges for Detail Pane */
+.status-badge-todo {
+    background-color: var(--todo-color) !important;
+}
+
+.status-badge-in_progress {
+    background-color: var(--progress-color) !important;
+}
+
+.status-badge-done {
+    background-color: var(--done-color) !important;
+}
+
+.status-badge-blocked {
+    background-color: var(--blocked-color) !important;
+}
+
+.status-badge-deferred {
+    background-color: var(--deferred-color) !important;
+}
+
+.translate-x-full {
+    transform: translateX(100%);
+}
+
+.translate-x-0 {
+    transform: translateX(0);
+}
+
+.hover-opacity-100:hover {
+    opacity: 1 !important;
+}
+
+.comment-count-badge {
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.task-card:hover .comment-count-badge {
+    opacity: 1;
+}
+
+/* Comment keyboard selection highlight */
+.comment-item.comment-selected {
+    border-color: rgba(59, 130, 246, 0.6) !important;
+    background: rgba(59, 130, 246, 0.15) !important;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+}
+
+/* Keyboard hint styling */
+kbd {
+    display: inline-block;
+    padding: 0.15rem 0.4rem;
+    font-size: 0.75rem;
+    font-family: monospace;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
 }

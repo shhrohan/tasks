@@ -69,6 +69,20 @@ Alpine.data('todoApp', () => ({
     activeLaneId: null,        // Currently selected lane on mobile (null = show all)
     isMobile: false,           // Track if we're on mobile viewport
 
+    // Task keyboard navigation (main view)
+    selectedTaskId: null,      // Currently keyboard-selected task in main view
+
+    // Task Detail Pane State (Desktop Only)
+    taskDetail: {
+        open: false,
+        task: null,
+        newComment: '',
+        isLoading: false,
+        editingCommentId: null,
+        editingCommentText: '',
+        selectedCommentIndex: -1  // For arrow key navigation
+    },
+
     // Import Store methods (modal management, API wrappers, etc.)
     ...Store,
 
@@ -202,6 +216,11 @@ Alpine.data('todoApp', () => ({
                 boardContainer.sortableInstance.option('disabled', isFilterActive);
             }
         });
+
+        // ---------------------------------------------------------------------
+        // STEP 7: Global Keyboard Navigation
+        // ---------------------------------------------------------------------
+        document.addEventListener('keydown', (e) => this.handleGlobalKeydown(e));
     },
 
     /**
@@ -734,6 +753,534 @@ Alpine.data('todoApp', () => ({
         const task = this.tasks.find(t => t.id === taskId);
         if (task && task.swimLane) {
             this.shrinkColumn(task.swimLane.id, task.status);
+        }
+    },
+
+    // =========================================================================
+    // TASK DETAIL PANE METHODS
+    // =========================================================================
+
+    /**
+     * Open task detail pane
+     */
+    openTaskDetail(taskId) {
+        if (this.isMobile) return; // Desktop only for now
+
+        console.log('[App] openTaskDetail:', taskId);
+        const task = this.tasks.find(t => t.id === taskId);
+        if (task) {
+            this.taskDetail.task = task;
+            this.taskDetail.open = true;
+            this.taskDetail.newComment = '';
+        }
+    },
+
+    /**
+     * Close task detail pane
+     */
+    closeTaskDetail() {
+        console.log('[App] closeTaskDetail');
+        this.taskDetail.open = false;
+        this.taskDetail.selectedCommentIndex = -1;
+        setTimeout(() => {
+            this.taskDetail.task = null;
+        }, 300); // Wait for transition
+    },
+
+    /**
+     * Handle keyboard events in task detail pane
+     */
+    handleDetailKeydown(event) {
+        console.log('[App] handleDetailKeydown:', {
+            key: event.key,
+            altKey: event.altKey,
+            ctrlKey: event.ctrlKey,
+            shiftKey: event.shiftKey,
+            taskDetailOpen: this.taskDetail.open,
+            selectedCommentIndex: this.taskDetail.selectedCommentIndex
+        });
+
+        if (!this.taskDetail.open) {
+            console.log('[App] handleDetailKeydown: Pane not open, ignoring');
+            return;
+        }
+
+        const comments = this.getTaskComments(this.taskDetail.task);
+        console.log('[App] handleDetailKeydown: Comments count:', comments.length);
+
+        // ESC: Close pane
+        if (event.key === 'Escape') {
+            console.log('[App] handleDetailKeydown: ESC pressed, closing pane');
+            this.closeTaskDetail();
+            event.preventDefault();
+            return;
+        }
+
+        // Alt+Enter: Submit comment
+        if (event.key === 'Enter' && event.altKey) {
+            console.log('[App] handleDetailKeydown: Alt+Enter pressed');
+            if (this.taskDetail.newComment.trim()) {
+                console.log('[App] handleDetailKeydown: Submitting comment');
+                this.addComment();
+            }
+            event.preventDefault();
+            return;
+        }
+
+        // Arrow Up: Select previous comment (from bottom up)
+        if (event.key === 'ArrowUp' && !this.taskDetail.editingCommentId) {
+            console.log('[App] handleDetailKeydown: ArrowUp pressed');
+            if (comments.length === 0) {
+                console.log('[App] handleDetailKeydown: No comments to navigate');
+                return;
+            }
+            if (this.taskDetail.selectedCommentIndex === -1) {
+                // Start from bottom
+                this.taskDetail.selectedCommentIndex = comments.length - 1;
+            } else if (this.taskDetail.selectedCommentIndex > 0) {
+                this.taskDetail.selectedCommentIndex--;
+            }
+            console.log('[App] handleDetailKeydown: New selectedCommentIndex:', this.taskDetail.selectedCommentIndex);
+            this.scrollToSelectedComment();
+            event.preventDefault();
+            return;
+        }
+
+        // Arrow Down: Select next comment
+        if (event.key === 'ArrowDown' && !this.taskDetail.editingCommentId) {
+            console.log('[App] handleDetailKeydown: ArrowDown pressed');
+            if (comments.length === 0) {
+                console.log('[App] handleDetailKeydown: No comments to navigate');
+                return;
+            }
+            if (this.taskDetail.selectedCommentIndex < comments.length - 1) {
+                this.taskDetail.selectedCommentIndex++;
+            }
+            console.log('[App] handleDetailKeydown: New selectedCommentIndex:', this.taskDetail.selectedCommentIndex);
+            this.scrollToSelectedComment();
+            event.preventDefault();
+            return;
+        }
+
+        // Enter: Edit selected comment
+        if (event.key === 'Enter' && !event.altKey && !event.ctrlKey && this.taskDetail.selectedCommentIndex !== -1) {
+            console.log('[App] handleDetailKeydown: Enter pressed on selected comment index:', this.taskDetail.selectedCommentIndex);
+            const comment = comments[this.taskDetail.selectedCommentIndex];
+            if (comment) {
+                console.log('[App] handleDetailKeydown: Starting edit for comment ID:', comment.id);
+                this.startEditComment(comment);
+            }
+            event.preventDefault();
+            return;
+        }
+    },
+
+    /**
+     * Scroll to the selected comment for visibility
+     */
+    scrollToSelectedComment() {
+        this.$nextTick(() => {
+            const selected = document.querySelector('.comment-item.comment-selected');
+            if (selected) {
+                selected.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        });
+    },
+
+    /**
+     * Check if comment at index is selected
+     */
+    isCommentSelected(index) {
+        return this.taskDetail.selectedCommentIndex === index;
+    },
+
+    // =========================================================================
+    // MAIN VIEW KEYBOARD NAVIGATION
+    // =========================================================================
+
+    /**
+     * Global keyboard handler - routes to appropriate handler
+     */
+    handleGlobalKeydown(event) {
+        // Ignore if user is typing in an input/textarea
+        const activeEl = document.activeElement;
+        if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+            return;
+        }
+
+        console.log('[App] handleGlobalKeydown:', {
+            key: event.key,
+            altKey: event.altKey,
+            ctrlKey: event.ctrlKey,
+            taskDetailOpen: this.taskDetail.open
+        });
+
+        // Route to appropriate handler
+        if (this.taskDetail.open) {
+            this.handleDetailKeydown(event);
+        } else {
+            this.handleMainViewKeydown(event);
+        }
+    },
+
+    /**
+     * Handle keyboard navigation in main swimlane view
+     */
+    handleMainViewKeydown(event) {
+        console.log('[App] handleMainViewKeydown:', event.key);
+
+        // Space: Open task detail for selected task
+        if (event.key === ' ' || event.key === 'Space') {
+            if (this.selectedTaskId) {
+                console.log('[App] Space pressed - opening task detail:', this.selectedTaskId);
+                this.openTaskDetail(this.selectedTaskId);
+                event.preventDefault();
+            }
+            return;
+        }
+
+        // Escape: Clear selection
+        if (event.key === 'Escape') {
+            console.log('[App] Escape pressed - clearing task selection');
+            this.selectedTaskId = null;
+            return;
+        }
+
+        // Arrow navigation
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+            this.navigateTask(event.key);
+            event.preventDefault();
+            return;
+        }
+    },
+
+    /**
+     * Navigate to adjacent task based on arrow key
+     */
+    navigateTask(direction) {
+        console.log('[App] navigateTask:', direction, 'current:', this.selectedTaskId);
+
+        // If no task selected, select the first visible task
+        if (!this.selectedTaskId) {
+            const firstTask = this.getFirstVisibleTask();
+            if (firstTask) {
+                this.selectedTaskId = firstTask.id;
+                this.scrollToSelectedTask();
+            }
+            return;
+        }
+
+        // Find current task and its position
+        const currentTask = this.tasks.find(t => t.id === this.selectedTaskId);
+        if (!currentTask) {
+            this.selectedTaskId = null;
+            return;
+        }
+
+        let nextTask = null;
+
+        switch (direction) {
+            case 'ArrowUp':
+                nextTask = this.getTaskAbove(currentTask);
+                break;
+            case 'ArrowDown':
+                nextTask = this.getTaskBelow(currentTask);
+                break;
+            case 'ArrowLeft':
+                nextTask = this.getTaskInPreviousColumn(currentTask);
+                break;
+            case 'ArrowRight':
+                nextTask = this.getTaskInNextColumn(currentTask);
+                break;
+        }
+
+        if (nextTask) {
+            console.log('[App] Navigating to task:', nextTask.id, nextTask.name);
+            this.selectedTaskId = nextTask.id;
+            this.scrollToSelectedTask();
+        }
+    },
+
+    /**
+     * Get first visible task in the view
+     */
+    getFirstVisibleTask() {
+        // Get first non-collapsed lane
+        const firstLane = this.lanes.find(l => !l.collapsed && this.laneHasMatchingTasks(l.id));
+        if (!firstLane) return null;
+
+        // Get first status column that has tasks
+        for (const status of this.columns) {
+            const tasks = this.getTasks(firstLane.id, status);
+            if (tasks.length > 0) {
+                return tasks[0];
+            }
+        }
+        return null;
+    },
+
+    /**
+     * Get task above current in same column
+     */
+    getTaskAbove(currentTask) {
+        const laneId = currentTask.swimLane?.id;
+        if (!laneId) return null;
+
+        const columnTasks = this.getTasks(laneId, currentTask.status);
+        const currentIndex = columnTasks.findIndex(t => t.id === currentTask.id);
+
+        if (currentIndex > 0) {
+            return columnTasks[currentIndex - 1];
+        }
+
+        // Try previous lane, same status
+        return this.getTaskInPreviousLane(currentTask);
+    },
+
+    /**
+     * Get task below current in same column
+     */
+    getTaskBelow(currentTask) {
+        const laneId = currentTask.swimLane?.id;
+        if (!laneId) return null;
+
+        const columnTasks = this.getTasks(laneId, currentTask.status);
+        const currentIndex = columnTasks.findIndex(t => t.id === currentTask.id);
+
+        if (currentIndex < columnTasks.length - 1) {
+            return columnTasks[currentIndex + 1];
+        }
+
+        // Try next lane, same status
+        return this.getTaskInNextLane(currentTask);
+    },
+
+    /**
+     * Get task in previous column (left)
+     */
+    getTaskInPreviousColumn(currentTask) {
+        const laneId = currentTask.swimLane?.id;
+        if (!laneId) return null;
+
+        const currentColIndex = this.columns.indexOf(currentTask.status);
+        if (currentColIndex <= 0) return null;
+
+        // Search columns to the left
+        for (let i = currentColIndex - 1; i >= 0; i--) {
+            const tasks = this.getTasks(laneId, this.columns[i]);
+            if (tasks.length > 0) {
+                return tasks[0]; // First task in that column
+            }
+        }
+        return null;
+    },
+
+    /**
+     * Get task in next column (right)
+     */
+    getTaskInNextColumn(currentTask) {
+        const laneId = currentTask.swimLane?.id;
+        if (!laneId) return null;
+
+        const currentColIndex = this.columns.indexOf(currentTask.status);
+        if (currentColIndex >= this.columns.length - 1) return null;
+
+        // Search columns to the right
+        for (let i = currentColIndex + 1; i < this.columns.length; i++) {
+            const tasks = this.getTasks(laneId, this.columns[i]);
+            if (tasks.length > 0) {
+                return tasks[0]; // First task in that column
+            }
+        }
+        return null;
+    },
+
+    /**
+     * Get task in previous lane (same status)
+     */
+    getTaskInPreviousLane(currentTask) {
+        const currentLaneIndex = this.lanes.findIndex(l => l.id === currentTask.swimLane?.id);
+        if (currentLaneIndex <= 0) return null;
+
+        // Search previous lanes
+        for (let i = currentLaneIndex - 1; i >= 0; i--) {
+            const lane = this.lanes[i];
+            if (lane.collapsed || !this.laneHasMatchingTasks(lane.id)) continue;
+
+            const tasks = this.getTasks(lane.id, currentTask.status);
+            if (tasks.length > 0) {
+                return tasks[tasks.length - 1]; // Last task in column (bottom)
+            }
+        }
+        return null;
+    },
+
+    /**
+     * Get task in next lane (same status)
+     */
+    getTaskInNextLane(currentTask) {
+        const currentLaneIndex = this.lanes.findIndex(l => l.id === currentTask.swimLane?.id);
+        if (currentLaneIndex >= this.lanes.length - 1) return null;
+
+        // Search next lanes
+        for (let i = currentLaneIndex + 1; i < this.lanes.length; i++) {
+            const lane = this.lanes[i];
+            if (lane.collapsed || !this.laneHasMatchingTasks(lane.id)) continue;
+
+            const tasks = this.getTasks(lane.id, currentTask.status);
+            if (tasks.length > 0) {
+                return tasks[0]; // First task in column (top)
+            }
+        }
+        return null;
+    },
+
+    /**
+     * Scroll to make selected task visible
+     */
+    scrollToSelectedTask() {
+        this.$nextTick(() => {
+            const selected = document.querySelector('.task-card.task-selected');
+            if (selected) {
+                selected.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        });
+    },
+
+    /**
+     * Check if task is currently selected
+     */
+    isTaskSelected(taskId) {
+        return this.selectedTaskId === taskId;
+    },
+
+    /**
+     * Get comments array from task
+     * Comments are now stored as an array via JPA @OneToMany
+     */
+    getTaskComments(task) {
+        if (!task || !task.comments) return [];
+        return Array.isArray(task.comments) ? task.comments : [];
+    },
+
+    /**
+     * Add a new comment to the current task
+     */
+    async addComment() {
+        const text = this.taskDetail.newComment.trim();
+        if (!text || !this.taskDetail.task) return;
+
+        console.log('[App] addComment:', text);
+        this.taskDetail.isLoading = true;
+
+        try {
+            const taskId = this.taskDetail.task.id;
+            const newComment = await Api.addComment(taskId, text);
+
+            // Comments are now an array on the task object
+            const task = this.tasks.find(t => t.id === taskId);
+            if (task) {
+                if (!task.comments) task.comments = [];
+                task.comments.push(newComment);
+                this.taskDetail.newComment = '';
+
+                // Force reactivity update
+                if (this.taskDetail.task.id === task.id) {
+                    this.taskDetail.task = { ...task };
+                }
+            }
+
+            this.triggerSave();
+        } catch (e) {
+            console.error('[App] Failed to add comment:', e);
+            this.showError('Failed to add comment');
+        } finally {
+            this.taskDetail.isLoading = false;
+        }
+    },
+    /**
+     * Start editing a comment
+     */
+    startEditComment(comment) {
+        this.taskDetail.editingCommentId = comment.id;
+        this.taskDetail.editingCommentText = comment.text || comment;
+    },
+
+    /**
+     * Cancel editing
+     */
+    cancelEditComment() {
+        this.taskDetail.editingCommentId = null;
+        this.taskDetail.editingCommentText = '';
+    },
+
+    /**
+     * Update an existing comment
+     */
+    async updateComment() {
+        const text = this.taskDetail.editingCommentText.trim();
+        const commentId = this.taskDetail.editingCommentId;
+        if (!text || !commentId || !this.taskDetail.task) return;
+
+        this.taskDetail.isLoading = true;
+        try {
+            const taskId = this.taskDetail.task.id;
+            const updatedComment = await Api.updateComment(taskId, commentId, text);
+
+            // Comments are now an array
+            const task = this.tasks.find(t => t.id == taskId);
+            if (task && task.comments) {
+                const idx = task.comments.findIndex(c => c.id == commentId);
+                if (idx !== -1) {
+                    task.comments[idx] = updatedComment;
+                    // Force reactivity update
+                    this.taskDetail.task = { ...task };
+                }
+            }
+
+            this.cancelEditComment();
+            this.triggerSave();
+        } catch (e) {
+            console.error('[App] Failed to update comment:', e);
+            this.showError('Failed to update comment');
+        } finally {
+            this.taskDetail.isLoading = false;
+        }
+    },
+
+    /**
+     * Request to delete a comment (opens confirmation modal)
+     */
+    deleteComment(commentId) {
+        if (!this.taskDetail.task) return;
+        // Use custom modal instead of native confirm()
+        this.confirmAction('deleteComment', commentId);
+    },
+
+    /**
+     * Execute delete comment after modal confirmation
+     */
+    async executeDeleteComment(commentId) {
+        if (!this.taskDetail.task) return;
+
+        this.taskDetail.isLoading = true;
+        try {
+            const taskId = this.taskDetail.task.id;
+            await Api.deleteComment(taskId, commentId);
+
+            // Comments are now an array
+            const task = this.tasks.find(t => t.id == taskId);
+            if (task && task.comments) {
+                task.comments = task.comments.filter(c => c.id != commentId);
+                // Force reactivity update
+                this.taskDetail.task = { ...task };
+            }
+            this.triggerSave();
+        } catch (e) {
+            console.error('[App] Failed to delete comment:', e);
+            this.showError('Failed to delete comment');
+        } finally {
+            this.taskDetail.isLoading = false;
         }
     }
 }));

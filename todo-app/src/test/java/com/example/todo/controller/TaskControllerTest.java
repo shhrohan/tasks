@@ -1,15 +1,18 @@
 package com.example.todo.controller;
 
 import com.example.todo.base.BaseIntegrationTest;
+import com.example.todo.model.Comment;
 import com.example.todo.model.SwimLane;
 import com.example.todo.model.Task;
 import com.example.todo.model.TaskStatus;
+import com.example.todo.repository.CommentRepository;
 import com.example.todo.repository.SwimLaneRepository;
 import com.example.todo.repository.TaskRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,6 +27,9 @@ class TaskControllerTest extends BaseIntegrationTest {
 
         @Autowired
         private SwimLaneRepository swimLaneRepository;
+
+        @Autowired
+        private CommentRepository commentRepository;
 
         @Test
         void getAllTasks_ShouldReturnTaskList() throws Exception {
@@ -102,10 +108,6 @@ class TaskControllerTest extends BaseIntegrationTest {
 
                 mockMvc.perform(delete("/api/tasks/{id}", task.getId()))
                                 .andExpect(status().isNoContent());
-
-                // Note: With async delete, task may still exist briefly.
-                // The async service will delete it. We verify the endpoint returns correctly.
-                // To fully test deletion, we'd need to wait for async completion.
         }
 
         @Test
@@ -119,23 +121,15 @@ class TaskControllerTest extends BaseIntegrationTest {
                 task.setStatus(TaskStatus.TODO);
                 task = taskRepository.save(task);
 
-                // The API returns an immediate optimistic response with the requested status
-                // The actual database update happens asynchronously
                 mockMvc.perform(patch("/api/tasks/{id}/move", task.getId())
                                 .param("status", "DONE")
                                 .param("swimLaneId", lane.getId().toString()))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.status").value("DONE"));
-
-                // Note: The actual DB state is updated asynchronously.
-                // Full verification would require waiting for async completion.
         }
 
         @Test
         void moveTask_ShouldReturnOk_EvenForNonExistentTask() throws Exception {
-                // The moveTask endpoint returns an optimistic response even for non-existent
-                // IDs
-                // since it delegates to async service. The async service will fail silently.
                 mockMvc.perform(patch("/api/tasks/{id}/move", 999L)
                                 .param("status", "DONE"))
                                 .andExpect(status().isOk());
@@ -155,8 +149,10 @@ class TaskControllerTest extends BaseIntegrationTest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.text").value(commentText));
 
-                Task commentedTask = taskRepository.findById(task.getId()).orElseThrow();
-                assertTrue(commentedTask.getComments().contains(commentText));
+                // Verify comment was saved in repository
+                List<Comment> comments = commentRepository.findByTaskIdOrderByCreatedAtAsc(task.getId());
+                assertEquals(1, comments.size());
+                assertEquals(commentText, comments.get(0).getText());
         }
 
         @Test
@@ -164,20 +160,25 @@ class TaskControllerTest extends BaseIntegrationTest {
                 Task task = new Task();
                 task.setName("Update Comment Task");
                 task.setStatus(TaskStatus.TODO);
-                // Add initial comment
-                String initialJson = "[{\"id\":\"c1\",\"text\":\"Old Text\",\"createdAt\":\"2023-01-01T10:00:00\",\"updatedAt\":\"2023-01-01T10:00:00\"}]";
-                task.setComments(initialJson);
                 task = taskRepository.save(task);
+
+                // Create a comment via repository
+                Comment comment = Comment.builder()
+                                .text("Old Text")
+                                .task(task)
+                                .build();
+                comment = commentRepository.save(comment);
 
                 String newText = "Updated Comment";
 
-                mockMvc.perform(put("/api/tasks/{id}/comments/{commentId}", task.getId(), "c1")
+                mockMvc.perform(put("/api/tasks/{id}/comments/{commentId}", task.getId(), comment.getId())
                                 .content(newText))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.text").value(newText));
 
-                Task updatedTask = taskRepository.findById(task.getId()).orElseThrow();
-                assertTrue(updatedTask.getComments().contains(newText));
+                // Verify update
+                Comment updatedComment = commentRepository.findById(comment.getId()).orElseThrow();
+                assertEquals(newText, updatedComment.getText());
         }
 
         @Test
@@ -185,15 +186,20 @@ class TaskControllerTest extends BaseIntegrationTest {
                 Task task = new Task();
                 task.setName("Delete Comment Task");
                 task.setStatus(TaskStatus.TODO);
-                String initialJson = "[{\"id\":\"c1\",\"text\":\"Delete Me\",\"createdAt\":\"2023-01-01T10:00:00\",\"updatedAt\":\"2023-01-01T10:00:00\"}]";
-                task.setComments(initialJson);
                 task = taskRepository.save(task);
 
-                mockMvc.perform(delete("/api/tasks/{id}/comments/{commentId}", task.getId(), "c1"))
+                // Create a comment
+                Comment comment = Comment.builder()
+                                .text("Delete Me")
+                                .task(task)
+                                .build();
+                comment = commentRepository.save(comment);
+
+                mockMvc.perform(delete("/api/tasks/{id}/comments/{commentId}", task.getId(), comment.getId()))
                                 .andExpect(status().isNoContent());
 
-                Task deletedCommentTask = taskRepository.findById(task.getId()).orElseThrow();
-                assertEquals("[]", deletedCommentTask.getComments());
+                // Verify deletion
+                assertFalse(commentRepository.findById(comment.getId()).isPresent());
         }
 
         @Test
@@ -276,17 +282,16 @@ class TaskControllerTest extends BaseIntegrationTest {
                 Task task = new Task();
                 task.setName("Update Comment Error Task");
                 task.setStatus(TaskStatus.TODO);
-                task.setComments("[]"); // Empty comments
                 task = taskRepository.save(task);
 
-                mockMvc.perform(put("/api/tasks/{id}/comments/{commentId}", task.getId(), "non-existent")
+                mockMvc.perform(put("/api/tasks/{id}/comments/{commentId}", task.getId(), 9999L)
                                 .content("Updated Text"))
                                 .andExpect(status().isBadRequest());
         }
 
         @Test
         void deleteComment_ShouldReturnBadRequest_WhenTaskNotFound() throws Exception {
-                mockMvc.perform(delete("/api/tasks/{id}/comments/{commentId}", 9999L, "c1"))
+                mockMvc.perform(delete("/api/tasks/{id}/comments/{commentId}", 9999L, 1L))
                                 .andExpect(status().isBadRequest());
         }
 
@@ -302,12 +307,17 @@ class TaskControllerTest extends BaseIntegrationTest {
                 Task task = new Task();
                 task.setName("Update JSON Comment Task");
                 task.setStatus(TaskStatus.TODO);
-                String json = "[{\"id\":\"c1\",\"text\":\"Old\",\"createdAt\":\"2023-01-01T10:00:00\",\"updatedAt\":\"2023-01-01T10:00:00\"}]";
-                task.setComments(json);
                 task = taskRepository.save(task);
 
+                // Create a comment
+                Comment comment = Comment.builder()
+                                .text("Old")
+                                .task(task)
+                                .build();
+                comment = commentRepository.save(comment);
+
                 // Text wrapped in JSON quotes
-                mockMvc.perform(put("/api/tasks/{id}/comments/{commentId}", task.getId(), "c1")
+                mockMvc.perform(put("/api/tasks/{id}/comments/{commentId}", task.getId(), comment.getId())
                                 .content("\"New Text\""))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.text").value("New Text"));

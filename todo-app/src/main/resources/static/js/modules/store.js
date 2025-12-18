@@ -170,6 +170,11 @@ export const Store = {
             this.modal.message = 'This will mark all tasks as done and hide the lane.';
             this.modal.type = 'success';
             this.modal.confirmText = 'Complete';
+        } else if (actionName === 'deleteComment') {
+            this.modal.title = 'Delete Comment?';
+            this.modal.message = 'Are you sure you want to delete this comment?';
+            this.modal.type = 'danger';
+            this.modal.confirmText = 'Delete';
         }
     },
 
@@ -188,6 +193,7 @@ export const Store = {
         const { action, payload } = this.modal;
         if (action === 'deleteLane') this.deleteLaneRecursive(payload);
         if (action === 'completeLane') this.completeLaneRecursive(payload);
+        if (action === 'deleteComment') this.executeDeleteComment(payload);
         this.closeModal();
     },
 
@@ -448,11 +454,26 @@ export const Store = {
     // --- SSE Handlers ---
     onServerTaskUpdate(updatedTask) {
         const startTime = performance.now();
-        const index = this.tasks.findIndex(t => t.id === updatedTask.id);
+        const index = this.tasks.findIndex(t => t.id == updatedTask.id);
         if (index !== -1) {
-            // Update in place (safer for reactivity)
-            this.tasks[index] = updatedTask;
-            console.log(`[TIMING] SSE task-update (existing) processed in ${(performance.now() - startTime).toFixed(1)}ms`);
+            // MERGE: Preserve swimLane from local state if server didn't send it
+            // This prevents task disappearance when SSE sends incomplete data
+            const existingTask = this.tasks[index];
+            const mergedTask = {
+                ...existingTask,
+                ...updatedTask,
+                // Preserve swimLane if server returns null (common with lazy loading)
+                swimLane: updatedTask.swimLane || existingTask.swimLane
+            };
+            this.tasks[index] = mergedTask;
+
+            // Sync Task Detail Pane if it's open for THIS task
+            if (this.taskDetail && this.taskDetail.open && this.taskDetail.task && this.taskDetail.task.id == updatedTask.id) {
+                console.log('[App] SSE Sync: Updating task detail pane data');
+                this.taskDetail.task = mergedTask;
+            }
+
+            console.log(`[TIMING] SSE task-update (merged) processed in ${(performance.now() - startTime).toFixed(1)}ms`);
         } else {
             this.tasks.push(updatedTask);
             console.log(`[TIMING] SSE task-update (new) processed in ${(performance.now() - startTime).toFixed(1)}ms`);
@@ -462,7 +483,7 @@ export const Store = {
 
     onServerTaskDelete(id) {
         const startTime = performance.now();
-        this.tasks = this.tasks.filter(t => t.id !== id);
+        this.tasks = this.tasks.filter(t => t.id != id);
         console.log(`[TIMING] SSE task-delete processed in ${(performance.now() - startTime).toFixed(1)}ms`);
     }
 };
