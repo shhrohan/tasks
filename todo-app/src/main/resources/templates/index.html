@@ -767,39 +767,6 @@ DRAG-AND-DROP CRITICAL NOTES:
     <!-- Main Application (Handles Alpine Init) - Minified Production Build -->
     <script type="module" src="js/app.min.js"></script>
 
-    <!-- Debug Script (Injected by Helper) -->
-    <script>
-        (function () {
-            const log = (type, e) => {
-                const card = e.target.closest('.task-card');
-                const col = e.target.closest('.lane-column');
-                console.log(`[Event ${type}]`, {
-                    target: e.target.tagName,
-                    cardId: card ? card.dataset.taskId : 'N/A',
-                    column: col ? col.dataset.status : 'N/A',
-                    raw: e.target
-                });
-            };
-            document.addEventListener('mousedown', e => log('MouseDown', e), true);
-            document.addEventListener('mouseup', e => log('MouseUp', e), true);
-            document.addEventListener('click', e => log('Click', e), true);
-
-            // DIAGNOSTIC: Check Sortable instances after 5 seconds
-            setTimeout(() => {
-                console.warn('\\n\\n=== DIAGNOSTIC: Checking Sortable instances after 5s ===');
-                const columns = document.querySelectorAll('.lane-column');
-                console.log(`Found ${columns.length} lane-column elements`);
-                columns.forEach(col => {
-                    const cards = col.querySelectorAll('.task-card');
-                    if (col.sortableInstance) {
-                        console.log('  -> Sortable options:', col.sortableInstance.options);
-                    }
-                });
-                console.warn('=== END DIAGNOSTIC ===\n\n');
-            }, 5000);
-        })();
-    </script>
-
     <!-- Bootstrap Bundle JS for dropdown functionality -->
     <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
