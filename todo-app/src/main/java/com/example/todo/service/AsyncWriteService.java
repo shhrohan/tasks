@@ -37,6 +37,7 @@ public class AsyncWriteService {
     @Async("asyncWriteExecutor")
     @Transactional
     public void moveTask(Long id, com.example.todo.model.TaskStatus status, Long laneId, Integer position) {
+        long start = System.currentTimeMillis();
         log.info("AsyncDB: Start processing MOVE for Task ID {} to Status {} Lane {} Position {}...", id,
                 status, laneId, position);
         simulateLatency();
@@ -60,7 +61,7 @@ public class AsyncWriteService {
             sseService.broadcast("task-updated", task);
         });
 
-        log.info("AsyncDB: Completed MOVE for Task ID {}", id);
+        log.info("[TIMING] AsyncDB: MOVE for Task ID {} completed in {}ms", id, System.currentTimeMillis() - start);
     }
 
     @Async("asyncWriteExecutor")

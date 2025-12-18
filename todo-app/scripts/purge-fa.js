@@ -25,8 +25,13 @@ async function purgeFontAwesome() {
         const result = await new PurgeCSS().purge({
             content: contentFiles,
             css: [cssPath],
-            // Only safelist the base classes, let PurgeCSS detect which fa-* icons are actually used
-            safelist: ['fas', 'far', 'fab', 'fa-solid', 'fa-regular', 'fa-brands']
+            // Safelist base classes + mobile sidebar icons
+            safelist: [
+                'fas', 'far', 'fab', 'fa-solid', 'fa-regular', 'fa-brands',
+                'fa-bars',          // Hamburger menu icon
+                'fa-layer-group',   // Sidebar header icon
+                'fa-times'          // Close button icon
+            ]
         });
 
         if (result.length > 0) {

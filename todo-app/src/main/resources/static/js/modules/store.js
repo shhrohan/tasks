@@ -124,9 +124,14 @@ export const Store = {
     },
 
     toggleLaneCollapse(laneId) {
+        console.log('[Store] toggleLaneCollapse called with laneId:', laneId);
         const lane = this.lanes.find(l => l.id === laneId);
         if (lane) {
+            const oldState = lane.collapsed;
             lane.collapsed = !lane.collapsed;
+            console.log('[Store] toggleLaneCollapse - Lane:', lane.name, 'collapsed:', oldState, '->', lane.collapsed);
+        } else {
+            console.warn('[Store] toggleLaneCollapse - Lane not found:', laneId);
         }
     },
 
@@ -323,6 +328,7 @@ export const Store = {
     // --- Actions ---
 
     async moveTaskOptimistic(taskId, newStatus, newLaneId, newIndex) {
+        const startTime = performance.now();
         console.log('[Store] moveTaskOptimistic - Params:', { taskId, newStatus, newLaneId, newIndex });
 
         // 1. Find Task
@@ -348,12 +354,15 @@ export const Store = {
         if (newIndex !== undefined && newIndex !== null) {
             task.position = newIndex;
         }
+        console.log(`[TIMING] Optimistic UI update completed in ${(performance.now() - startTime).toFixed(1)}ms`);
 
         // 4. Send to API
         try {
+            const apiStart = performance.now();
             console.log('[Store] moveTaskOptimistic - Calling API.moveTask with:', { taskId, newStatus, newLaneId, newIndex });
             await Api.moveTask(taskId, newStatus, newLaneId, newIndex);
-            console.log('[Store] moveTaskOptimistic - API call successful');
+            console.log(`[TIMING] API moveTask() call completed in ${(performance.now() - apiStart).toFixed(1)}ms`);
+            console.log(`[TIMING] Total moveTaskOptimistic() completed in ${(performance.now() - startTime).toFixed(1)}ms`);
             this.triggerSave();
         } catch (e) {
             console.error('[Store] moveTaskOptimistic - FAILED, rolling back:', e);
@@ -438,17 +447,22 @@ export const Store = {
 
     // --- SSE Handlers ---
     onServerTaskUpdate(updatedTask) {
+        const startTime = performance.now();
         const index = this.tasks.findIndex(t => t.id === updatedTask.id);
         if (index !== -1) {
             // Update in place (safer for reactivity)
             this.tasks[index] = updatedTask;
+            console.log(`[TIMING] SSE task-update (existing) processed in ${(performance.now() - startTime).toFixed(1)}ms`);
         } else {
             this.tasks.push(updatedTask);
+            console.log(`[TIMING] SSE task-update (new) processed in ${(performance.now() - startTime).toFixed(1)}ms`);
         }
         this.triggerSave();
     },
 
     onServerTaskDelete(id) {
+        const startTime = performance.now();
         this.tasks = this.tasks.filter(t => t.id !== id);
+        console.log(`[TIMING] SSE task-delete processed in ${(performance.now() - startTime).toFixed(1)}ms`);
     }
 };

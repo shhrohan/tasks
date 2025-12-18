@@ -92,16 +92,16 @@ DRAG-AND-DROP CRITICAL NOTES:
 
     <!-- Critical CSS (render-blocking, needed for initial paint) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/style.min.css">
+    <link rel="stylesheet" href="/css/style.css">
 
     <!-- Non-critical CSS (async load with media trick) -->
-    <!-- Font Awesome - Purged to only used icons (90% smaller) -->
-    <link rel="stylesheet" href="/css/fontawesome.purged.css" media="print" onload="this.media='all'">
+    <!-- Font Awesome - Full version for debugging -->
+    <link rel="stylesheet" href="/css/fontawesome.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" media="print"
         onload="this.media='all'">
     <!-- Fallback for no-JS -->
     <noscript>
-        <link rel="stylesheet" href="/css/fontawesome.purged.css">
+        <link rel="stylesheet" href="/css/fontawesome.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     </noscript>
 
@@ -117,14 +117,22 @@ DRAG-AND-DROP CRITICAL NOTES:
 <body class="bg-dark text-white" x-data="todoApp">
 
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark glass-panel sticky-top mb-4">
+    <nav class="navbar navbar-dark glass-panel sticky-top mb-4">
         <div class="container-fluid">
+            <!-- Mobile: Sidebar Toggle (hidden on desktop) -->
+            <button class="btn btn-outline-light btn-sm d-lg-none me-2 mobile-sidebar-toggle"
+                @click="toggleMobileSidebar()" :class="{'active': mobileSidebarOpen}" title="Switch Swimlane">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+
             <a class="navbar-brand fw-bold" href="#">
-                <i class="fa-solid fa-cubes me-2"></i>TaskBoard 3D
+                <i class="fa-solid fa-cubes me-2"></i><span class="d-none d-sm-inline">TaskBoard 3D</span><span
+                    class="d-sm-none">Tasks</span>
             </a>
-            <div class="d-flex align-items-center gap-3">
-                <!-- Collapse/Expand All Button -->
-                <button class="btn btn-outline-light btn-sm" @click="toggleAllLanes()"
+
+            <div class="d-flex align-items-center gap-2 gap-lg-3">
+                <!-- Collapse/Expand All Button (hidden on mobile) -->
+                <button class="btn btn-outline-light btn-sm d-none d-lg-flex" @click="toggleAllLanes()"
                     :title="areAllLanesCollapsed() ? 'Expand All Lanes' : 'Collapse All Lanes'">
                     <i class="fa-solid" :class="areAllLanesCollapsed() ? 'fa-expand' : 'fa-compress'"></i>
                     <span x-text="areAllLanesCollapsed() ? 'Expand All' : 'Collapse All'"></span>
@@ -134,26 +142,26 @@ DRAG-AND-DROP CRITICAL NOTES:
                 <div class="btn-group" role="group">
                     <button type="button" class="btn btn-sm" :class="hideDone ? 'btn-success' : 'btn-outline-secondary'"
                         @click="hideDone = !hideDone; showOnlyBlocked = false" title="Hide completed tasks">
-                        <i class="fa-solid fa-eye-slash me-1"></i>Hide Done
+                        <i class="fa-solid fa-eye-slash"></i><span class="d-none d-lg-inline ms-1">Hide Done</span>
                     </button>
                     <button type="button" class="btn btn-sm"
                         :class="showOnlyBlocked ? 'btn-danger' : 'btn-outline-secondary'"
                         @click="showOnlyBlocked = !showOnlyBlocked; hideDone = false" title="Show only blocked tasks">
-                        <i class="fa-solid fa-ban me-1"></i>Blocked Only
+                        <i class="fa-solid fa-ban"></i><span class="d-none d-lg-inline ms-1">Blocked Only</span>
                     </button>
                 </div>
 
                 <!-- Add Swimlane Button -->
                 <button class="btn btn-primary btn-sm" @click="openSwimlaneModal()">
-                    <i class="fa-solid fa-plus"></i> New Board
+                    <i class="fa-solid fa-plus"></i><span class="d-none d-lg-inline ms-1">New Board</span>
                 </button>
 
                 <!-- User/Logout -->
                 <div class="dropdown">
                     <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
-                        <i class="fa-solid fa-user me-1"></i>
-                        <span th:text="${#authentication?.name ?: 'User'}">User</span>
+                        <i class="fa-solid fa-user"></i>
+                        <span class="d-none d-lg-inline ms-1" th:text="${#authentication?.name ?: 'User'}">User</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
                         <li>
@@ -169,24 +177,98 @@ DRAG-AND-DROP CRITICAL NOTES:
         </div>
     </nav>
 
-    <!-- Tag Filter Bar -->
-    <div class="tag-filter-bar glass-panel px-4 py-2" x-show="getAllUniqueTags().length > 0">
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-            <span class="text-secondary small me-2">
-                <i class="fa-solid fa-tags me-1"></i>Filter by tag:
+    <!-- Mobile Sidebar Drawer (Swimlane Navigation) -->
+    <div class="mobile-sidebar-backdrop" x-show="mobileSidebarOpen && isMobile"
+        x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" @click="mobileSidebarOpen = false"
+        x-cloak>
+    </div>
+
+    <aside class="mobile-sidebar" x-show="mobileSidebarOpen && isMobile"
+        x-transition:enter="transition ease-out duration-300" x-transition:enter-start="sidebar-hidden"
+        x-transition:enter-end="sidebar-visible" x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="sidebar-visible" x-transition:leave-end="sidebar-hidden" x-cloak>
+
+        <!-- Sidebar Header with Hamburger -->
+        <div class="mobile-sidebar-header">
+            <button class="sidebar-hamburger" @click="mobileSidebarOpen = false">
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+
+        <!-- Swimlane List -->
+        <div class="mobile-sidebar-body">
+            <template x-for="lane in lanes" :key="lane.id">
+                <button class="sidebar-lane-item" :class="{'active': activeLaneId === lane.id}"
+                    @click="selectLane(lane.id)">
+                    <span class="lane-name" x-text="lane.name"></span>
+                    <div class="lane-progress-ring">
+                        <!-- Circular progress indicator -->
+                        <svg class="progress-circle" viewBox="0 0 36 36">
+                            <path class="progress-bg"
+                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="progress-bar" :stroke-dasharray="getLaneStats(lane.id).donePct + ', 100'"
+                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        </svg>
+                        <!-- Percentage or checkmark -->
+                        <span class="progress-text" x-show="activeLaneId !== lane.id"
+                            x-text="getLaneStats(lane.id).donePct + '%'"></span>
+                        <i class="fa-solid fa-check progress-check" x-show="activeLaneId === lane.id"></i>
+                    </div>
+                </button>
+            </template>
+        </div>
+
+        <!-- Collapse arrow at bottom -->
+        <div class="mobile-sidebar-footer">
+            <button class="sidebar-collapse-btn" @click="mobileSidebarOpen = false">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Tag Filter Bar (Collapsible on mobile) -->
+    <div class="tag-filter-bar glass-panel px-3 py-2" x-show="getAllUniqueTags().length > 0" x-data="{expanded: false}">
+        <div class="d-flex align-items-center justify-content-between">
+            <button class="btn btn-sm btn-link text-secondary p-0 d-flex align-items-center gap-2"
+                @click="expanded = !expanded">
+                <i class="fa-solid fa-tags"></i>
+                <span class="d-none d-lg-inline">Filter by tag:</span>
+                <span class="d-lg-none"
+                    x-text="expanded ? 'Hide tags' : 'Tags (' + getAllUniqueTags().length + ')'"></span>
+                <i class="fa-solid d-lg-none" :class="expanded ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+            </button>
+            <span x-show="selectedTags.length > 0" class="badge bg-info">
+                <span x-text="selectedTags.length"></span> active
             </span>
+        </div>
+        <!-- Desktop: Always show all tags -->
+        <div class="d-none d-lg-flex align-items-center gap-2 flex-wrap mt-2">
             <template x-for="tag in getAllUniqueTags()" :key="tag">
                 <button class="tag-capsule" :class="{'active': isTagSelected(tag)}" @click="toggleTag(tag)"
                     x-text="tag">
                 </button>
             </template>
-            <span x-show="selectedTags.length > 0" class="text-info small ms-2">
-                (<span x-text="selectedTags.length"></span> selected)
-            </span>
             <button class="btn btn-link btn-sm text-secondary p-0 ms-2" x-show="selectedTags.length > 0"
                 @click="clearSelectedTags()" title="Clear all filters">
-                <i class="fa-solid fa-times-circle"></i> Clear All
+                <i class="fa-solid fa-times-circle"></i> Clear
             </button>
+        </div>
+        <!-- Mobile: Expandable tag list -->
+        <div class="d-lg-none mt-2" x-show="expanded" x-transition>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <template x-for="tag in getAllUniqueTags()" :key="tag">
+                    <button class="tag-capsule" :class="{'active': isTagSelected(tag)}" @click="toggleTag(tag)"
+                        x-text="tag">
+                    </button>
+                </template>
+                <button class="btn btn-link btn-sm text-secondary p-0 ms-2" x-show="selectedTags.length > 0"
+                    @click="clearSelectedTags()" title="Clear all filters">
+                    <i class="fa-solid fa-times-circle"></i> Clear
+                </button>
+            </div>
         </div>
     </div>
 
@@ -214,26 +296,36 @@ DRAG-AND-DROP CRITICAL NOTES:
                     <!-- Loop Swimlanes -->
                     <template x-for="lane in lanes" :key="lane.id">
                         <div class="row mb-3 mb-lg-4 swimlane-row" :data-lane-id="lane.id"
-                            x-show="laneHasMatchingTasks(lane.id)" x-transition:leave="transition ease-in duration-200"
+                            x-show="isLaneVisible(lane.id)" x-transition:leave="transition ease-in duration-200"
                             x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
 
                             <!-- Swimlane Header -->
                             <div class="swimlane-header p-3" @click="toggleLaneCollapse(lane.id)"
                                 style="cursor: pointer;">
                                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                    <!-- Left: Title & Stats -->
-                                    <div class="d-flex align-items-center gap-3">
-                                        <i class="fa-solid"
-                                            :class="lane.collapsed ? 'fa-chevron-right' : 'fa-chevron-down'"></i>
-                                        <span class="h4 mb-0 fw-bold" x-text="lane.name"></span>
+                                    <!-- Left: Title & Stats + Action Button on mobile -->
+                                    <div class="d-flex align-items-center gap-2 gap-lg-3 flex-grow-1">
+                                        <!-- Collapse chevron: Show on mobile when tag filters active -->
+                                        <i class="fa-solid" :class="[lane.collapsed ? 'fa-chevron-right' : 'fa-chevron-down', 
+                                                     selectedTags.length > 0 ? '' : 'd-none d-lg-inline']"></i>
+                                        <!-- Lane name on both mobile and desktop -->
+                                        <span class="h5 mb-0 fw-bold d-lg-none" x-text="lane.name"></span>
+                                        <span class="h4 mb-0 fw-bold d-none d-lg-inline" x-text="lane.name"></span>
                                         <span class="badge bg-primary rounded-pill"
                                             x-text="getLaneStats(lane.id).total"></span>
                                         <div x-show="lane.loading" class="spinner-border spinner-border-sm text-primary"
                                             role="status"></div>
+
+                                        <!-- Mobile: Mark As Done button -->
+                                        <button class="btn btn-sm btn-outline-success d-lg-none px-2 py-1"
+                                            @click.stop="confirmAction('completeLane', lane.id)" title="Mark As Done">
+                                            <i class="fa-solid fa-circle-check me-1"></i>
+                                            <span class="small">Done</span>
+                                        </button>
                                     </div>
 
-                                    <!-- Center: Progress Bar (Inline in Header) -->
-                                    <div class="swimlane-progress-inline flex-grow-1 mx-3 ms-auto"
+                                    <!-- Center: Progress Bar (Inline in Header) - Desktop only -->
+                                    <div class="swimlane-progress-inline flex-grow-1 mx-3 ms-auto d-none d-lg-flex"
                                         x-show="getLaneStats(lane.id).total > 0" @click.stop>
                                         <div class="d-flex align-items-center gap-2 w-100">
                                             <!-- Todo -->
@@ -278,8 +370,8 @@ DRAG-AND-DROP CRITICAL NOTES:
                                         </div>
                                     </div>
 
-                                    <!-- Right: Actions -->
-                                    <div class="d-flex gap-2">
+                                    <!-- Right: Actions - Desktop only (mobile button is inline above) -->
+                                    <div class="d-none d-lg-flex gap-2 ms-auto">
                                         <button class="btn btn-sm btn-outline-success"
                                             @click.stop="confirmAction('completeLane', lane.id)"
                                             title="Mark As Completed">
@@ -519,7 +611,7 @@ DRAG-AND-DROP CRITICAL NOTES:
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 
     <!-- Main Application (Handles Alpine Init) - Minified Production Build -->
-    <script type="module" src="js/app.prod.min.js?v=prod_min"></script>
+    <script type="module" src="js/app.js?v=debug"></script>
 
     <!-- Debug Script (Injected by Helper) -->
     <script>

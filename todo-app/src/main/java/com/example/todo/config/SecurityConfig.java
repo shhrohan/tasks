@@ -51,7 +51,7 @@ public class SecurityConfig {
                                                 .deleteCookies("JSESSIONID")
                                                 .permitAll())
                                 .sessionManagement(session -> session
-                                                .maximumSessions(1) // One session per user
+                                                .maximumSessions(5) // Allow multiple tabs/sessions per user
                                                 .expiredUrl("/login?expired=true"))
                                 .userDetailsService(userDetailsService);
 

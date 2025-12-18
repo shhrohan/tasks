@@ -107,6 +107,7 @@ public class TaskService {
     @CacheEvict(value = { "tasks", "tasksByLane" }, allEntries = true)
     @Transactional
     public Task moveTask(Long id, TaskStatus newStatus, Long swimLaneId, Integer position) {
+        long start = System.currentTimeMillis();
         log.info("[CACHE EVICT] Invalidating 'tasks' cache - moving task {}", id);
         log.info("Delegating MOVE for task {} to Async Service (status={}, lane={}, position={})", id, newStatus,
                 swimLaneId, position);
@@ -124,7 +125,8 @@ public class TaskService {
         }
 
         asyncWriteService.moveTask(id, newStatus, swimLaneId, position);
-        log.info("Returning immediate response to UI for move task {}", id);
+        log.info("[TIMING] Optimistic UI response for task {} returned in {}ms", id,
+                System.currentTimeMillis() - start);
         return dummyTask;
     }
 

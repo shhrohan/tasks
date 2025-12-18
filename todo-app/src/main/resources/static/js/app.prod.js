@@ -35,9 +35,9 @@
  */
 
 import Alpine from 'https://esm.sh/alpinejs@3.12.0';
-import { Store } from './modules/store.min.js';
-import { Api } from './modules/api.min.js';
-import { Drag } from './modules/drag.min.js';
+import { Store } from './modules/store.js';
+import { Api } from './modules/api.js';
+import { Drag } from './modules/drag.js';
 
 console.log('[App] ====== Application Loading ======');
 console.log('[App] Alpine.js ESM Module System');
@@ -63,6 +63,11 @@ Alpine.data('todoApp', () => ({
 
     // Loading state for skeleton loaders
     isLoading: true,  // Shows skeletons until tasks load
+
+    // Mobile sidebar navigation
+    mobileSidebarOpen: false,  // Toggle sidebar drawer
+    activeLaneId: null,        // Currently selected lane on mobile (null = show all)
+    isMobile: false,           // Track if we're on mobile viewport
 
     // Import Store methods (modal management, API wrappers, etc.)
     ...Store,
@@ -165,6 +170,74 @@ Alpine.data('todoApp', () => ({
         );
 
         console.log('[App] ====== Initialization Complete ======');
+
+        // ---------------------------------------------------------------------
+        // STEP 5: Setup mobile detection and set initial active lane
+        // ---------------------------------------------------------------------
+        this.checkMobile();
+        window.addEventListener('resize', () => this.checkMobile());
+
+        // Set first lane as active on mobile if we have lanes
+        if (this.lanes.length > 0 && !this.activeLaneId) {
+            this.activeLaneId = this.lanes[0].id;
+        }
+    },
+
+    /**
+     * Check if current viewport is mobile (<992px)
+     * Updates isMobile state and resets sidebar if switching to desktop
+     */
+    checkMobile() {
+        const wasMobile = this.isMobile;
+        this.isMobile = window.innerWidth < 992;
+
+        // If switching from mobile to desktop, close sidebar and show all lanes
+        if (wasMobile && !this.isMobile) {
+            this.mobileSidebarOpen = false;
+        }
+
+        console.log('[App] checkMobile:', { isMobile: this.isMobile, width: window.innerWidth });
+    },
+
+    /**
+     * Toggle mobile sidebar open/close
+     */
+    toggleMobileSidebar() {
+        this.mobileSidebarOpen = !this.mobileSidebarOpen;
+        console.log('[App] toggleMobileSidebar:', this.mobileSidebarOpen);
+    },
+
+    /**
+     * Select a swimlane on mobile (closes sidebar automatically)
+     */
+    selectLane(laneId) {
+        console.log('[App] selectLane:', laneId);
+        this.activeLaneId = laneId;
+        this.mobileSidebarOpen = false; // Auto-close sidebar
+
+        // Scroll to top of content
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+
+    /**
+     * Check if a lane should be visible (on mobile, only show active lane)
+     */
+    isLaneVisible(laneId) {
+        // On desktop, show all lanes (filtered by tags)
+        if (!this.isMobile) {
+            return this.laneHasMatchingTasks(laneId);
+        }
+
+        // On mobile, only show active lane
+        return laneId === this.activeLaneId && this.laneHasMatchingTasks(laneId);
+    },
+
+    /**
+     * Get lane name by ID (for sidebar display)
+     */
+    getLaneName(laneId) {
+        const lane = this.lanes.find(l => l.id === laneId);
+        return lane ? lane.name : '';
     },
 
     /**
