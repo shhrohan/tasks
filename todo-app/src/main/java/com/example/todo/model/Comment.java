@@ -15,6 +15,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(exclude = "task")
+@ToString(exclude = "task")
 public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
