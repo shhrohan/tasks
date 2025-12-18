@@ -92,16 +92,16 @@ DRAG-AND-DROP CRITICAL NOTES:
 
     <!-- Critical CSS (render-blocking, needed for initial paint) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/style.min.css">
 
     <!-- Non-critical CSS (async load with media trick) -->
     <!-- Font Awesome - Full version for debugging -->
-    <link rel="stylesheet" href="/css/fontawesome.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/css/fontawesome.purged.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" media="print"
         onload="this.media='all'">
     <!-- Fallback for no-JS -->
     <noscript>
-        <link rel="stylesheet" href="/css/fontawesome.css">
+        <link rel="stylesheet" href="/css/fontawesome.purged.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     </noscript>
 
@@ -765,7 +765,7 @@ DRAG-AND-DROP CRITICAL NOTES:
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 
     <!-- Main Application (Handles Alpine Init) - Minified Production Build -->
-    <script type="module" src="js/app.js?v=debug"></script>
+    <script type="module" src="js/app.min.js"></script>
 
     <!-- Debug Script (Injected by Helper) -->
     <script>
