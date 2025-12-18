@@ -181,6 +181,27 @@ Alpine.data('todoApp', () => ({
         if (this.lanes.length > 0 && !this.activeLaneId) {
             this.activeLaneId = this.lanes[0].id;
         }
+
+        // ---------------------------------------------------------------------
+        // STEP 6: Watchers
+        // ---------------------------------------------------------------------
+        this.$watch('selectedTags', (value) => {
+            const isFilterActive = value.length > 0;
+            console.log('[App] Tag filter state changed. isFilterActive:', isFilterActive);
+
+            // Update all task Sortable instances
+            document.querySelectorAll('.lane-column').forEach(col => {
+                if (col.sortableInstance) {
+                    col.sortableInstance.option('disabled', isFilterActive);
+                }
+            });
+
+            // Update lane reorder Sortable instance
+            const boardContainer = document.querySelector('.board-container');
+            if (boardContainer && boardContainer.sortableInstance) {
+                boardContainer.sortableInstance.option('disabled', isFilterActive);
+            }
+        });
     },
 
     /**
@@ -460,6 +481,37 @@ Alpine.data('todoApp', () => ({
                 taskTags.includes(selectedTag.toLowerCase())
             );
         });
+    },
+
+    /**
+     * Check if a specific status column in a lane has any tasks matching the current tag filter
+     */
+    columnHasMatchingTasks(laneId, status) {
+        if (!this.selectedTags || this.selectedTags.length === 0) {
+            return true;
+        }
+        return this.getTasks(laneId, status).length > 0;
+    },
+
+    /**
+     * Complete visibility logic for a status column
+     * Used in index.html to hide empty columns in mobile filter view
+     */
+    isColumnVisible(laneId, status) {
+        // Always show on desktop
+        if (!this.isMobile) return true;
+
+        // On mobile, if no tags selected, show all (active) columns
+        if (!this.selectedTags || this.selectedTags.length === 0) return true;
+
+        // On mobile WITH filters, check if column has matching tasks
+        const visible = this.columnHasMatchingTasks(laneId, status);
+
+        if (!visible) {
+            console.log(`[App] Hiding empty column ${status} for lane ${laneId} in mobile filter view`);
+        }
+
+        return visible;
     },
 
     /**
