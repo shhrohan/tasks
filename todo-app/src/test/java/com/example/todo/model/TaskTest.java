@@ -145,4 +145,24 @@ class TaskTest {
         assertEquals(TaskStatus.BLOCKED, TaskStatus.valueOf("BLOCKED"));
         assertEquals(TaskStatus.DEFERRED, TaskStatus.valueOf("DEFERRED"));
     }
+
+    @Test
+    void builder_ToString_ShouldReturnString() {
+        Task.TaskBuilder builder = Task.builder()
+                .id(1L)
+                .name("Test")
+                .status(TaskStatus.TODO);
+        String toString = builder.toString();
+        assertNotNull(toString);
+        assertTrue(toString.contains("TaskBuilder"));
+    }
+
+    @Test
+    void builder_DefaultComments_ShouldBeEmptyList() {
+        Task task = Task.builder().id(1L).name("Test").status(TaskStatus.TODO).build();
+        // Default value from @Builder.Default should be empty ArrayList
+        assertNotNull(task.getComments());
+        assertTrue(task.getComments().isEmpty());
+    }
 }
+

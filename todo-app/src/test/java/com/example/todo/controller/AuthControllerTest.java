@@ -155,4 +155,29 @@ class AuthControllerTest extends BaseIntegrationTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrlPattern("/register?error=*"));
     }
+
+    @Test
+    @WithAnonymousUser
+    void registerUser_WithNullEmail_ShouldRedirectWithError() throws Exception {
+        mockMvc.perform(post("/register")
+                        .with(csrf())
+                        .param("name", "Test User")
+                        // email param omitted (null)
+                        .param("password", "password123")
+                        .param("confirmPassword", "password123"))
+                .andExpect(status().is4xxClientError()); // Missing required param
+    }
+
+    @Test
+    @WithAnonymousUser
+    void login_WithBothErrorAndLogout_ShouldShowBothMessages() throws Exception {
+        mockMvc.perform(get("/login")
+                        .param("error", "true")
+                        .param("logout", "true"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("login"))
+                .andExpect(model().attributeExists("error"))
+                .andExpect(model().attributeExists("message"));
+    }
 }
+
