@@ -6,14 +6,19 @@ import com.example.todo.model.Comment;
 import com.example.todo.model.SwimLane;
 import com.example.todo.model.Task;
 import com.example.todo.model.TaskStatus;
+import com.example.todo.model.User;
 import com.example.todo.repository.CommentRepository;
+import com.example.todo.repository.UserRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import lombok.extern.log4j.Log4j2;
 
@@ -25,13 +30,47 @@ public class TaskService {
     private final SwimLaneDAO swimLaneDAO;
     private final CommentRepository commentRepository;
     private final AsyncWriteService asyncWriteService;
+    private final UserRepository userRepository;
 
     public TaskService(TaskDAO taskDAO, SwimLaneDAO swimLaneDAO, CommentRepository commentRepository,
-            AsyncWriteService asyncWriteService) {
+            AsyncWriteService asyncWriteService, UserRepository userRepository) {
         this.taskDAO = taskDAO;
         this.swimLaneDAO = swimLaneDAO;
         this.commentRepository = commentRepository;
         this.asyncWriteService = asyncWriteService;
+        this.userRepository = userRepository;
+    }
+
+    /**
+     * Get the currently authenticated user from SecurityContext.
+     */
+    private User getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new RuntimeException("No authenticated user found");
+        }
+        String email = auth.getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found: " + email));
+    }
+
+    /**
+     * Get tasks for the currently authenticated user only.
+     * Filters out tasks that belong to swimlanes owned by other users.
+     */
+    public List<Task> getTasksForCurrentUser() {
+        long start = System.currentTimeMillis();
+        User user = getCurrentUser();
+        log.info("[TaskService] Fetching tasks for user: {} (id={})", user.getEmail(), user.getId());
+        List<Task> allTasks = taskDAO.findAll();
+        List<Task> result = allTasks.stream()
+                .filter(task -> task.getSwimLane() != null
+                        && task.getSwimLane().getUser() != null
+                        && task.getSwimLane().getUser().getId().equals(user.getId()))
+                .collect(Collectors.toList());
+        log.info("[TIMING] getTasksForCurrentUser() completed in {}ms, returned {} tasks (filtered from {})",
+                System.currentTimeMillis() - start, result.size(), allTasks.size());
+        return result;
     }
 
     @Cacheable(value = "tasks")

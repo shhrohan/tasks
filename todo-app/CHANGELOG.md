@@ -31,6 +31,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Login UI Bugs** (`d8a7120`, `52131dc`)
   - Fixed Chrome autofill text visibility issues.
   - Added Bootstrap JS for functional logout dropdowns.
+- **Tag Filter User Data Isolation** - Fixed bug where tag filter bar showed tags from all users' tasks instead of just the current user's tasks.
+  - Added `getTasksForCurrentUser()` method to `TaskService` to filter tasks by user ownership.
+  - Updated `HomeController.index()` to use the new filtered method.
 
 ---
 

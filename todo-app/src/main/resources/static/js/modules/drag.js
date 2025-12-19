@@ -92,9 +92,10 @@ export const Drag = {
                 ghostClass: 'task-ghost', // CSS class for ghost element
                 dragClass: 'task-drag',   // CSS class while dragging
 
-                // NOTE: forceFallback defaults to false (use native HTML5 drag)
-                // Set to true only if native drag has issues, but this can break
-                // other functionality. Prefer fixing CSS issues instead.
+                // CRITICAL: These options prevent Alpine.js errors during mobile/touch drag
+                // When elements are cloned, they lose Alpine.js context causing "task is not defined" errors
+                removeCloneOnHide: true,  // Remove clone immediately when hidden (prevents re-evaluation)
+                forceFallback: false,     // Use native HTML5 drag when possible (avoids cloning issues)
 
                 /**
                  * onChoose: Fired when user clicks/touches an item to start drag
@@ -116,6 +117,33 @@ export const Drag = {
                         fromColumn: evt.from.getAttribute('data-status'),
                         fromLane: evt.from.getAttribute('data-lane-id')
                     });
+                },
+
+                /**
+                 * onClone: Fired when element is cloned (for ghost/fallback)
+                 * CRITICAL: Replace clone's inner content to prevent Alpine errors.
+                 * The clone is created outside the x-for loop context, so `task` 
+                 * variable is not defined. We replace the content with static HTML.
+                 */
+                onClone: (evt) => {
+                    const clone = evt.clone;
+                    if (clone) {
+                        // Get task name from the original element before replacing content
+                        const taskName = clone.querySelector('.card-title')?.textContent || 'Task';
+                        const taskId = clone.getAttribute('data-task-id');
+
+                        // Add x-ignore to tell Alpine to skip this element entirely
+                        clone.setAttribute('x-ignore', '');
+
+                        // Replace innerHTML with static content (no Alpine bindings)
+                        clone.innerHTML = `
+                            <div class="card-body p-2">
+                                <p class="h6 card-title text-white mb-1">${taskName}</p>
+                            </div>
+                        `;
+
+                        console.log('[Drag] onClone - Created static ghost for task:', taskId);
+                    }
                 },
 
                 /**

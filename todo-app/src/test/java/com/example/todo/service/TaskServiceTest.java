@@ -6,14 +6,22 @@ import com.example.todo.model.Comment;
 import com.example.todo.model.SwimLane;
 import com.example.todo.model.Task;
 import com.example.todo.model.TaskStatus;
+import com.example.todo.model.User;
 import com.example.todo.repository.CommentRepository;
+import com.example.todo.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,8 +44,39 @@ class TaskServiceTest {
     @Mock
     private AsyncWriteService asyncWriteService;
 
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private SecurityContext securityContext;
+
+    @Mock
+    private Authentication authentication;
+
     @InjectMocks
     private TaskService taskService;
+
+    private User testUser;
+
+    @BeforeEach
+    void setUp() {
+        testUser = new User();
+        testUser.setId(1L);
+        testUser.setEmail("testuser@example.com");
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private void setupSecurityContext() {
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getName()).thenReturn("testuser@example.com");
+        SecurityContextHolder.setContext(securityContext);
+        when(userRepository.findByEmail("testuser@example.com")).thenReturn(Optional.of(testUser));
+    }
 
     @Test
     void createTask_ShouldSetDefaultStatus_WhenStatusIsNull() {
@@ -389,5 +428,114 @@ class TaskServiceTest {
         Optional<Task> result = taskService.getTask(taskId);
 
         assertFalse(result.isPresent());
+    }
+
+    @Test
+    void getTasksForCurrentUser_ShouldReturnOnlyCurrentUserTasks() {
+        setupSecurityContext();
+
+        User otherUser = new User();
+        otherUser.setId(2L);
+        otherUser.setEmail("other@example.com");
+
+        SwimLane myLane = new SwimLane();
+        myLane.setId(1L);
+        myLane.setUser(testUser);
+
+        SwimLane otherLane = new SwimLane();
+        otherLane.setId(2L);
+        otherLane.setUser(otherUser);
+
+        Task myTask = new Task();
+        myTask.setId(1L);
+        myTask.setName("My Task");
+        myTask.setSwimLane(myLane);
+
+        Task otherUserTask = new Task();
+        otherUserTask.setId(2L);
+        otherUserTask.setName("Other User Task");
+        otherUserTask.setSwimLane(otherLane);
+
+        when(taskDAO.findAll()).thenReturn(Arrays.asList(myTask, otherUserTask));
+
+        List<Task> result = taskService.getTasksForCurrentUser();
+
+        assertEquals(1, result.size());
+        assertEquals("My Task", result.get(0).getName());
+        verify(taskDAO).findAll();
+    }
+
+    @Test
+    void getTasksForCurrentUser_ShouldFilterOutTasksWithNullSwimLane() {
+        setupSecurityContext();
+
+        SwimLane myLane = new SwimLane();
+        myLane.setId(1L);
+        myLane.setUser(testUser);
+
+        Task myTask = new Task();
+        myTask.setId(1L);
+        myTask.setSwimLane(myLane);
+
+        Task taskWithoutLane = new Task();
+        taskWithoutLane.setId(2L);
+        taskWithoutLane.setSwimLane(null);
+
+        when(taskDAO.findAll()).thenReturn(Arrays.asList(myTask, taskWithoutLane));
+
+        List<Task> result = taskService.getTasksForCurrentUser();
+
+        assertEquals(1, result.size());
+        assertEquals(1L, result.get(0).getId());
+    }
+
+    @Test
+    void getTasksForCurrentUser_ShouldFilterOutTasksWithNullUser() {
+        setupSecurityContext();
+
+        SwimLane myLane = new SwimLane();
+        myLane.setId(1L);
+        myLane.setUser(testUser);
+
+        SwimLane laneWithoutUser = new SwimLane();
+        laneWithoutUser.setId(2L);
+        laneWithoutUser.setUser(null);
+
+        Task myTask = new Task();
+        myTask.setId(1L);
+        myTask.setSwimLane(myLane);
+
+        Task taskWithNullUser = new Task();
+        taskWithNullUser.setId(2L);
+        taskWithNullUser.setSwimLane(laneWithoutUser);
+
+        when(taskDAO.findAll()).thenReturn(Arrays.asList(myTask, taskWithNullUser));
+
+        List<Task> result = taskService.getTasksForCurrentUser();
+
+        assertEquals(1, result.size());
+        assertEquals(1L, result.get(0).getId());
+    }
+
+    @Test
+    void getTasksForCurrentUser_ShouldReturnEmptyListWhenNoMatchingTasks() {
+        setupSecurityContext();
+
+        User otherUser = new User();
+        otherUser.setId(2L);
+
+        SwimLane otherLane = new SwimLane();
+        otherLane.setId(1L);
+        otherLane.setUser(otherUser);
+
+        Task otherTask = new Task();
+        otherTask.setId(1L);
+        otherTask.setSwimLane(otherLane);
+
+        when(taskDAO.findAll()).thenReturn(Arrays.asList(otherTask));
+
+        List<Task> result = taskService.getTasksForCurrentUser();
+
+        assertTrue(result.isEmpty());
     }
 }
