@@ -2,6 +2,9 @@ package com.example.todo.model;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -13,11 +16,14 @@ class TaskTest {
     @Test
     void builder_ShouldCreateTask() {
         SwimLane lane = SwimLane.builder().id(1L).name("Lane").build();
+        List<Comment> comments = new ArrayList<>();
+        comments.add(Comment.builder().id(1L).text("comment").build());
+
         Task task = Task.builder()
                 .id(1L)
                 .name("Test Task")
                 .status(TaskStatus.TODO)
-                .comments("[\"comment\"]")
+                .comments(comments)
                 .tags("[\"tag\"]")
                 .position(5)
                 .swimLane(lane)
@@ -26,7 +32,7 @@ class TaskTest {
         assertEquals(1L, task.getId());
         assertEquals("Test Task", task.getName());
         assertEquals(TaskStatus.TODO, task.getStatus());
-        assertEquals("[\"comment\"]", task.getComments());
+        assertEquals(1, task.getComments().size());
         assertEquals("[\"tag\"]", task.getTags());
         assertEquals(5, task.getPosition());
         assertEquals(lane, task.getSwimLane());
@@ -65,12 +71,13 @@ class TaskTest {
     void allArgsConstructor_ShouldWork() {
         SwimLane lane = new SwimLane();
         lane.setId(1L);
-        
-        Task task = new Task(1L, "Test", TaskStatus.DONE, "[]", "[]", lane, 10);
+        List<Comment> comments = new ArrayList<>();
+
+        Task task = new Task(1L, "Test", TaskStatus.DONE, comments, "[]", lane, 10);
         assertEquals(1L, task.getId());
         assertEquals("Test", task.getName());
         assertEquals(TaskStatus.DONE, task.getStatus());
-        assertEquals("[]", task.getComments());
+        assertEquals(comments, task.getComments());
         assertEquals("[]", task.getTags());
         assertEquals(lane, task.getSwimLane());
         assertEquals(10, task.getPosition());
@@ -81,11 +88,12 @@ class TaskTest {
         Task task = new Task();
         SwimLane lane = new SwimLane();
         lane.setId(1L);
+        List<Comment> comments = new ArrayList<>();
 
         task.setId(1L);
         task.setName("Test");
         task.setStatus(TaskStatus.IN_PROGRESS);
-        task.setComments("[\"comment\"]");
+        task.setComments(comments);
         task.setTags("[\"tag\"]");
         task.setPosition(5);
         task.setSwimLane(lane);
@@ -93,7 +101,7 @@ class TaskTest {
         assertEquals(1L, task.getId());
         assertEquals("Test", task.getName());
         assertEquals(TaskStatus.IN_PROGRESS, task.getStatus());
-        assertEquals("[\"comment\"]", task.getComments());
+        assertEquals(comments, task.getComments());
         assertEquals("[\"tag\"]", task.getTags());
         assertEquals(5, task.getPosition());
         assertEquals(lane, task.getSwimLane());
@@ -137,4 +145,24 @@ class TaskTest {
         assertEquals(TaskStatus.BLOCKED, TaskStatus.valueOf("BLOCKED"));
         assertEquals(TaskStatus.DEFERRED, TaskStatus.valueOf("DEFERRED"));
     }
+
+    @Test
+    void builder_ToString_ShouldReturnString() {
+        Task.TaskBuilder builder = Task.builder()
+                .id(1L)
+                .name("Test")
+                .status(TaskStatus.TODO);
+        String toString = builder.toString();
+        assertNotNull(toString);
+        assertTrue(toString.contains("TaskBuilder"));
+    }
+
+    @Test
+    void builder_DefaultComments_ShouldBeEmptyList() {
+        Task task = Task.builder().id(1L).name("Test").status(TaskStatus.TODO).build();
+        // Default value from @Builder.Default should be empty ArrayList
+        assertNotNull(task.getComments());
+        assertTrue(task.getComments().isEmpty());
+    }
 }
+

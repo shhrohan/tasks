@@ -92,16 +92,16 @@ DRAG-AND-DROP CRITICAL NOTES:
 
     <!-- Critical CSS (render-blocking, needed for initial paint) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/style.min.css">
 
     <!-- Non-critical CSS (async load with media trick) -->
     <!-- Font Awesome - Full version for debugging -->
-    <link rel="stylesheet" href="/css/fontawesome.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/css/fontawesome.purged.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" media="print"
         onload="this.media='all'">
     <!-- Fallback for no-JS -->
     <noscript>
-        <link rel="stylesheet" href="/css/fontawesome.css">
+        <link rel="stylesheet" href="/css/fontawesome.purged.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     </noscript>
 
@@ -132,7 +132,8 @@ DRAG-AND-DROP CRITICAL NOTES:
 
             <div class="d-flex align-items-center gap-2 gap-lg-3">
                 <!-- Collapse/Expand All Button (hidden on mobile) -->
-                <button class="btn btn-outline-light btn-sm d-none d-lg-flex" @click="toggleAllLanes()"
+                <button class="btn btn-outline-light btn-sm d-none d-lg-flex align-items-center gap-2"
+                    @click="toggleAllLanes()"
                     :title="areAllLanesCollapsed() ? 'Expand All Lanes' : 'Collapse All Lanes'">
                     <i class="fa-solid" :class="areAllLanesCollapsed() ? 'fa-expand' : 'fa-compress'"></i>
                     <span x-text="areAllLanesCollapsed() ? 'Expand All' : 'Collapse All'"></span>
@@ -401,7 +402,8 @@ DRAG-AND-DROP CRITICAL NOTES:
                                 -->
                                 <template x-for="status in columns" :key="status">
                                     <div class="col-12 col-lg lane-column" :id="'lane-' + lane.id + '-' + status"
-                                        :data-status="status" :data-lane-id="lane.id" x-init="initColumn($el)">
+                                        :data-status="status" :data-lane-id="lane.id" x-init="initColumn($el)"
+                                        x-show="isColumnVisible(lane.id, status)">
 
                                         <!-- 
                                             TASK CARDS (Draggable Items)
@@ -414,18 +416,31 @@ DRAG-AND-DROP CRITICAL NOTES:
                                         <!-- TASK CARDS (Draggable Items) -->
                                         <template x-for="task in getTasks(lane.id, status)" :key="task.id">
                                             <div class="card task-card mb-2" :data-task-id="task.id"
-                                                :data-status="task.status" draggable="true"
-                                                :style="getTaskStyle(task.id)" @dblclick="resetTaskSize(task.id)">
-                                                <div class="card-body p-2 d-flex flex-column">
+                                                :data-status="task.status" :draggable="!selectedTags.length"
+                                                :style="getTaskStyle(task.id)" @dblclick="resetTaskSize(task.id)"
+                                                @click="openTaskDetail(task.id)"
+                                                :class="{'task-selected': isTaskSelected(task.id)}">
+                                                <div class="card-body p-2 d-flex flex-column h-100">
                                                     <p class="h6 card-title text-white mb-1" x-text="task.name"></p>
-                                                    <!-- Tags: Bottom Right -->
-                                                    <div class="d-flex flex-wrap gap-1 mt-2 ms-auto">
-                                                        <template x-for="tag in getTags(task.tags)" :key="tag">
-                                                            <span
-                                                                class="badge border border-secondary text-white fw-normal"
-                                                                style="font-size: 0.9rem; letter-spacing: 0.03em;"
-                                                                x-text="tag"></span>
+                                                    <div class="d-flex align-items-center gap-2 mt-auto">
+                                                        <!-- Comment Count -->
+                                                        <template x-if="getTaskComments(task).length > 0">
+                                                            <div class="comment-count-badge small text-white-50"
+                                                                title="Comments">
+                                                                <i class="fa-regular fa-comment me-1"></i>
+                                                                <span x-text="getTaskComments(task).length"></span>
+                                                            </div>
                                                         </template>
+
+                                                        <!-- Tags: ms-auto to push tags to the right -->
+                                                        <div class="d-flex flex-wrap gap-1 ms-auto justify-content-end">
+                                                            <template x-for="tag in getTags(task.tags)" :key="tag">
+                                                                <span
+                                                                    class="badge border border-secondary text-white fw-normal"
+                                                                    style="font-size: 0.9rem; letter-spacing: 0.03em;"
+                                                                    x-text="tag"></span>
+                                                            </template>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <!-- Resize handle -->
@@ -606,45 +621,151 @@ DRAG-AND-DROP CRITICAL NOTES:
 
     </main>
 
+    <!-- Task Detail Pane (Desktop Only Sidebar) -->
+    <aside class="task-detail-pane glass-panel" x-show="taskDetail.open && !isMobile"
+        x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="translate-x-full"
+        x-transition:enter-end="translate-x-0" x-transition:leave="transition ease-in duration-200 transform"
+        x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full"
+        @click.outside="closeTaskDetail()" @keydown.window="handleDetailKeydown($event)" x-cloak>
+
+        <template x-if="taskDetail.task">
+            <div class="h-100 d-flex flex-column">
+                <!-- Swimlane Header Bar -->
+                <div class="px-4 py-3" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-white" style="font-size: 1rem;"></i>
+                        <span class="text-white fw-bold" style="font-size: 1rem;"
+                            x-text="taskDetail.task?.swimLane?.name || 'Unknown Swimlane'"></span>
+                    </div>
+                </div>
+
+                <!-- Header -->
+                <div
+                    class="detail-header p-4 border-bottom border-secondary d-flex justify-content-between align-items-start">
+                    <div class="d-flex flex-column gap-1">
+                        <h3 class="h4 text-white mb-0" x-text="taskDetail.task?.name"></h3>
+                    </div>
+                    <button class="btn-close btn-close-white" @click="closeTaskDetail()"></button>
+                </div>
+
+                <div class="detail-body p-4 flex-grow-1 overflow-auto">
+                    <!-- Tags -->
+                    <div class="mb-4">
+                        <label class="text-uppercase text-secondary fw-bold small mb-2 d-block">Tags</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <template x-for="tag in getTags(taskDetail.task?.tags)" :key="tag">
+                                <span class="tag-capsule active" x-text="tag"></span>
+                            </template>
+                            <template x-if="getTags(taskDetail.task?.tags).length === 0">
+                                <span class="text-secondary small fst-italic">No tags</span>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="mb-4">
+                        <label class="text-uppercase text-secondary fw-bold small mb-2 d-block">Status</label>
+                        <span class="badge"
+                            :class="taskDetail.task?.status ? 'status-badge-' + taskDetail.task.status.toLowerCase() : ''"
+                            x-text="taskDetail.task?.status ? taskDetail.task.status.replace('_', ' ') : ''">
+                        </span>
+                    </div>
+
+
+                    <!-- Comments -->
+                    <div class="comments-section">
+                        <label class="text-uppercase text-secondary fw-bold small mb-3 d-block">Comments</label>
+
+                        <div class="comments-list mb-4">
+                            <template x-for="(comment, index) in getTaskComments(taskDetail.task)"
+                                :key="comment.id || index">
+                                <div class="comment-item mb-3 p-3 rounded bg-dark border border-secondary"
+                                    :class="{'border-primary': taskDetail.editingCommentId === comment.id, 'comment-selected': isCommentSelected(index)}">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="fw-bold text-primary small">User</span>
+                                            <span class="text-muted smaller"
+                                                x-text="comment.createdAt ? new Date(comment.createdAt).toLocaleString() : new Date().toLocaleString()"></span>
+                                        </div>
+                                        <!-- Actions -->
+                                        <div class="comment-actions d-flex gap-2"
+                                            x-show="taskDetail.editingCommentId !== comment.id">
+                                            <button class="btn btn-link btn-sm p-0 text-secondary hover-opacity-100"
+                                                @click="startEditComment(comment)" title="Edit">
+                                                <i class="fa-solid fa-pen-to-square"></i>
+                                            </button>
+                                            <button class="btn btn-link btn-sm p-0 text-danger hover-opacity-100"
+                                                @click="deleteComment(comment.id)" title="Delete">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Static Text -->
+                                    <template x-if="taskDetail.editingCommentId !== comment.id">
+                                        <p class="mb-0 text-white-50" x-text="comment.text || comment"
+                                            style="white-space: pre-wrap;"></p>
+                                    </template>
+
+                                    <!-- Inline Edit -->
+                                    <template x-if="taskDetail.editingCommentId === comment.id">
+                                        <div class="mt-2">
+                                            <textarea
+                                                class="form-control form-control-sm bg-dark text-white border-secondary mb-2"
+                                                x-model="taskDetail.editingCommentText" rows="2" autofocus></textarea>
+                                            <div class="d-flex justify-content-end gap-2">
+                                                <button class="btn btn-sm btn-outline-secondary"
+                                                    @click="cancelEditComment()"
+                                                    :disabled="taskDetail.isLoading">Cancel</button>
+                                                <button class="btn btn-sm btn-primary" @click="updateComment()"
+                                                    :disabled="taskDetail.isLoading || !taskDetail.editingCommentText.trim()">
+                                                    <span x-show="!taskDetail.isLoading">Save</span>
+                                                    <span class="spinner-border spinner-border-sm"
+                                                        x-show="taskDetail.isLoading"></span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                            <template x-if="getTaskComments(taskDetail.task).length === 0">
+                                <div class="text-center py-4">
+                                    <i class="fa-regular fa-comments fa-2x mb-2 d-block text-secondary opacity-50"></i>
+                                    <span class="text-secondary fst-italic">No comments yet</span>
+                                </div>
+
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer (Add Comment) -->
+                <div class="detail-footer p-4 border-top border-secondary">
+                    <div class="input-group gap-2">
+                        <textarea class="form-control bg-dark text-white border-secondary rounded"
+                            placeholder="Add a comment..." x-model="taskDetail.newComment" rows="2"
+                            @keydown.enter.ctrl="addComment()" :disabled="taskDetail.isLoading"></textarea>
+                        <button class="btn btn-primary rounded" @click="addComment()"
+                            :disabled="!taskDetail.newComment.trim() || taskDetail.isLoading">
+                            <i class="fa-solid fa-paper-plane" x-show="!taskDetail.isLoading"></i>
+                            <span class="spinner-border spinner-border-sm" x-show="taskDetail.isLoading"></span>
+                        </button>
+                    </div>
+                    <div class="mt-3 pt-2 text-secondary smaller">
+                        <kbd>Alt</kbd>+<kbd>Enter</kbd> to post &bull; <kbd>↑</kbd><kbd>↓</kbd> to navigate &bull;
+                        <kbd>Esc</kbd> to close
+                    </div>
+                </div>
+            </div>
+        </template>
+    </aside>
+
     <!-- JS Dependencies -->
     <script defer src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 
     <!-- Main Application (Handles Alpine Init) - Minified Production Build -->
-    <script type="module" src="js/app.js?v=debug"></script>
-
-    <!-- Debug Script (Injected by Helper) -->
-    <script>
-        (function () {
-            const log = (type, e) => {
-                const card = e.target.closest('.task-card');
-                const col = e.target.closest('.lane-column');
-                console.log(`[Event ${type}]`, {
-                    target: e.target.tagName,
-                    cardId: card ? card.dataset.taskId : 'N/A',
-                    column: col ? col.dataset.status : 'N/A',
-                    raw: e.target
-                });
-            };
-            document.addEventListener('mousedown', e => log('MouseDown', e), true);
-            document.addEventListener('mouseup', e => log('MouseUp', e), true);
-            document.addEventListener('click', e => log('Click', e), true);
-
-            // DIAGNOSTIC: Check Sortable instances after 5 seconds
-            setTimeout(() => {
-                console.warn('\\n\\n=== DIAGNOSTIC: Checking Sortable instances after 5s ===');
-                const columns = document.querySelectorAll('.lane-column');
-                console.log(`Found ${columns.length} lane-column elements`);
-                columns.forEach(col => {
-                    const cards = col.querySelectorAll('.task-card');
-                    if (col.sortableInstance) {
-                        console.log('  -> Sortable options:', col.sortableInstance.options);
-                    }
-                });
-                console.warn('=== END DIAGNOSTIC ===\n\n');
-            }, 5000);
-        })();
-    </script>
+    <script type="module" src="js/app.min.js"></script>
 
     <!-- Bootstrap Bundle JS for dropdown functionality -->
     <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

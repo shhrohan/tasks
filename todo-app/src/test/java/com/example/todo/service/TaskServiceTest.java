@@ -2,15 +2,19 @@ package com.example.todo.service;
 
 import com.example.todo.dao.SwimLaneDAO;
 import com.example.todo.dao.TaskDAO;
+import com.example.todo.model.Comment;
 import com.example.todo.model.SwimLane;
 import com.example.todo.model.Task;
 import com.example.todo.model.TaskStatus;
+import com.example.todo.repository.CommentRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,6 +29,9 @@ class TaskServiceTest {
 
     @Mock
     private SwimLaneDAO swimLaneDAO;
+
+    @Mock
+    private CommentRepository commentRepository;
 
     @Mock
     private AsyncWriteService asyncWriteService;
@@ -62,7 +69,6 @@ class TaskServiceTest {
 
         assertEquals("New Name", result.getName());
         assertEquals(TaskStatus.IN_PROGRESS, result.getStatus());
-        // Verify async service is called instead of DAO save
         verify(asyncWriteService).saveTask(existingTask);
         verify(taskDAO, never()).save(existingTask);
     }
@@ -123,7 +129,7 @@ class TaskServiceTest {
     }
 
     @Test
-    void deleteTask_ShouldCallDeleteById() {
+    void deleteTask_ShouldCallAsyncService() {
         Long taskId = 1L;
         taskService.deleteTask(taskId);
 
@@ -132,56 +138,77 @@ class TaskServiceTest {
     }
 
     @Test
-    void addComment_ShouldAddCommentToTask() throws Exception {
+    void addComment_ShouldSaveCommentViaRepository() {
         Long taskId = 1L;
         Task task = new Task();
         task.setId(taskId);
-        task.setComments("[]");
+        task.setComments(new ArrayList<>());
+
+        Comment savedComment = Comment.builder()
+                .id(1L)
+                .text("New Comment")
+                .task(task)
+                .build();
 
         when(taskDAO.findById(taskId)).thenReturn(Optional.of(task));
+        when(commentRepository.save(any(Comment.class))).thenReturn(savedComment);
 
-        com.example.todo.model.Comment comment = taskService.addComment(taskId, "New Comment");
+        Comment result = taskService.addComment(taskId, "New Comment");
 
-        assertNotNull(comment);
-        assertEquals("New Comment", comment.getText());
-        verify(asyncWriteService).saveTask(task);
-        verify(taskDAO, never()).save(task);
+        assertNotNull(result);
+        assertEquals("New Comment", result.getText());
+        assertEquals(1L, result.getId());
+        verify(commentRepository).save(any(Comment.class));
     }
 
     @Test
-    void updateComment_ShouldUpdateExistingComment() throws Exception {
+    void updateComment_ShouldUpdateViaRepository() {
         Long taskId = 1L;
-        String commentId = "c1";
+        Long commentId = 1L;
+
         Task task = new Task();
         task.setId(taskId);
-        // Mock existing comment JSON
-        String json = "[{\"id\":\"c1\",\"text\":\"Old Text\",\"createdAt\":\"2023-01-01T10:00:00\",\"updatedAt\":\"2023-01-01T10:00:00\"}]";
-        task.setComments(json);
 
-        when(taskDAO.findById(taskId)).thenReturn(Optional.of(task));
+        Comment existingComment = Comment.builder()
+                .id(commentId)
+                .text("Old Text")
+                .task(task)
+                .build();
 
-        com.example.todo.model.Comment updated = taskService.updateComment(taskId, commentId, "New Text");
+        Comment updatedComment = Comment.builder()
+                .id(commentId)
+                .text("New Text")
+                .task(task)
+                .build();
 
-        assertEquals("New Text", updated.getText());
-        verify(asyncWriteService).saveTask(task);
-        verify(taskDAO, never()).save(task);
+        when(commentRepository.findById(commentId)).thenReturn(Optional.of(existingComment));
+        when(commentRepository.save(existingComment)).thenReturn(updatedComment);
+
+        Comment result = taskService.updateComment(taskId, commentId, "New Text");
+
+        assertEquals("New Text", result.getText());
+        verify(commentRepository).save(existingComment);
     }
 
     @Test
-    void deleteComment_ShouldRemoveComment() throws Exception {
+    void deleteComment_ShouldDeleteViaRepository() {
         Long taskId = 1L;
-        String commentId = "c1";
+        Long commentId = 1L;
+
         Task task = new Task();
         task.setId(taskId);
-        String json = "[{\"id\":\"c1\",\"text\":\"Text\",\"createdAt\":\"2023-01-01T10:00:00\",\"updatedAt\":\"2023-01-01T10:00:00\"}]";
-        task.setComments(json);
 
-        when(taskDAO.findById(taskId)).thenReturn(Optional.of(task));
+        Comment comment = Comment.builder()
+                .id(commentId)
+                .text("To be deleted")
+                .task(task)
+                .build();
+
+        when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
 
         taskService.deleteComment(taskId, commentId);
 
-        verify(asyncWriteService).saveTask(task);
-        verify(taskDAO, never()).save(task);
+        verify(commentRepository).delete(comment);
     }
 
     @Test
@@ -258,85 +285,61 @@ class TaskServiceTest {
     }
 
     @Test
-    void updateComment_ShouldThrowException_WhenTaskNotFound() {
-        Long taskId = 999L;
-        when(taskDAO.findById(taskId)).thenReturn(Optional.empty());
-
-        assertThrows(IllegalArgumentException.class, () -> taskService.updateComment(taskId, "c1", "Text"));
-    }
-
-    @Test
-    void deleteComment_ShouldThrowException_WhenTaskNotFound() {
-        Long taskId = 999L;
-        when(taskDAO.findById(taskId)).thenReturn(Optional.empty());
-
-        assertThrows(IllegalArgumentException.class, () -> taskService.deleteComment(taskId, "c1"));
-    }
-
-    @Test
-    void addComment_ShouldWorkWithEmptyComments() {
-        Long taskId = 1L;
-        Task task = new Task();
-        task.setId(taskId);
-        task.setComments(""); // Empty string
-
-        when(taskDAO.findById(taskId)).thenReturn(Optional.of(task));
-
-        com.example.todo.model.Comment comment = taskService.addComment(taskId, "First Comment");
-
-        assertNotNull(comment);
-        assertEquals("First Comment", comment.getText());
-        verify(asyncWriteService).saveTask(task);
-    }
-
-    @Test
-    void addComment_ShouldWorkWithNullComments() {
-        Long taskId = 1L;
-        Task task = new Task();
-        task.setId(taskId);
-        task.setComments(null); // Null comments
-
-        when(taskDAO.findById(taskId)).thenReturn(Optional.of(task));
-
-        com.example.todo.model.Comment comment = taskService.addComment(taskId, "First Comment");
-
-        assertNotNull(comment);
-        assertEquals("First Comment", comment.getText());
-        verify(asyncWriteService).saveTask(task);
-    }
-
-    @Test
-    void addComment_ShouldMigrateLegacyStringArrayFormat() {
-        Long taskId = 1L;
-        Task task = new Task();
-        task.setId(taskId);
-        // Legacy format: array of strings
-        task.setComments("[\"Old comment 1\", \"Old comment 2\"]");
-
-        when(taskDAO.findById(taskId)).thenReturn(Optional.of(task));
-
-        com.example.todo.model.Comment comment = taskService.addComment(taskId, "New Comment");
-
-        assertNotNull(comment);
-        assertEquals("New Comment", comment.getText());
-        verify(asyncWriteService).saveTask(task);
-        // The task should now have migrated comments + new comment
-        assertTrue(task.getComments().contains("Old comment 1"));
-        assertTrue(task.getComments().contains("New Comment"));
-    }
-
-    @Test
     void updateComment_ShouldThrowException_WhenCommentNotFound() {
         Long taskId = 1L;
-        Task task = new Task();
-        task.setId(taskId);
-        task.setComments(
-                "[{\"id\":\"c1\",\"text\":\"Text\",\"createdAt\":\"2023-01-01T10:00:00\",\"updatedAt\":\"2023-01-01T10:00:00\"}]");
+        Long commentId = 999L;
+        when(commentRepository.findById(commentId)).thenReturn(Optional.empty());
 
-        when(taskDAO.findById(taskId)).thenReturn(Optional.of(task));
+        assertThrows(IllegalArgumentException.class, () -> taskService.updateComment(taskId, commentId, "Text"));
+    }
 
-        // Try to update a non-existent comment
-        assertThrows(RuntimeException.class, () -> taskService.updateComment(taskId, "non-existent-id", "New Text"));
+    @Test
+    void deleteComment_ShouldThrowException_WhenCommentNotFound() {
+        Long taskId = 1L;
+        Long commentId = 999L;
+        when(commentRepository.findById(commentId)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () -> taskService.deleteComment(taskId, commentId));
+    }
+
+    @Test
+    void updateComment_ShouldThrowException_WhenCommentBelongsToDifferentTask() {
+        Long taskId = 1L;
+        Long commentId = 1L;
+        Long otherTaskId = 2L;
+
+        Task otherTask = new Task();
+        otherTask.setId(otherTaskId);
+
+        Comment comment = Comment.builder()
+                .id(commentId)
+                .text("Text")
+                .task(otherTask)
+                .build();
+
+        when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
+
+        assertThrows(IllegalArgumentException.class, () -> taskService.updateComment(taskId, commentId, "New Text"));
+    }
+
+    @Test
+    void deleteComment_ShouldThrowException_WhenCommentBelongsToDifferentTask() {
+        Long taskId = 1L;
+        Long commentId = 1L;
+        Long otherTaskId = 2L;
+
+        Task otherTask = new Task();
+        otherTask.setId(otherTaskId);
+
+        Comment comment = Comment.builder()
+                .id(commentId)
+                .text("Text")
+                .task(otherTask)
+                .build();
+
+        when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
+
+        assertThrows(IllegalArgumentException.class, () -> taskService.deleteComment(taskId, commentId));
     }
 
     @Test
@@ -386,22 +389,5 @@ class TaskServiceTest {
         Optional<Task> result = taskService.getTask(taskId);
 
         assertFalse(result.isPresent());
-    }
-
-    @Test
-    void addComment_ShouldHandleMalformedJson() {
-        Long taskId = 1L;
-        Task task = new Task();
-        task.setId(taskId);
-        task.setComments("not valid json"); // Malformed JSON
-
-        when(taskDAO.findById(taskId)).thenReturn(Optional.of(task));
-
-        // Should not throw, should start with empty list
-        com.example.todo.model.Comment comment = taskService.addComment(taskId, "New Comment");
-
-        assertNotNull(comment);
-        assertEquals("New Comment", comment.getText());
-        verify(asyncWriteService).saveTask(task);
     }
 }

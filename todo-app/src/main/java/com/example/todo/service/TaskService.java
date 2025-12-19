@@ -2,9 +2,11 @@ package com.example.todo.service;
 
 import com.example.todo.dao.SwimLaneDAO;
 import com.example.todo.dao.TaskDAO;
+import com.example.todo.model.Comment;
 import com.example.todo.model.SwimLane;
 import com.example.todo.model.Task;
 import com.example.todo.model.TaskStatus;
+import com.example.todo.repository.CommentRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -21,16 +23,15 @@ public class TaskService {
 
     private final TaskDAO taskDAO;
     private final SwimLaneDAO swimLaneDAO;
+    private final CommentRepository commentRepository;
     private final AsyncWriteService asyncWriteService;
 
-    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
-
-    public TaskService(TaskDAO taskDAO, SwimLaneDAO swimLaneDAO, AsyncWriteService asyncWriteService) {
+    public TaskService(TaskDAO taskDAO, SwimLaneDAO swimLaneDAO, CommentRepository commentRepository,
+            AsyncWriteService asyncWriteService) {
         this.taskDAO = taskDAO;
         this.swimLaneDAO = swimLaneDAO;
+        this.commentRepository = commentRepository;
         this.asyncWriteService = asyncWriteService;
-        this.objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-        this.objectMapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
     @Cacheable(value = "tasks")
@@ -62,7 +63,6 @@ public class TaskService {
     public Task createTask(Task task) {
         log.info("[CACHE EVICT] Invalidating 'tasks' cache - creating new task");
         log.debug("Creating task: {}", task);
-        // Ensure default status if not set
         if (task.getStatus() == null) {
             task.setStatus(TaskStatus.TODO);
         }
@@ -75,7 +75,6 @@ public class TaskService {
                 .map(existing -> {
                     existing.setName(updatedTask.getName());
                     existing.setStatus(updatedTask.getStatus());
-                    existing.setComments(updatedTask.getComments());
                     existing.setTags(updatedTask.getTags());
                     if (updatedTask.getSwimLane() != null && updatedTask.getSwimLane().getId() != null) {
                         SwimLane lane = swimLaneDAO.findById(updatedTask.getSwimLane().getId())
@@ -85,7 +84,6 @@ public class TaskService {
                                 });
                         existing.setSwimLane(lane);
                     }
-                    // Fire and forget
                     asyncWriteService.saveTask(existing);
                     log.info("Returning immediate response to UI for task {}", id);
                     return existing;
@@ -112,7 +110,6 @@ public class TaskService {
         log.info("Delegating MOVE for task {} to Async Service (status={}, lane={}, position={})", id, newStatus,
                 swimLaneId, position);
 
-        // Optimization: Skip DB fetch. Construct dummy object for UI response.
         Task dummyTask = new Task();
         dummyTask.setId(id);
         dummyTask.setStatus(newStatus);
@@ -130,90 +127,52 @@ public class TaskService {
         return dummyTask;
     }
 
-    public com.example.todo.model.Comment addComment(Long taskId, String text) {
-        Task task = getTask(taskId).orElseThrow(() -> new IllegalArgumentException("Task not found"));
-        try {
-            List<com.example.todo.model.Comment> comments = parseComments(task.getComments());
-            com.example.todo.model.Comment newComment = com.example.todo.model.Comment.builder()
-                    .id(java.util.UUID.randomUUID().toString())
-                    .text(text)
-                    .createdAt(java.time.LocalDateTime.now())
-                    .updatedAt(java.time.LocalDateTime.now())
-                    .build();
-            comments.add(newComment);
-            task.setComments(objectMapper.writeValueAsString(comments));
-            task.setComments(objectMapper.writeValueAsString(comments));
-            asyncWriteService.saveTask(task);
-            return newComment;
-        } catch (Exception e) {
-            throw new RuntimeException("Error adding comment", e);
-        }
+    // =========================================================================
+    // COMMENT CRUD (Using CommentRepository)
+    // =========================================================================
+
+    @Transactional
+    public Comment addComment(Long taskId, String text) {
+        log.info("Adding comment to task {}", taskId);
+        Task task = getTask(taskId).orElseThrow(() -> new IllegalArgumentException("Task not found: " + taskId));
+
+        Comment comment = Comment.builder()
+                .text(text)
+                .task(task)
+                .build();
+
+        Comment saved = commentRepository.save(comment);
+        log.info("Comment {} added to task {}", saved.getId(), taskId);
+        return saved;
     }
 
-    public com.example.todo.model.Comment updateComment(Long taskId, String commentId, String newText) {
-        Task task = getTask(taskId).orElseThrow(() -> new IllegalArgumentException("Task not found"));
-        try {
-            List<com.example.todo.model.Comment> comments = parseComments(task.getComments());
-            com.example.todo.model.Comment comment = comments.stream()
-                    .filter(c -> c.getId().equals(commentId))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException("Comment not found"));
+    @Transactional
+    public Comment updateComment(Long taskId, Long commentId, String newText) {
+        log.info("Updating comment {} in task {}", commentId, taskId);
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("Comment not found: " + commentId));
 
-            comment.setText(newText);
-            comment.setUpdatedAt(java.time.LocalDateTime.now());
-
-            task.setComments(objectMapper.writeValueAsString(comments));
-            task.setComments(objectMapper.writeValueAsString(comments));
-            asyncWriteService.saveTask(task);
-            return comment;
-        } catch (Exception e) {
-            throw new RuntimeException("Error updating comment", e);
+        if (!comment.getTask().getId().equals(taskId)) {
+            throw new IllegalArgumentException("Comment does not belong to task " + taskId);
         }
+
+        comment.setText(newText);
+        Comment updated = commentRepository.save(comment);
+        log.info("Comment {} updated", commentId);
+        return updated;
     }
 
-    public void deleteComment(Long taskId, String commentId) {
-        Task task = getTask(taskId).orElseThrow(() -> new IllegalArgumentException("Task not found"));
-        try {
-            List<com.example.todo.model.Comment> comments = parseComments(task.getComments());
-            comments.removeIf(c -> c.getId().equals(commentId));
-            task.setComments(objectMapper.writeValueAsString(comments));
-            task.setComments(objectMapper.writeValueAsString(comments));
-            asyncWriteService.saveTask(task);
-        } catch (Exception e) {
-            throw new RuntimeException("Error deleting comment", e);
-        }
-    }
+    @Transactional
+    public void deleteComment(Long taskId, Long commentId) {
+        log.info("Deleting comment {} from task {}", commentId, taskId);
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("Comment not found: " + commentId));
 
-    private List<com.example.todo.model.Comment> parseComments(String json) {
-        try {
-            if (json == null || json.isEmpty()) {
-                return new java.util.ArrayList<>();
-            }
-            // Handle legacy string array if necessary, or assume migration is handled.
-            // For robustness, check if it starts with [" (legacy) or [{" (new)
-            if (json.trim().startsWith("[\"")) {
-                // Legacy: List<String>
-                List<String> oldComments = objectMapper.readValue(json,
-                        new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {
-                        });
-                List<com.example.todo.model.Comment> newComments = new java.util.ArrayList<>();
-                for (String text : oldComments) {
-                    newComments.add(com.example.todo.model.Comment.builder()
-                            .id(java.util.UUID.randomUUID().toString())
-                            .text(text)
-                            .createdAt(java.time.LocalDateTime.now())
-                            .updatedAt(java.time.LocalDateTime.now())
-                            .build());
-                }
-                return newComments;
-            } else {
-                return objectMapper.readValue(json,
-                        new com.fasterxml.jackson.core.type.TypeReference<List<com.example.todo.model.Comment>>() {
-                        });
-            }
-        } catch (Exception e) {
-            log.error("Error parsing comments: {}", e.getMessage());
-            return new java.util.ArrayList<>();
+        if (!comment.getTask().getId().equals(taskId)) {
+            throw new IllegalArgumentException("Comment does not belong to task " + taskId);
         }
+
+        commentRepository.delete(comment);
+        log.info("Comment {} deleted", commentId);
     }
 }

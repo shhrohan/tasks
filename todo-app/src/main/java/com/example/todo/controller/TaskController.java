@@ -1,5 +1,6 @@
 package com.example.todo.controller;
 
+import com.example.todo.model.Comment;
 import com.example.todo.model.Task;
 import com.example.todo.model.TaskStatus;
 import com.example.todo.service.TaskService;
@@ -82,21 +83,19 @@ public class TaskController {
         }
     }
 
+    // =========================================================================
+    // COMMENT ENDPOINTS
+    // =========================================================================
+
     @PostMapping("/{id}/comments")
-    public ResponseEntity<com.example.todo.model.Comment> addComment(@PathVariable Long id, @RequestBody String text) {
+    public ResponseEntity<Comment> addComment(@PathVariable Long id, @RequestBody String text) {
         log.info("Adding comment to task {}", id);
         try {
-            // Text might come as a JSON string or plain text depending on frontend.
-            // Simple approach: assume raw string or handle quotes if JSON.
-            // Better: use a DTO, but for single string, raw body is fine if handled.
-            // Let's clean quotes if it's a JSON string literal.
             String cleanText = text;
             if (text.startsWith("\"") && text.endsWith("\"")) {
                 cleanText = text.substring(1, text.length() - 1);
             }
-            // Also unescape if needed, but simple for now.
-
-            com.example.todo.model.Comment comment = taskService.addComment(id, cleanText);
+            Comment comment = taskService.addComment(id, cleanText);
             return ResponseEntity.ok(comment);
         } catch (Exception e) {
             log.error("Failed to add comment to task {}", id, e);
@@ -105,15 +104,15 @@ public class TaskController {
     }
 
     @PutMapping("/{id}/comments/{commentId}")
-    public ResponseEntity<com.example.todo.model.Comment> updateComment(@PathVariable Long id,
-            @PathVariable String commentId, @RequestBody String text) {
+    public ResponseEntity<Comment> updateComment(@PathVariable Long id,
+            @PathVariable Long commentId, @RequestBody String text) {
         log.info("Updating comment {} in task {}", commentId, id);
         try {
             String cleanText = text;
             if (text.startsWith("\"") && text.endsWith("\"")) {
                 cleanText = text.substring(1, text.length() - 1);
             }
-            com.example.todo.model.Comment comment = taskService.updateComment(id, commentId, cleanText);
+            Comment comment = taskService.updateComment(id, commentId, cleanText);
             return ResponseEntity.ok(comment);
         } catch (Exception e) {
             log.error("Failed to update comment {} in task {}", commentId, id, e);
@@ -122,7 +121,7 @@ public class TaskController {
     }
 
     @DeleteMapping("/{id}/comments/{commentId}")
-    public ResponseEntity<Void> deleteComment(@PathVariable Long id, @PathVariable String commentId) {
+    public ResponseEntity<Void> deleteComment(@PathVariable Long id, @PathVariable Long commentId) {
         log.info("Deleting comment {} from task {}", commentId, id);
         try {
             taskService.deleteComment(id, commentId);

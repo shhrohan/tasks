@@ -144,6 +144,12 @@ The application implements several latency reduction strategies:
 
 Cache is evicted via `@CacheEvict` on create/delete operations.
 
+### Cache Management & Monitoring
+| Component | Function |
+|-----------|----------|
+| `CacheWarmupService` | Pre-warms `tasks` and `tasksByLane` caches on `ApplicationReadyEvent`. |
+| `CacheLoggingInterceptor` | Intercepts `/api/**` requests to log hit/miss stats via Caffeine native metrics. |
+
 ### HikariCP Connection Pool
 ```properties
 spring.datasource.hikari.maximum-pool-size=10

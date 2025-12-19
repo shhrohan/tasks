@@ -107,4 +107,15 @@ class SwimLaneTest {
         assertNull(lane.getIsDeleted());
         assertNull(lane.getPosition());
     }
+
+    @Test
+    void builder_ToString_ShouldReturnString() {
+        SwimLane.SwimLaneBuilder builder = SwimLane.builder()
+                .id(1L)
+                .name("Test");
+        String toString = builder.toString();
+        assertNotNull(toString);
+        assertTrue(toString.contains("SwimLaneBuilder"));
+    }
 }
+

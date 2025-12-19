@@ -8,7 +8,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [Unreleased] - 2025-12-08
+## [Unreleased] - 2025-12-19
+
+### Added
+- **CacheWarmupService** (`a0c5e6f`) - Pre-warms user and task caches on application startup to ensure O(1) retrieval for first-time requests.
+- **CacheLoggingInterceptor** (`2a9c690`) - Real-time monitoring of cache hits/misses for API endpoints, logged with `[CACHE HIT]` or `[CACHE MISS]` prefixes.
+- **Spring Security Integration** (`e54629b`) - Comprehensive authentication and authorization flow:
+  - Custom `UserDetailsService` for database-backed authentication.
+  - Password hashing via `BCryptPasswordEncoder`.
+  - Session management with support for up to 5 concurrent sessions per user.
+  - CSRF protection enabled for web routes, disabled for `/api/**` to support programmatic access.
+- **User Data Isolation** (`d300ad3`) - All swimlane and task operations are scope-filtered by the currently authenticated user.
+- **Performance Optimizations** (`838b587`, `a704080`)
+  - Self-hosted Font Awesome with `font-display: swap` for improved First Contentful Paint (FCP).
+  - Gzip compression for all text-based assets.
+  - HikariCP connection pool tuning for high-concurrency database access.
+  - Database-level indexes on frequently queried columns (`user_id`, `status`, `position_order`).
+
+### Fixed
+- **Branch Coverage** (`ed47726`, `6a0bcd4`) - Increased branch coverage from **34% → 90%** through rigorous testing of services and models.
+- **Session Management** (`6a2826d`) - Added EOD auto-logout and back-button prevention after logout for enhanced security.
+- **Login UI Bugs** (`d8a7120`, `52131dc`)
+  - Fixed Chrome autofill text visibility issues.
+  - Added Bootstrap JS for functional logout dropdowns.
+
+---
+
+## [1.3.1] - 2025-12-08
 
 ### Chores
 - **Comprehensive .gitignore** (`020ddf4`) - Added 90+ entries organized by category:

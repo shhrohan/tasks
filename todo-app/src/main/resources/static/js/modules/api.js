@@ -160,6 +160,32 @@ export const Api = {
         return response.data;
     },
 
+    /**
+     * Update a comment
+     * @param {number} taskId - Task ID
+     * @param {number} commentId - Comment ID
+     * @param {string} text - New comment text
+     */
+    async updateComment(taskId, commentId, text) {
+        console.log('[API] updateComment() - Params:', { taskId, commentId, text });
+        const response = await axios.put(`${TASKS_URL}/${taskId}/comments/${commentId}`, text, {
+            headers: { 'Content-Type': 'text/plain' }
+        });
+        console.log('[API] updateComment() - Response:', response.data);
+        return response.data;
+    },
+
+    /**
+     * Delete a comment
+     * @param {number} taskId - Task ID
+     * @param {number} commentId - Comment ID
+     */
+    async deleteComment(taskId, commentId) {
+        console.log('[API] deleteComment() - Params:', { taskId, commentId });
+        await axios.delete(`${TASKS_URL}/${taskId}/comments/${commentId}`);
+        console.log('[API] deleteComment() - Deleted successfully');
+    },
+
     // =========================================================================
     // SWIMLANES
     // =========================================================================

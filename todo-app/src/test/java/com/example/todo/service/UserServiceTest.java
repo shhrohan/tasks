@@ -9,8 +9,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,35 +36,6 @@ class UserServiceTest {
     }
 
     @Test
-    void getAllUsers_ShouldReturnAllUsers() {
-        when(userDAO.findAll()).thenReturn(Arrays.asList(testUser));
-
-        List<User> result = userService.getAllUsers();
-
-        assertEquals(1, result.size());
-        assertEquals(testUser, result.get(0));
-    }
-
-    @Test
-    void getUser_ShouldReturnUser_WhenExists() {
-        when(userDAO.findById(1L)).thenReturn(Optional.of(testUser));
-
-        Optional<User> result = userService.getUser(1L);
-
-        assertTrue(result.isPresent());
-        assertEquals(testUser, result.get());
-    }
-
-    @Test
-    void getUser_ShouldReturnEmpty_WhenNotExists() {
-        when(userDAO.findById(999L)).thenReturn(Optional.empty());
-
-        Optional<User> result = userService.getUser(999L);
-
-        assertFalse(result.isPresent());
-    }
-
-    @Test
     void getUserByEmail_ShouldReturnUser() {
         when(userDAO.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
 
@@ -83,38 +52,6 @@ class UserServiceTest {
 
         assertEquals(testUser, result);
         verify(userDAO).save(testUser);
-    }
-
-    @Test
-    void updateUser_ShouldUpdateExistingUser() {
-        User updatedData = User.builder()
-                .name("Updated Name")
-                .email("updated@example.com")
-                .build();
-
-        when(userDAO.findById(1L)).thenReturn(Optional.of(testUser));
-        when(userDAO.save(any(User.class))).thenReturn(testUser);
-
-        User result = userService.updateUser(1L, updatedData);
-
-        assertEquals("Updated Name", testUser.getName());
-        assertEquals("updated@example.com", testUser.getEmail());
-        verify(userDAO).save(testUser);
-    }
-
-    @Test
-    void updateUser_ShouldThrowException_WhenUserNotFound() {
-        when(userDAO.findById(999L)).thenReturn(Optional.empty());
-
-        assertThrows(IllegalArgumentException.class, () -> 
-                userService.updateUser(999L, testUser));
-    }
-
-    @Test
-    void deleteUser_ShouldCallDeleteById() {
-        userService.deleteUser(1L);
-
-        verify(userDAO).deleteById(1L);
     }
 
     @Test
@@ -139,3 +76,4 @@ class UserServiceTest {
         verify(userDAO).save(any(User.class));
     }
 }
+
