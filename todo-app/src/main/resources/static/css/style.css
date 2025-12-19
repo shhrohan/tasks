@@ -1021,13 +1021,9 @@ body {
         flex: 0 0 auto !important;
         align-self: flex-end !important;
         margin-left: auto !important;
-        font-size: 1.1rem !important;
-        font-weight: 700 !important;
-        padding: 0.6rem 1.5rem !important;
-        border-radius: 10px !important;
-        border: 2px solid var(--bs-success) !important;
-        box-shadow: none !important;
-        outline: none !important;
+        font-size: 0.75rem !important;
+        padding: 0.35rem 0.6rem !important;
+        border-radius: 6px !important;
     }
 
     .swimlane-header .h4 {
@@ -1085,11 +1081,6 @@ body {
         flex-direction: column !important;
         gap: 0 !important;
         padding: 0 1rem 1rem 1rem !important;
-    }
-
-    /* Respect Alpine x-show hidden state for collapsed swimlanes */
-    .swimlane-content.row[style*="display: none"] {
-        display: none !important;
     }
 
     .swimlane-content>div {

@@ -124,14 +124,9 @@ export const Store = {
     },
 
     toggleLaneCollapse(laneId) {
-        console.log('[Store] toggleLaneCollapse called with laneId:', laneId);
         const lane = this.lanes.find(l => l.id === laneId);
         if (lane) {
-            const oldState = lane.collapsed;
             lane.collapsed = !lane.collapsed;
-            console.log('[Store] toggleLaneCollapse - Lane:', lane.name, 'collapsed:', oldState, '->', lane.collapsed);
-        } else {
-            console.warn('[Store] toggleLaneCollapse - Lane not found:', laneId);
         }
     },
 
