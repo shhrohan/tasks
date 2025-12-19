@@ -9,6 +9,7 @@ import com.example.todo.model.TaskStatus;
 import com.example.todo.model.User;
 import com.example.todo.repository.CommentRepository;
 import com.example.todo.repository.UserRepository;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.Authentication;
@@ -31,14 +32,18 @@ public class TaskService {
     private final CommentRepository commentRepository;
     private final AsyncWriteService asyncWriteService;
     private final UserRepository userRepository;
+    
+    // Self-injection for @Cacheable proxy calls within same class
+    private final TaskService self;
 
     public TaskService(TaskDAO taskDAO, SwimLaneDAO swimLaneDAO, CommentRepository commentRepository,
-            AsyncWriteService asyncWriteService, UserRepository userRepository) {
+            AsyncWriteService asyncWriteService, UserRepository userRepository, @Lazy TaskService self) {
         this.taskDAO = taskDAO;
         this.swimLaneDAO = swimLaneDAO;
         this.commentRepository = commentRepository;
         this.asyncWriteService = asyncWriteService;
         this.userRepository = userRepository;
+        this.self = self;
     }
 
     /**
@@ -57,12 +62,14 @@ public class TaskService {
     /**
      * Get tasks for the currently authenticated user only.
      * Filters out tasks that belong to swimlanes owned by other users.
+     * Uses the cached getAllTasks() to avoid hitting the database on every login.
      */
     public List<Task> getTasksForCurrentUser() {
         long start = System.currentTimeMillis();
         User user = getCurrentUser();
         log.info("[TaskService] Fetching tasks for user: {} (id={})", user.getEmail(), user.getId());
-        List<Task> allTasks = taskDAO.findAll();
+        // Use self-injection to call through Spring proxy for @Cacheable to work
+        List<Task> allTasks = self.getAllTasks();
         List<Task> result = allTasks.stream()
                 .filter(task -> task.getSwimLane() != null
                         && task.getSwimLane().getUser() != null
