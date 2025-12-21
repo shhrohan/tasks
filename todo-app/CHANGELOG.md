@@ -8,9 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [Unreleased] - 2025-12-19
+## [Unreleased] - 2025-12-21
 
 ### Added
+- **Double-Click Protection** (`70186b1`) - Multi-layer protection against duplicate button clicks:
+  - Frontend loading state flags in `store.js` for all mutating operations (except `moveTask`)
+  - Guard clauses at start of async functions to prevent duplicate API calls
+  - Modal buttons with `x-if` templates showing spinner during operations
+  - Backend `IdempotencyService` for duplicate detection with 5-second window
+  - Idempotency checks in `TaskService.createTask()` and `SwimLaneService.createSwimLane()`
 - **CacheWarmupService** (`a0c5e6f`) - Pre-warms user and task caches on application startup to ensure O(1) retrieval for first-time requests.
 - **CacheLoggingInterceptor** (`2a9c690`) - Real-time monitoring of cache hits/misses for API endpoints, logged with `[CACHE HIT]` or `[CACHE MISS]` prefixes.
 - **Spring Security Integration** (`e54629b`) - Comprehensive authentication and authorization flow:
