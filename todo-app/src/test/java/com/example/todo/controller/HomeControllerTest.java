@@ -60,7 +60,7 @@ class HomeControllerTest {
     void index_ShouldReturnIndexView() throws Exception {
         // Arrange
         when(swimLaneService.getActiveSwimLanes()).thenReturn(Collections.emptyList());
-        when(taskService.getAllTasks()).thenReturn(Collections.emptyList());
+        when(taskService.getTasksForCurrentUser()).thenReturn(Collections.emptyList());
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");
 
         // Act
@@ -78,7 +78,7 @@ class HomeControllerTest {
         String expectedJson = "{\"lanes\":[],\"tasks\":[]}";
 
         when(swimLaneService.getActiveSwimLanes()).thenReturn(lanes);
-        when(taskService.getAllTasks()).thenReturn(tasks);
+        when(taskService.getTasksForCurrentUser()).thenReturn(tasks);
         when(objectMapper.writeValueAsString(any())).thenReturn(expectedJson);
 
         // Act
@@ -92,7 +92,7 @@ class HomeControllerTest {
     void index_ShouldFetchActiveSwimLanes() throws Exception {
         // Arrange
         when(swimLaneService.getActiveSwimLanes()).thenReturn(Collections.emptyList());
-        when(taskService.getAllTasks()).thenReturn(Collections.emptyList());
+        when(taskService.getTasksForCurrentUser()).thenReturn(Collections.emptyList());
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");
 
         // Act
@@ -106,14 +106,14 @@ class HomeControllerTest {
     void index_ShouldFetchAllTasks() throws Exception {
         // Arrange
         when(swimLaneService.getActiveSwimLanes()).thenReturn(Collections.emptyList());
-        when(taskService.getAllTasks()).thenReturn(Collections.emptyList());
+        when(taskService.getTasksForCurrentUser()).thenReturn(Collections.emptyList());
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");
 
         // Act
         homeController.index(model);
 
         // Assert
-        verify(taskService).getAllTasks();
+        verify(taskService).getTasksForCurrentUser();
     }
 
     @Test
@@ -123,7 +123,7 @@ class HomeControllerTest {
         List<Task> tasks = Arrays.asList(testTask);
 
         when(swimLaneService.getActiveSwimLanes()).thenReturn(lanes);
-        when(taskService.getAllTasks()).thenReturn(tasks);
+        when(taskService.getTasksForCurrentUser()).thenReturn(tasks);
         when(objectMapper.writeValueAsString(any())).thenReturn("{\"lanes\":[{\"id\":1}],\"tasks\":[{\"id\":1}]}");
 
         // Act

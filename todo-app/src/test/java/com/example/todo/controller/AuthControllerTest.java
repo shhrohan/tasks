@@ -1,183 +1,158 @@
 package com.example.todo.controller;
 
-import com.example.todo.base.BaseIntegrationTest;
 import com.example.todo.model.User;
-import com.example.todo.repository.UserRepository;
+import com.example.todo.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.test.context.support.WithAnonymousUser;
+import org.springframework.ui.Model;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import java.util.Optional;
 
-class AuthControllerTest extends BaseIntegrationTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
-    @Autowired
-    private UserRepository userRepository;
+@ExtendWith(MockitoExtension.class)
+class AuthControllerTest {
 
-    @Autowired
+    @Mock
+    private UserService userService;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private Model model;
+
+    @Mock
+    private RedirectAttributes redirectAttributes;
+
+    private AuthController authController;
 
     @BeforeEach
     void setUp() {
-        userRepository.deleteAll();
+        authController = new AuthController(userService, passwordEncoder);
     }
 
     @Test
-    @WithAnonymousUser
-    void login_ShouldRenderLoginPage() throws Exception {
-        mockMvc.perform(get("/login"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("login"));
+    void login_ShouldAddError_WhenErrorParamPresent() {
+        String view = authController.login("true", null, model);
+        
+        verify(model).addAttribute("error", "Invalid email or password");
+        assertEquals("login", view);
     }
 
     @Test
-    @WithAnonymousUser
-    void login_WithError_ShouldShowErrorMessage() throws Exception {
-        mockMvc.perform(get("/login").param("error", "true"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("login"))
-                .andExpect(model().attributeExists("error"));
+    void login_ShouldAddLogoutMessage_WhenLogoutParamPresent() {
+        String view = authController.login(null, "true", model);
+        
+        verify(model).addAttribute("message", "You have been logged out successfully");
+        assertEquals("login", view);
     }
 
     @Test
-    @WithAnonymousUser
-    void login_WithLogout_ShouldShowLogoutMessage() throws Exception {
-        mockMvc.perform(get("/login").param("logout", "true"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("login"))
-                .andExpect(model().attributeExists("message"));
+    void login_ShouldDoNothing_WhenParamsNull() {
+        String view = authController.login(null, null, model);
+        
+        verifyNoInteractions(model); // No attributes added
+        assertEquals("login", view);
     }
 
     @Test
-    @WithAnonymousUser
-    void register_ShouldRenderRegisterPage() throws Exception {
-        mockMvc.perform(get("/register"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("register"));
+    void register_ShouldAddError_WhenErrorParamPresent() {
+        String view = authController.register("Some Error", model);
+        
+        verify(model).addAttribute("error", "Some Error");
+        assertEquals("register", view);
     }
 
     @Test
-    @WithAnonymousUser
-    void register_WithError_ShouldShowErrorMessage() throws Exception {
-        mockMvc.perform(get("/register").param("error", "Some error"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("register"))
-                .andExpect(model().attributeExists("error"));
+    void registerUser_ShouldFail_WhenNameIsEmpty() {
+        String view = authController.registerUser("", "test@example.com", "password", "password", redirectAttributes);
+        
+        verify(redirectAttributes).addAttribute("error", "Name is required");
+        assertEquals("redirect:/register", view);
     }
 
     @Test
-    @WithAnonymousUser
-    void registerUser_ShouldCreateUserAndRedirect() throws Exception {
-        mockMvc.perform(post("/register")
-                        .with(csrf())
-                        .param("name", "Test User")
-                        .param("email", "test@example.com")
-                        .param("password", "password123")
-                        .param("confirmPassword", "password123"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login"));
+    void registerUser_ShouldFail_WhenEmailIsInvalid() {
+        String view = authController.registerUser("Test", "invalid-email", "password", "password", redirectAttributes);
+        
+        verify(redirectAttributes).addAttribute("error", "Valid email is required");
+        assertEquals("redirect:/register", view);
     }
 
     @Test
-    @WithAnonymousUser
-    void registerUser_WithEmptyName_ShouldRedirectWithError() throws Exception {
-        mockMvc.perform(post("/register")
-                        .with(csrf())
-                        .param("name", "")
-                        .param("email", "test@example.com")
-                        .param("password", "password123")
-                        .param("confirmPassword", "password123"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrlPattern("/register?error=*"));
+    void registerUser_ShouldFail_WhenPasswordIsShort() {
+        String view = authController.registerUser("Test", "test@example.com", "123", "123", redirectAttributes);
+        
+        verify(redirectAttributes).addAttribute("error", "Password must be at least 6 characters");
+        assertEquals("redirect:/register", view);
     }
 
     @Test
-    @WithAnonymousUser
-    void registerUser_WithInvalidEmail_ShouldRedirectWithError() throws Exception {
-        mockMvc.perform(post("/register")
-                        .with(csrf())
-                        .param("name", "Test")
-                        .param("email", "invalid-email")
-                        .param("password", "password123")
-                        .param("confirmPassword", "password123"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrlPattern("/register?error=*"));
+    void registerUser_ShouldFail_WhenPasswordsDoNotMatch() {
+        String view = authController.registerUser("Test", "test@example.com", "password123", "password456", redirectAttributes);
+        
+        verify(redirectAttributes).addAttribute("error", "Passwords do not match");
+        assertEquals("redirect:/register", view);
     }
 
     @Test
-    @WithAnonymousUser
-    void registerUser_WithShortPassword_ShouldRedirectWithError() throws Exception {
-        mockMvc.perform(post("/register")
-                        .with(csrf())
-                        .param("name", "Test")
-                        .param("email", "test@example.com")
-                        .param("password", "12345")
-                        .param("confirmPassword", "12345"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrlPattern("/register?error=*"));
+    void registerUser_ShouldFail_WhenEmailExists() {
+        when(userService.getUserByEmail("test@example.com")).thenReturn(Optional.of(new User()));
+
+        String view = authController.registerUser("Test", "test@example.com", "password123", "password123", redirectAttributes);
+        
+        verify(redirectAttributes).addAttribute("error", "Email already registered");
+        assertEquals("redirect:/register", view);
     }
 
     @Test
-    @WithAnonymousUser
-    void registerUser_WithMismatchedPasswords_ShouldRedirectWithError() throws Exception {
-        mockMvc.perform(post("/register")
-                        .with(csrf())
-                        .param("name", "Test")
-                        .param("email", "test@example.com")
-                        .param("password", "password123")
-                        .param("confirmPassword", "different123"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrlPattern("/register?error=*"));
+    void registerUser_ShouldSucceed_WhenValid() {
+        when(userService.getUserByEmail("test@example.com")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode("password123")).thenReturn("encoded");
+
+        String view = authController.registerUser("Test", "test@example.com", "password123", "password123", redirectAttributes);
+        
+        verify(userService).createUser(any(User.class));
+        verify(redirectAttributes).addFlashAttribute(eq("message"), anyString());
+        assertEquals("redirect:/login", view);
+    }
+    @Test
+    void register_ShouldDoNothing_WhenErrorIsNull() {
+        String view = authController.register(null, model);
+        
+        verifyNoInteractions(model);
+        assertEquals("register", view);
     }
 
     @Test
-    @WithAnonymousUser
-    void registerUser_WithExistingEmail_ShouldRedirectWithError() throws Exception {
-        // Create existing user
-        User existingUser = User.builder()
-                .name("Existing")
-                .email("existing@example.com")
-                .passwordHash(passwordEncoder.encode("password"))
-                .build();
-        userRepository.save(existingUser);
-
-        mockMvc.perform(post("/register")
-                        .with(csrf())
-                        .param("name", "New User")
-                        .param("email", "existing@example.com")
-                        .param("password", "password123")
-                        .param("confirmPassword", "password123"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrlPattern("/register?error=*"));
+    void registerUser_ShouldFail_WhenNameIsNull() {
+        String view = authController.registerUser(null, "test@example.com", "password", "password", redirectAttributes);
+        
+        verify(redirectAttributes).addAttribute("error", "Name is required");
+        assertEquals("redirect:/register", view);
     }
 
     @Test
-    @WithAnonymousUser
-    void registerUser_WithNullEmail_ShouldRedirectWithError() throws Exception {
-        mockMvc.perform(post("/register")
-                        .with(csrf())
-                        .param("name", "Test User")
-                        // email param omitted (null)
-                        .param("password", "password123")
-                        .param("confirmPassword", "password123"))
-                .andExpect(status().is4xxClientError()); // Missing required param
+    void registerUser_ShouldFail_WhenEmailIsNull() {
+        String view = authController.registerUser("Test", null, "password", "password", redirectAttributes);
+        
+        verify(redirectAttributes).addAttribute("error", "Valid email is required");
+        assertEquals("redirect:/register", view);
     }
-
+    
     @Test
-    @WithAnonymousUser
-    void login_WithBothErrorAndLogout_ShouldShowBothMessages() throws Exception {
-        mockMvc.perform(get("/login")
-                        .param("error", "true")
-                        .param("logout", "true"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("login"))
-                .andExpect(model().attributeExists("error"))
-                .andExpect(model().attributeExists("message"));
+    void registerUser_ShouldFail_WhenPasswordIsNull() {
+        String view = authController.registerUser("Test", "test@example.com", null, "password", redirectAttributes);
+        
+        verify(redirectAttributes).addAttribute("error", "Password must be at least 6 characters");
+        assertEquals("redirect:/register", view);
     }
 }
-

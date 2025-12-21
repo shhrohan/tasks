@@ -45,7 +45,8 @@ While actively coding:
 ### 2.2.1 TERMINAL USAGE
 *   **NEVER** run multiple terminal sessions in parallel.
 *   **ALWAYS** wait for the previous terminal command to complete before starting a new one.
-*   **KILL** existing running processes (like `spring-boot:run`) before starting new ones.
+*   **ALWAYS** kill the existing process (e.g., `mvn spring-boot:run` or java process) BEFORE starting a new one.
+*   **ALWAYS** restart the backend application after ANY frontend or backend changes.
 
 ### 2.3 COMMIT & RESTART CYCLE
 *   **VALIDATION FIRST**: Before committing, you MUST:

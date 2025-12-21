@@ -45,7 +45,7 @@ public class HomeController {
 
         // Fetch initial data
         List<SwimLane> lanes = swimLaneService.getActiveSwimLanes();
-        List<Task> tasks = taskService.getAllTasks();
+        List<Task> tasks = taskService.getTasksForCurrentUser();
 
         log.info("[HomeController] Loaded {} lanes and {} tasks", lanes.size(), tasks.size());
 

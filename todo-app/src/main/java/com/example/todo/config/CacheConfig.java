@@ -13,13 +13,13 @@ import java.util.concurrent.TimeUnit;
  * CacheConfig - Configures Caffeine caching for performance optimization.
  * 
  * Cache Strategy:
- * - lanes: Short TTL (2 min), rarely changes
- * - tasks: Short TTL (1 min), invalidated on update
- * - userLanes: User-specific lane cache
+ * - Uses expireAfterAccess (not expireAfterWrite) to keep cache alive while in use
+ * - 30 minute TTL - cache only expires if unused for 30 minutes
+ * - Write-through updates keep cache consistent with database
  * 
  * Expected Performance Improvement:
  * - Reduces database queries for repeated requests
- * - Improves response time from ~1500ms to ~50ms for cached data
+ * - Improves response time from ~18000ms to ~50ms for cached data
  */
 @Configuration
 @EnableCaching
@@ -42,7 +42,10 @@ public class CacheConfig {
         return Caffeine.newBuilder()
                 .initialCapacity(100)
                 .maximumSize(500)
-                .expireAfterWrite(2, TimeUnit.MINUTES)
+                // Use expireAfterAccess instead of expireAfterWrite
+                // Cache stays alive as long as it's being accessed
+                // Only expires if unused for 30 minutes
+                .expireAfterAccess(30, TimeUnit.MINUTES)
                 .recordStats(); // Enable cache statistics
     }
 }

@@ -72,7 +72,25 @@ Alpine.data('todoApp', () => ({
     // Task keyboard navigation (main view)
     selectedTaskId: null,      // Currently keyboard-selected task in main view
 
-    // Task Detail Pane State (Desktop Only)
+    // --- Drag Helpers (Event-Based Protection) ---
+
+    prepareDrag(taskId) {
+        // console.log('[App] prepareDrag - Adding x-ignore to task', taskId);
+        const el = document.querySelector(`[data-task-id="${taskId}"]`);
+        if (el) {
+            el.setAttribute('x-ignore', '');
+        }
+    },
+
+    cleanupDrag(taskId) {
+        // console.log('[App] cleanupDrag - Removing x-ignore from task', taskId);
+        const el = document.querySelector(`[data-task-id="${taskId}"]`);
+        if (el) {
+            el.removeAttribute('x-ignore');
+        }
+    },
+
+    // --- Task Resize Feature ---State (Desktop Only)
     taskDetail: {
         open: false,
         task: null,
@@ -236,7 +254,7 @@ Alpine.data('todoApp', () => ({
             this.mobileSidebarOpen = false;
         }
 
-        console.log('[App] checkMobile:', { isMobile: this.isMobile, width: window.innerWidth });
+
     },
 
     /**
@@ -390,29 +408,30 @@ Alpine.data('todoApp', () => ({
      * @param {number|string} laneId - The lane ID to reinitialize
      */
     reinitSortableForLane(laneId) {
-        console.log(`[App] ====== Reinit Sortable for Lane ${laneId} ======`);
+        // console.log(`[App] reinitSortableForLane: ${laneId}`);
+        const laneEl = document.getElementById(`lane-${laneId}-container`); // Ensure we target correct container if needed
 
-        // Find all columns for this specific lane
+        // Find all columns for this lane
+        // They should have ID: lane-{laneId}-{status}
+        // OR we can querySelector by data-lane-id
         const columns = document.querySelectorAll(`.lane-column[data-lane-id="${laneId}"]`);
-        console.log(`[App] Found ${columns.length} columns for lane ${laneId}`);
+
+        if (columns.length === 0) {
+            console.warn(`[App] reinitSortableForLane: No columns found for lane ${laneId}`);
+            return;
+        }
 
         columns.forEach(col => {
-            const status = col.getAttribute('data-status');
-            const cardCount = col.querySelectorAll('.task-card').length;
-
-            console.log(`[App] Column ${status}: ${cardCount} task cards`);
-
-            // Destroy existing Sortable instance
+            // Destroy existing instance if it exists to prevent duplicates
             if (col.sortableInstance) {
-                console.log(`[App] Destroying old Sortable for ${col.id}`);
+                // console.log(`[App] Destroying old Sortable for lane ${laneId} status ${col.getAttribute('data-status')}`);
                 col.sortableInstance.destroy();
                 col.sortableInstance = null;
             }
 
-            // Create fresh Sortable with current DOM state
-            Drag.initOneColumn(col, this);
+            // Re-init
+            Drag.initOneColumn(col, this, Alpine);
         });
-
         console.log(`[App] ====== Reinit Complete for Lane ${laneId} ======`);
     },
 
@@ -1263,7 +1282,14 @@ Alpine.data('todoApp', () => ({
     async executeDeleteComment(commentId) {
         if (!this.taskDetail.task) return;
 
+        // Guard: Prevent duplicate delete calls
+        if (this.isDeletingComment) {
+            console.warn('[App] executeDeleteComment - Already deleting, ignoring');
+            return;
+        }
+        this.isDeletingComment = true;
         this.taskDetail.isLoading = true;
+
         try {
             const taskId = this.taskDetail.task.id;
             await Api.deleteComment(taskId, commentId);
@@ -1280,7 +1306,9 @@ Alpine.data('todoApp', () => ({
             console.error('[App] Failed to delete comment:', e);
             this.showError('Failed to delete comment');
         } finally {
+            this.isDeletingComment = false;
             this.taskDetail.isLoading = false;
+            this.closeModal();
         }
     }
 }));

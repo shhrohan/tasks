@@ -36,14 +36,17 @@ class SwimLaneServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private IdempotencyService idempotencyService;
+
     private SwimLaneService swimLaneService;
 
     private User testUser;
 
     @BeforeEach
     void setUp() {
-        swimLaneService = new SwimLaneService(swimLaneDAO, asyncWriteService, userRepository);
-        
+        swimLaneService = new SwimLaneService(swimLaneDAO, asyncWriteService, userRepository, idempotencyService);
+
         // Create test user
         testUser = new User();
         testUser.setId(1L);
@@ -57,8 +60,12 @@ class SwimLaneServiceTest {
         lenient().when(securityContext.getAuthentication()).thenReturn(auth);
         SecurityContextHolder.setContext(securityContext);
 
-        // Mock UserRepository to return test user (lenient to avoid UnnecessaryStubbingException)
+        // Mock UserRepository to return test user (lenient to avoid
+        // UnnecessaryStubbingException)
         lenient().when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
+
+        // Mock IdempotencyService to allow operations by default
+        lenient().when(idempotencyService.isDuplicate(any())).thenReturn(false);
     }
 
     @AfterEach
@@ -388,6 +395,38 @@ class SwimLaneServiceTest {
 
         assertThrows(RuntimeException.class, () -> swimLaneService.getAllSwimLanes());
     }
+
+    @Test
+    void reorderSwimLanes_ShouldFilterOutLanesWithNullUser() {
+        SwimLane myLane = new SwimLane();
+        myLane.setId(1L);
+        myLane.setPosition(0);
+        myLane.setUser(testUser);
+
+        SwimLane laneWithNoUser = new SwimLane();
+        laneWithNoUser.setId(2L);
+        laneWithNoUser.setPosition(1);
+        laneWithNoUser.setUser(null);
+
+        List<Long> orderedIds = Arrays.asList(2L, 1L);
+        when(swimLaneDAO.findAllById(orderedIds)).thenReturn(Arrays.asList(myLane, laneWithNoUser));
+
+        swimLaneService.reorderSwimLanes(orderedIds);
+
+        // Only myLane should be reordered
+        assertEquals(1, myLane.getPosition());
+        verify(swimLaneDAO).saveAll(anyList());
+    }
+
+    @Test
+    void getCurrentUser_ShouldThrowException_WhenNotAuthenticated() {
+        SecurityContextHolder.clearContext();
+        SecurityContext customContext = mock(SecurityContext.class);
+        UsernamePasswordAuthenticationToken unauth = mock(UsernamePasswordAuthenticationToken.class);
+        when(unauth.isAuthenticated()).thenReturn(false);
+        when(customContext.getAuthentication()).thenReturn(unauth);
+        SecurityContextHolder.setContext(customContext);
+
+        assertThrows(RuntimeException.class, () -> swimLaneService.getAllSwimLanes());
+    }
 }
-
-

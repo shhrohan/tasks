@@ -419,6 +419,9 @@ DRAG-AND-DROP CRITICAL NOTES:
                                                 :data-status="task.status" :draggable="!selectedTags.length"
                                                 :style="getTaskStyle(task.id)" @dblclick="resetTaskSize(task.id)"
                                                 @click="openTaskDetail(task.id)"
+                                                @mousedown.passive="prepareDrag(task.id)"
+                                                @touchstart.passive="prepareDrag(task.id)"
+                                                @mouseup="cleanupDrag(task.id)" @touchend="cleanupDrag(task.id)"
                                                 :class="{'task-selected': isTaskSelected(task.id)}">
                                                 <div class="card-body p-2 d-flex flex-column h-100">
                                                     <p class="h6 card-title text-white mb-1" x-text="task.name"></p>
@@ -520,9 +523,20 @@ DRAG-AND-DROP CRITICAL NOTES:
                     <p class="mb-0" x-text="modal.message"></p>
                 </div>
                 <div class="custom-modal-footer">
-                    <button type="button" class="btn btn-secondary" @click="closeModal()">Cancel</button>
+                    <button type="button" class="btn btn-secondary" @click="closeModal()"
+                        :disabled="isDeletingLane || isCompletingLane || isDeletingComment">Cancel</button>
                     <button type="button" class="btn" :class="'btn-' + modal.type" @click="confirmModalAction()"
-                        x-text="modal.confirmText"></button>
+                        :disabled="isDeletingLane || isCompletingLane || isDeletingComment">
+                        <template x-if="!isDeletingLane && !isCompletingLane && !isDeletingComment">
+                            <span x-text="modal.confirmText"></span>
+                        </template>
+                        <template x-if="isDeletingLane || isCompletingLane || isDeletingComment">
+                            <span class="d-flex align-items-center gap-2">
+                                <span class="spinner-border spinner-border-sm"></span>
+                                Processing...
+                            </span>
+                        </template>
+                    </button>
                 </div>
             </div>
         </div>
@@ -612,8 +626,20 @@ DRAG-AND-DROP CRITICAL NOTES:
                     </template>
                 </div>
                 <div class="custom-modal-footer">
-                    <button type="button" class="btn btn-secondary" @click="closeInputModal()">Cancel</button>
-                    <button type="button" class="btn btn-primary" @click="submitInputModal()">Save</button>
+                    <button type="button" class="btn btn-secondary" @click="closeInputModal()"
+                        :disabled="isSubmittingModal">Cancel</button>
+                    <button type="button" class="btn btn-primary" @click="submitInputModal()"
+                        :disabled="isSubmittingModal">
+                        <template x-if="!isSubmittingModal">
+                            <span>Save</span>
+                        </template>
+                        <template x-if="isSubmittingModal">
+                            <span class="d-flex align-items-center gap-2">
+                                <span class="spinner-border spinner-border-sm"></span>
+                                Saving...
+                            </span>
+                        </template>
+                    </button>
                 </div>
             </div>
         </div>
@@ -765,7 +791,7 @@ DRAG-AND-DROP CRITICAL NOTES:
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 
     <!-- Main Application (Handles Alpine Init) - Minified Production Build -->
-    <script type="module" src="js/app.min.js"></script>
+    <script type="module" src="js/app.js"></script>
 
     <!-- Bootstrap Bundle JS for dropdown functionality -->
     <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

@@ -312,6 +312,35 @@ body {
     background: rgba(15, 23, 42, 0.5);
 }
 
+/* ============================================
+   DRAG VISUAL FEEDBACK - Shows valid drop zones
+   ============================================ */
+/* Active lane during drag - highlighted */
+.swimlane-row.drag-active-lane {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.4), 0 10px 30px rgba(0, 0, 0, 0.3);
+    border-color: rgba(59, 130, 246, 0.5);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+/* Disabled lanes during drag - dimmed with no-drop indicator */
+.swimlane-row.drag-disabled-lane {
+    opacity: 0.4;
+    pointer-events: none;
+    position: relative;
+}
+
+.swimlane-row.drag-disabled-lane::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 16px;
+    pointer-events: none;
+}
+
 .swimlane-header {
     background: rgba(255, 255, 255, 0.03);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -807,6 +836,31 @@ body {
     }
 }
 
+/* ===========================================================================
+   LOADING STATE STYLES (Double-Click Protection)
+   =========================================================================== */
+
+/* Disabled button during loading - enhanced visual feedback */
+.btn:disabled,
+.btn[disabled] {
+    opacity: 0.7;
+    cursor: not-allowed !important;
+    pointer-events: none;
+}
+
+/* Spinner sizing in buttons */
+.btn .spinner-border-sm {
+    width: 0.875rem;
+    height: 0.875rem;
+    border-width: 0.15em;
+    vertical-align: middle;
+}
+
+/* Ensure flex containers in buttons align properly */
+.btn .d-flex {
+    display: inline-flex !important;
+}
+
 /* Bootstrap Overrides for Dark Mode */
 .modal-content {
     background-color: #1e293b;
@@ -1029,13 +1083,9 @@ body {
         flex: 0 0 auto !important;
         align-self: flex-end !important;
         margin-left: auto !important;
-        font-size: 1.1rem !important;
-        font-weight: 700 !important;
-        padding: 0.6rem 1.5rem !important;
-        border-radius: 10px !important;
-        border: 2px solid var(--bs-success) !important;
-        box-shadow: none !important;
-        outline: none !important;
+        font-size: 0.75rem !important;
+        padding: 0.35rem 0.6rem !important;
+        border-radius: 6px !important;
     }
 
     .swimlane-header .h4 {
@@ -1095,11 +1145,6 @@ body {
         padding: 0 1rem 1rem 1rem !important;
     }
 
-    /* Respect Alpine x-show hidden state for collapsed swimlanes */
-    .swimlane-content.row[style*="display: none"] {
-        display: none !important;
-    }
-
     .swimlane-content>div {
         width: 100% !important;
         max-width: 100% !important;
@@ -1133,7 +1178,7 @@ body {
         min-height: 120px !important;
         height: auto !important;
         padding: 0 !important;
-        margin-bottom: 1.25rem !important;
+        margin-bottom: 1.75rem !important;
         border-radius: 16px !important;
         background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(0, 0, 0, 0.3) 100%) !important;
         backdrop-filter: blur(10px);
