@@ -388,6 +388,39 @@ class SwimLaneServiceTest {
 
         assertThrows(RuntimeException.class, () -> swimLaneService.getAllSwimLanes());
     }
+    @Test
+    void reorderSwimLanes_ShouldFilterOutLanesWithNullUser() {
+        SwimLane myLane = new SwimLane();
+        myLane.setId(1L);
+        myLane.setPosition(0);
+        myLane.setUser(testUser);
+
+        SwimLane laneWithNoUser = new SwimLane();
+        laneWithNoUser.setId(2L);
+        laneWithNoUser.setPosition(1);
+        laneWithNoUser.setUser(null);
+
+        List<Long> orderedIds = Arrays.asList(2L, 1L);
+        when(swimLaneDAO.findAllById(orderedIds)).thenReturn(Arrays.asList(myLane, laneWithNoUser));
+
+        swimLaneService.reorderSwimLanes(orderedIds);
+
+        // Only myLane should be reordered
+        assertEquals(1, myLane.getPosition());
+        verify(swimLaneDAO).saveAll(anyList());
+    }
+
+    @Test
+    void getCurrentUser_ShouldThrowException_WhenNotAuthenticated() {
+        SecurityContextHolder.clearContext();
+        SecurityContext customContext = mock(SecurityContext.class);
+        UsernamePasswordAuthenticationToken unauth = mock(UsernamePasswordAuthenticationToken.class);
+        when(unauth.isAuthenticated()).thenReturn(false);
+        when(customContext.getAuthentication()).thenReturn(unauth);
+        SecurityContextHolder.setContext(customContext);
+
+        assertThrows(RuntimeException.class, () -> swimLaneService.getAllSwimLanes());
+    }
 }
 
 
