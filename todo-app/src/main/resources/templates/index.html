@@ -191,11 +191,15 @@ DRAG-AND-DROP CRITICAL NOTES:
         x-transition:enter-end="sidebar-visible" x-transition:leave="transition ease-in duration-200"
         x-transition:leave-start="sidebar-visible" x-transition:leave-end="sidebar-hidden" x-cloak>
 
-        <!-- Sidebar Header with Hamburger -->
+        <!-- Sidebar Header with Hamburger and Pin -->
         <div class="mobile-sidebar-header">
             <button class="sidebar-hamburger" @click="mobileSidebarOpen = false">
                 <span></span>
                 <span></span>
+            </button>
+            <button class="sidebar-pin-btn" @click="toggleSidebarPin()" :class="{'pinned': sidebarPinned}"
+                :title="sidebarPinned ? 'Unpin sidebar' : 'Pin sidebar open'">
+                <i class="fa-solid" :class="sidebarPinned ? 'fa-thumbtack' : 'fa-thumbtack fa-rotate-90'"></i>
             </button>
         </div>
 

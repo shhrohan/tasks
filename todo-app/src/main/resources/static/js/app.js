@@ -66,6 +66,7 @@ Alpine.data('todoApp', () => ({
 
     // Mobile sidebar navigation
     mobileSidebarOpen: false,  // Toggle sidebar drawer
+    sidebarPinned: false,      // Pin sidebar open (don't auto-close on lane select)
     activeLaneId: null,        // Currently selected lane on mobile (null = show all)
     isMobile: false,           // Track if we're on mobile viewport
 
@@ -266,15 +267,25 @@ Alpine.data('todoApp', () => ({
     },
 
     /**
-     * Select a swimlane on mobile (closes sidebar automatically)
+     * Select a swimlane on mobile (closes sidebar only if not pinned)
      */
     selectLane(laneId) {
         console.log('[App] selectLane:', laneId);
         this.activeLaneId = laneId;
-        this.mobileSidebarOpen = false; // Auto-close sidebar
+        if (!this.sidebarPinned) {
+            this.mobileSidebarOpen = false; // Auto-close sidebar only if not pinned
+        }
 
         // Scroll to top of content
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+
+    /**
+     * Toggle sidebar pinned state
+     */
+    toggleSidebarPin() {
+        this.sidebarPinned = !this.sidebarPinned;
+        console.log('[App] toggleSidebarPin:', this.sidebarPinned);
     },
 
     /**
