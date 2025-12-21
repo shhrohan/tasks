@@ -1,5 +1,6 @@
 package com.example.todo.service;
 
+import com.example.todo.annotation.Idempotent;
 import com.example.todo.dao.SwimLaneDAO;
 import com.example.todo.model.SwimLane;
 import com.example.todo.model.User;
@@ -11,6 +12,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import lombok.extern.log4j.Log4j2;
 
@@ -21,14 +25,12 @@ public class SwimLaneService {
     private final SwimLaneDAO swimLaneDAO;
     private final AsyncWriteService asyncWriteService;
     private final UserRepository userRepository;
-    private final IdempotencyService idempotencyService;
 
     public SwimLaneService(SwimLaneDAO swimLaneDAO, AsyncWriteService asyncWriteService,
-            UserRepository userRepository, IdempotencyService idempotencyService) {
+            UserRepository userRepository) {
         this.swimLaneDAO = swimLaneDAO;
         this.asyncWriteService = asyncWriteService;
         this.userRepository = userRepository;
-        this.idempotencyService = idempotencyService;
     }
 
     /**
@@ -76,17 +78,10 @@ public class SwimLaneService {
         return swimLaneDAO.findByUserIdAndIsCompletedTrueAndIsDeletedFalseOrderByPositionAsc(user.getId());
     }
 
+    @Idempotent(keyExpression = "'createLane:' + #swimLane.name")
     @CacheEvict(value = { "lanes", "userLanes" }, allEntries = true)
     public SwimLane createSwimLane(SwimLane swimLane) {
         User user = getCurrentUser();
-
-        // Idempotency check - prevent duplicate lanes from rapid clicks
-        String idempotencyKey = "createLane:" + user.getId() + ":" + swimLane.getName();
-        if (idempotencyService.isDuplicate(idempotencyKey)) {
-            log.warn("[IDEMPOTENCY] Duplicate lane creation rejected: {}", swimLane.getName());
-            throw new IllegalStateException("Duplicate lane creation detected. Please wait.");
-        }
-
         log.info("[CACHE EVICT] Invalidating 'lanes' cache - creating new swimlane");
         swimLane.setUser(user);
 
@@ -94,13 +89,10 @@ public class SwimLaneService {
         Integer maxPos = swimLaneDAO.findMaxPositionByUserId(user.getId());
         swimLane.setPosition(maxPos == null ? 0 : maxPos + 1);
         log.info("Creating new swimlane '{}' for user: {}", swimLane.getName(), user.getEmail());
-        SwimLane saved = swimLaneDAO.save(swimLane);
-
-        // Mark operation complete to allow same lane name to be created again
-        idempotencyService.complete(idempotencyKey);
-        return saved;
+        return swimLaneDAO.save(swimLane);
     }
 
+    @Idempotent(keyExpression = "'completeLane:' + #id")
     public SwimLane completeSwimLane(Long id) {
         User user = getCurrentUser();
         log.debug("Marking swimlane {} as completed", id);
@@ -143,6 +135,7 @@ public class SwimLaneService {
         return swimLane;
     }
 
+    @Idempotent(keyExpression = "'deleteLane:' + #id")
     @CacheEvict(value = { "lanes", "userLanes" }, allEntries = true)
     public void deleteSwimLane(Long id) {
         log.info("[CACHE EVICT] Invalidating 'lanes' cache - deleting swimlane {}", id);
@@ -169,6 +162,7 @@ public class SwimLaneService {
         swimLaneDAO.deleteById(id);
     }
 
+    @Idempotent(keyExpression = "'reorderLanes:' + #orderedIds.hashCode()")
     @CacheEvict(value = { "lanes", "userLanes" }, allEntries = true)
     public void reorderSwimLanes(List<Long> orderedIds) {
         log.info("[CACHE EVICT] Invalidating 'lanes' cache - reordering lanes");
@@ -178,11 +172,11 @@ public class SwimLaneService {
         // Filter to only lanes owned by current user
         lanes = lanes.stream()
                 .filter(lane -> lane.getUser() != null && lane.getUser().getId().equals(user.getId()))
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
 
         // Create a map for O(1) lookup
-        java.util.Map<Long, SwimLane> laneMap = lanes.stream()
-                .collect(java.util.stream.Collectors.toMap(SwimLane::getId, java.util.function.Function.identity()));
+        Map<Long, SwimLane> laneMap = lanes.stream()
+                .collect(Collectors.toMap(SwimLane::getId, Function.identity()));
 
         for (int i = 0; i < orderedIds.size(); i++) {
             Long id = orderedIds.get(i);

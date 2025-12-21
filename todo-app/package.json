@@ -4,7 +4,7 @@
   "description": "Spring Boot Todo App with minified JS and CSS",
   "scripts": {
     "minify:js": "npm run minify:app && npm run minify:store && npm run minify:api && npm run minify:drag",
-    "minify:app": "terser src/main/resources/static/js/app.js -o src/main/resources/static/js/app.min.js -c -m",
+    "minify:app": "terser src/main/resources/static/js/app.js -o src/main/resources/static/js/app.min.js -c -m && node -e \"const fs=require('fs');let c=fs.readFileSync('src/main/resources/static/js/app.min.js','utf8');c=c.replace(/\\.js\\\"/g,'.min.js\\\"');fs.writeFileSync('src/main/resources/static/js/app.min.js',c);\"",
     "minify:store": "terser src/main/resources/static/js/modules/store.js -o src/main/resources/static/js/modules/store.min.js -c -m",
     "minify:api": "terser src/main/resources/static/js/modules/api.js -o src/main/resources/static/js/modules/api.min.js -c -m",
     "minify:drag": "terser src/main/resources/static/js/modules/drag.js -o src/main/resources/static/js/modules/drag.min.js -c -m",

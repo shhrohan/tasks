@@ -66,6 +66,7 @@ Alpine.data('todoApp', () => ({
 
     // Mobile sidebar navigation
     mobileSidebarOpen: false,  // Toggle sidebar drawer
+    sidebarPinned: false,      // Pin sidebar open (don't auto-close on lane select)
     activeLaneId: null,        // Currently selected lane on mobile (null = show all)
     isMobile: false,           // Track if we're on mobile viewport
 
@@ -262,19 +263,51 @@ Alpine.data('todoApp', () => ({
      */
     toggleMobileSidebar() {
         this.mobileSidebarOpen = !this.mobileSidebarOpen;
+        // Always use push mode when sidebar is open
+        this.sidebarPinned = this.mobileSidebarOpen;
         console.log('[App] toggleMobileSidebar:', this.mobileSidebarOpen);
+        this.updateSidebarBodyClasses();
     },
 
     /**
-     * Select a swimlane on mobile (closes sidebar automatically)
+     * Select a swimlane on mobile (closes sidebar only if not pinned)
      */
     selectLane(laneId) {
         console.log('[App] selectLane:', laneId);
         this.activeLaneId = laneId;
-        this.mobileSidebarOpen = false; // Auto-close sidebar
+        if (!this.sidebarPinned) {
+            this.mobileSidebarOpen = false; // Auto-close sidebar only if not pinned
+            this.updateSidebarBodyClasses();
+        }
 
         // Scroll to top of content
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+
+    /**
+     * Toggle sidebar pinned state
+     */
+    toggleSidebarPin() {
+        this.sidebarPinned = !this.sidebarPinned;
+        console.log('[App] toggleSidebarPin:', this.sidebarPinned);
+        this.updateSidebarBodyClasses();
+    },
+
+    /**
+     * Update body classes for sidebar state (used by CSS for push layout)
+     */
+    updateSidebarBodyClasses() {
+        const body = document.body;
+        if (this.mobileSidebarOpen) {
+            body.classList.add('sidebar-open');
+        } else {
+            body.classList.remove('sidebar-open');
+        }
+        if (this.sidebarPinned) {
+            body.classList.add('sidebar-pinned');
+        } else {
+            body.classList.remove('sidebar-pinned');
+        }
     },
 
     /**
@@ -296,6 +329,16 @@ Alpine.data('todoApp', () => ({
 
         // On mobile WITHOUT tag filters: show only active lane
         return laneId === this.activeLaneId;
+    },
+
+    isSidebarLaneVisible(laneId) {
+        // If no tags selected, show ALL lanes for discovery on mobile sidebar
+        if (!this.selectedTags || this.selectedTags.length === 0) {
+            return true;
+        }
+
+        // If tags are selected, show only lanes that have matching tasks
+        return this.laneHasMatchingTasks(laneId);
     },
 
     /**
@@ -560,10 +603,28 @@ Alpine.data('todoApp', () => ({
      */
     getAllUniqueTags() {
         const tagSet = new Set();
-        this.tasks.forEach(task => {
-            const tags = this.getTags(task.tags);
-            tags.forEach(tag => tagSet.add(tag));
-        });
+
+        // If no tags are selected, show ALL unique tags for discovery (especially important on mobile)
+        if (!this.selectedTags || this.selectedTags.length === 0) {
+            this.tasks.forEach(task => {
+                const tags = this.getTags(task.tags);
+                tags.forEach(tag => tagSet.add(tag));
+            });
+        } else {
+            // If tags are selected, show tags from visible lanes to allow narrowing down
+            this.lanes.forEach(lane => {
+                if (this.isLaneVisible(lane.id)) {
+                    const laneTasks = this.tasks.filter(t => t.swimLane && t.swimLane.id === lane.id);
+                    laneTasks.forEach(task => {
+                        const tags = this.getTags(task.tags);
+                        tags.forEach(tag => tagSet.add(tag));
+                    });
+                }
+            });
+            // ALWAYS include selected tags so they can be unselected
+            this.selectedTags.forEach(tag => tagSet.add(tag));
+        }
+
         return Array.from(tagSet).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
     },
 
@@ -783,8 +844,6 @@ Alpine.data('todoApp', () => ({
      * Open task detail pane
      */
     openTaskDetail(taskId) {
-        if (this.isMobile) return; // Desktop only for now
-
         console.log('[App] openTaskDetail:', taskId);
         const task = this.tasks.find(t => t.id === taskId);
         if (task) {

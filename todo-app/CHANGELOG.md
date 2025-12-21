@@ -8,15 +8,70 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [Unreleased] - 2025-12-21
+## [Unreleased] - 2025-12-22
 
 ### Added
-- **Double-Click Protection** (`70186b1`) - Multi-layer protection against duplicate button clicks:
-  - Frontend loading state flags in `store.js` for all mutating operations (except `moveTask`)
-  - Guard clauses at start of async functions to prevent duplicate API calls
-  - Modal buttons with `x-if` templates showing spinner during operations
-  - Backend `IdempotencyService` for duplicate detection with 5-second window
-  - Idempotency checks in `TaskService.createTask()` and `SwimLaneService.createSwimLane()`
+- **Mobile Task Details Slide-up** - Enhanced task detail experience for smaller screens:
+  - **Slide-up Animation**: Task details now slide up from the bottom on mobile instead of sliding in from the right.
+  - **Fixed Layout**: Optimized pane dimensions (`85vh` height, `100%` width) and rounded top corners for a native app feel.
+- **Tag Bar Discovery & Persistence** - Improved tag filtering logic:
+  - **Discovery Mode**: On mobile, the tag bar reveals all system tags by default (even if the active lane is empty) to aid in navigation and task discovery.
+  - **Filter Persistence**: Selected tags always remain visible in the tag bar, allowing users to unselect them regardless of other filter conflicts.
+  - **Permanent Visibility**: The tag filter area is now always visible across all views, ensuring users always have access to filter controls.
+- **Improved UI Specificity** - Resolved CSS conflicts causing unexpected behavior:
+  - **Add Task Visibility**: Fixed a conflict between Bootstrap's `d-flex` (`!important`) and Alpine's `x-show` that prevented the "Add Task" button from being hidden when filters were active.
+- **Mobile Sidebar Lane Filtering**: Swimlanes in the mobile sidebar now only show lanes containing tasks that match active tag filters. If no tags are selected, all lanes are shown.
+- **Enhanced Code Coverage**: Achieved **96% backend instruction coverage**, exceeding the 93% target. Added comprehensive tests for `IdempotencyAspect`, `IdempotencyService`, `GlobalExceptionHandler`, and `CacheLoggingInterceptor`.
+
+### Changed
+- **Mobile Details Accessibility**: Removed restricted logic that prevented task details from opening on mobile devices.
+- **Dynamic CSS Transitions**: Refactored transition logic to use shared CSS classes (`pane-visible`, `pane-hidden`) for smoother cross-device animations.
+
+## [1.3.2] - 2025-12-21
+
+### Added
+- **Mobile Sidebar Refinement** - Enhanced mobile experience with permanent push layout:
+  - **Push Layout**: Sidebar now pushes/shrinks main content instead of overlaying it, keeping both visible.
+  - **Relative Width**: Converted sidebar width to `12.5em` for better scaling with device font settings.
+  - **Word Wrapping**: Implemented `break-word` wrapping for long swimlane names in the sidebar.
+  - **Cleaner UI**: Removed header hamburger and footer collapse buttons in favor of the persistent navbar trigger.
+- **AOP-Based Idempotency** - Comprehensive protection against duplicate operations using Spring AOP:
+  
+  **Custom Annotation (`@Idempotent`):**
+  - Declarative idempotency via annotation on service methods
+  - SpEL expressions for flexible key generation
+  - Configurable time window (default 5 seconds)
+  
+  **AOP Aspect (`IdempotencyAspect.java`):**
+  - Intercepts `@Idempotent` annotated methods
+  - Evaluates SpEL expressions against method parameters
+  - Throws `DuplicateOperationException` (→ 409 Conflict) for duplicates
+  - Automatic key cleanup after operation completes
+  
+  **Frontend Layer (store.js & app.js):**
+  - Loading state flags for all mutating operations
+  - Guard clauses prevent duplicate API calls
+  - Modal spinners show during operations
+  
+  **Idempotency Coverage Matrix:**
+  | Operation | Frontend | Backend | Key Expression |
+  |-----------|:--------:|:-------:|----------------|
+  | **Task Operations** ||||
+  | Create Task | ✅ | ✅ | `'createTask:' + #task.name + ':' + #task.swimLane.id` |
+  | Delete Task | ✅ | ✅ | `'deleteTask:' + #id` |
+  | Update Task | ❌ | ❌ | *(Inherently idempotent - same update = same result)* |
+  | Move Task | ❌ | ❌ | *(Preserves drag-drop responsiveness)* |
+  | **Lane Operations** ||||
+  | Create Lane | ✅ | ✅ | `'createLane:' + #swimLane.name` |
+  | Delete Lane | ✅ | ✅ | `'deleteLane:' + #id` |
+  | Complete Lane | ✅ | ✅ | `'completeLane:' + #id` |
+  | Reorder Lanes | ✅ | ✅ | `'reorderLanes:' + #orderedIds.hashCode()` |
+  | **Comment Operations** ||||
+  | Add Comment | ✅ | ✅ | `'addComment:' + #taskId + ':' + #text.hashCode()` |
+  | Update Comment | ✅ | ✅ | `'updateComment:' + #commentId + ':' + #newText.hashCode()` |
+  | Delete Comment | ✅ | ✅ | `'deleteComment:' + #taskId + ':' + #commentId` |
+
+
 - **CacheWarmupService** (`a0c5e6f`) - Pre-warms user and task caches on application startup to ensure O(1) retrieval for first-time requests.
 - **CacheLoggingInterceptor** (`2a9c690`) - Real-time monitoring of cache hits/misses for API endpoints, logged with `[CACHE HIT]` or `[CACHE MISS]` prefixes.
 - **Spring Security Integration** (`e54629b`) - Comprehensive authentication and authorization flow:

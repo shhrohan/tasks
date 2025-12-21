@@ -102,9 +102,11 @@ This is a full-stack, single-page web application for managing tasks and to-do i
 *   **3D Kanban Board**: Visually distinct swimlanes with 3D depth effects.
 *   **Interactive Statistics**: Collapsible accordion dashboard with 3D Pie and Bar charts.
 *   **Drag-and-Drop**: Intuitive task management powered by Sortable.js.
-*   **Mobile Optimized**: Responsive layout with vertical stacking and touch-friendly targets.
-*   **Glassmorphism UI**: Modern, translucent design aesthetic.
+*   **Mobile Optimized**: Responsive layout with persistent push-sidebar navigation and bottom-anchored task details.
+*   **Glassmorphism UI**: Modern, translucent design aesthetic with dynamic CSS transitions.
 *   **Task Filters**: Hide Done and Blocked Only filter buttons in navbar.
+*   **Tag Filter Bar**: Sticky, permanently visible tag bar with discovery mode (shows all tags on mobile by default) and persistence (selected tags always stay visible).
+*   **AOP Idempotency**: Transparent protection against duplicate/concurrent operations using Spring AOP and custom annotations.
 
 ## Technology Stack
 
@@ -183,6 +185,18 @@ server.compression.min-response-size=1024
 ### Other Optimizations
 - `spring.jpa.open-in-view=false` - Prevents N+1 lazy loading issues
 - Optimistic UI updates with SSE-based eventual consistency
+
+## Architectural Patterns
+
+### AOP-Based Idempotency
+- **Annotation**: `@Idempotent`
+- **Logic**: Uses Spring AOP to intercept mutating operations. Generates a unique key via SpEL expressions (e.g., `'createTask:' + #task.name`).
+- **Storage**: `IdempotencyService` manages a time-windowed cache of operation keys (default 5s).
+- **Error Handling**: Throws `DuplicateOperationException` (409 Conflict) if a duplicate is detected.
+
+### Global Exception Handling
+- **Component**: `GlobalExceptionHandler`
+- **Purpose**: Centralized handling of business and runtime exceptions (e.g., `DuplicateOperationException`, `IllegalArgumentException`) to return consistent JSON error responses.
 
 ## Building and Running
 

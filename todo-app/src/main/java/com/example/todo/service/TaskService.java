@@ -1,5 +1,6 @@
 package com.example.todo.service;
 
+import com.example.todo.annotation.Idempotent;
 import com.example.todo.dao.SwimLaneDAO;
 import com.example.todo.dao.TaskDAO;
 import com.example.todo.model.Comment;
@@ -36,14 +37,13 @@ public class TaskService {
     private final AsyncWriteService asyncWriteService;
     private final UserRepository userRepository;
     private final CacheManager cacheManager;
-    private final IdempotencyService idempotencyService;
 
     // Self-injection for @Cacheable proxy calls within same class
     private final TaskService self;
 
     public TaskService(TaskDAO taskDAO, SwimLaneDAO swimLaneDAO, CommentRepository commentRepository,
             AsyncWriteService asyncWriteService, UserRepository userRepository,
-            CacheManager cacheManager, @Lazy TaskService self, IdempotencyService idempotencyService) {
+            CacheManager cacheManager, @Lazy TaskService self) {
         this.taskDAO = taskDAO;
         this.swimLaneDAO = swimLaneDAO;
         this.commentRepository = commentRepository;
@@ -51,7 +51,6 @@ public class TaskService {
         this.userRepository = userRepository;
         this.cacheManager = cacheManager;
         this.self = self;
-        this.idempotencyService = idempotencyService;
     }
 
     // =========================================================================
@@ -208,17 +207,10 @@ public class TaskService {
 
     /**
      * Create a new task and add it to the cache (write-through).
-     * Includes idempotency check to prevent duplicate tasks from rapid clicks.
+     * Protected by @Idempotent to prevent duplicate tasks from rapid clicks.
      */
+    @Idempotent(keyExpression = "'createTask:' + #task.name + ':' + (#task.swimLane != null ? #task.swimLane.id : 'null')")
     public Task createTask(Task task) {
-        // Idempotency check - prevent duplicate tasks from rapid clicks
-        String idempotencyKey = "createTask:" + task.getName() + ":" +
-                (task.getSwimLane() != null ? task.getSwimLane().getId() : "null");
-        if (idempotencyService.isDuplicate(idempotencyKey)) {
-            log.warn("[IDEMPOTENCY] Duplicate task creation rejected: {}", task.getName());
-            throw new IllegalStateException("Duplicate task creation detected. Please wait.");
-        }
-
         log.info("[CACHE WRITE-THROUGH] Creating new task");
         log.debug("Creating task: {}", task);
         if (task.getStatus() == null) {
@@ -226,9 +218,6 @@ public class TaskService {
         }
         Task savedTask = taskDAO.save(task);
         addTaskToCache(savedTask);
-
-        // Mark operation complete to allow same task name to be created again
-        idempotencyService.complete(idempotencyKey);
         return savedTask;
     }
 
@@ -272,6 +261,7 @@ public class TaskService {
     /**
      * Delete a task and remove it from cache (write-through).
      */
+    @Idempotent(keyExpression = "'deleteTask:' + #id")
     public void deleteTask(Long id) {
         log.info("[CACHE WRITE-THROUGH] Deleting task {}", id);
         removeTaskFromCache(id);
@@ -324,6 +314,7 @@ public class TaskService {
     // COMMENT CRUD (Using CommentRepository)
     // =========================================================================
 
+    @Idempotent(keyExpression = "'addComment:' + #taskId + ':' + #text.hashCode()")
     @Transactional
     public Comment addComment(Long taskId, String text) {
         log.info("Adding comment to task {}", taskId);
@@ -339,6 +330,7 @@ public class TaskService {
         return saved;
     }
 
+    @Idempotent(keyExpression = "'updateComment:' + #commentId + ':' + #newText.hashCode()")
     @Transactional
     public Comment updateComment(Long taskId, Long commentId, String newText) {
         log.info("Updating comment {} in task {}", commentId, taskId);
@@ -355,6 +347,7 @@ public class TaskService {
         return updated;
     }
 
+    @Idempotent(keyExpression = "'deleteComment:' + #taskId + ':' + #commentId")
     @Transactional
     public void deleteComment(Long taskId, Long commentId) {
         log.info("Deleting comment {} from task {}", commentId, taskId);

@@ -144,5 +144,54 @@ class SseServiceTest {
         assertFalse(emitters.contains(deadEmitter));
         assertTrue(emitters.contains(workingEmitter));
     }
-}
 
+    @Test
+    void testCallbacks() throws Exception {
+        SseEmitter emitter = sseService.subscribe();
+
+        invokeCallback(emitter, "completionCallback");
+
+        Field emittersField = SseService.class.getDeclaredField("emitters");
+        emittersField.setAccessible(true);
+        List<?> emitters = (List<?>) emittersField.get(sseService);
+        assertFalse(emitters.contains(emitter));
+    }
+
+    @Test
+    void testErrorAndTimeoutCallbacks() throws Exception {
+        SseEmitter emitter = sseService.subscribe();
+
+        invokeCallback(emitter, "timeoutCallback");
+        invokeCallback(emitter, "errorCallback", new RuntimeException("error"));
+
+        Field emittersField = SseService.class.getDeclaredField("emitters");
+        emittersField.setAccessible(true);
+        List<?> emitters = (List<?>) emittersField.get(sseService);
+        assertFalse(emitters.contains(emitter));
+    }
+
+    private void invokeCallback(SseEmitter emitter, String fieldName, Object... args) throws Exception {
+        // ResponseBodyEmitter (parent of SseEmitter) has these private Runnable fields.
+        java.lang.reflect.Field field = null;
+        Class<?> clazz = emitter.getClass();
+        while (clazz != null) {
+            try {
+                field = clazz.getDeclaredField(fieldName);
+                break;
+            } catch (NoSuchFieldException e) {
+                clazz = clazz.getSuperclass();
+            }
+        }
+
+        if (field != null) {
+            field.setAccessible(true);
+            Object callback = field.get(emitter);
+            if (callback instanceof Runnable) {
+                ((Runnable) callback).run();
+            } else if (callback instanceof java.util.function.Consumer) {
+                // errorCallback is a Consumer in some versions
+                ((java.util.function.Consumer<Throwable>) callback).accept(new RuntimeException("test error"));
+            }
+        }
+    }
+}

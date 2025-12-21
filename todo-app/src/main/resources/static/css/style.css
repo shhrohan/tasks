@@ -1970,24 +1970,31 @@ body {
    circular progress rings, checkmark on active.
    ============================================ */
 
-/* Backdrop overlay */
+/* Backdrop overlay - hidden in push mode, shown only when NOT pinned */
 .mobile-sidebar-backdrop {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
     z-index: 1040;
+    /* Only show when sidebar is open but NOT pinned */
 }
 
-/* Sidebar drawer - matches mockup */
+/* Hide backdrop when sidebar is pinned (push mode) */
+body.sidebar-pinned .mobile-sidebar-backdrop {
+    display: none !important;
+}
+
+/* Sidebar drawer - push layout on mobile */
 .mobile-sidebar {
     position: fixed;
     top: 0;
     left: 0;
-    width: 280px;
+    width: 12.5em;
+    /* Approximately 200px */
     height: 100vh;
     z-index: 1050;
     background: linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(10, 15, 30, 0.99) 100%);
@@ -1999,6 +2006,29 @@ body {
     transform: translateX(0);
 }
 
+/* Main content shrinks when sidebar is open AND pinned */
+@media (max-width: 991.98px) {
+
+    body.sidebar-open.sidebar-pinned .navbar,
+    body.sidebar-open.sidebar-pinned main.container-fluid,
+    body.sidebar-open.sidebar-pinned .tag-filter-bar {
+        margin-left: 12.5em;
+        width: calc(100% - 12.5em);
+        transition: margin-left 0.3s ease, width 0.3s ease;
+    }
+
+    body:not(.sidebar-open) .navbar,
+    body:not(.sidebar-open) main.container-fluid,
+    body:not(.sidebar-open) .tag-filter-bar,
+    body:not(.sidebar-pinned) .navbar,
+    body:not(.sidebar-pinned) main.container-fluid,
+    body:not(.sidebar-pinned) .tag-filter-bar {
+        margin-left: 0;
+        width: 100%;
+        transition: margin-left 0.3s ease, width 0.3s ease;
+    }
+}
+
 /* Transition classes */
 .sidebar-hidden {
     transform: translateX(-100%);
@@ -2008,12 +2038,44 @@ body {
     transform: translateX(0);
 }
 
-/* Sidebar header with hamburger */
+/* Sidebar header with hamburger and pin */
 .mobile-sidebar-header {
     padding: 1.5rem 1rem;
     display: flex;
-    justify-content: flex-start;
+    justify-content: space-between;
+    align-items: center;
 }
+
+/* Sidebar pin button */
+.sidebar-pin-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sidebar-pin-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.sidebar-pin-btn.pinned {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.5);
+    color: #3b82f6;
+}
+
+.sidebar-pin-btn.pinned i {
+    transform: rotate(0deg);
+}
+
 
 /* Hamburger icon (two lines) */
 .sidebar-hamburger {
@@ -2059,7 +2121,7 @@ body {
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: 0.875rem 1rem;
+    padding: 0.6rem 0.8rem;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
@@ -2067,7 +2129,17 @@ body {
     text-align: left;
     cursor: pointer;
     transition: all 0.2s ease;
-    min-height: 52px;
+    min-height: 3.5rem;
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+.lane-name {
+    word-wrap: break-word;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    flex: 1;
+    margin-right: 0.5rem;
 }
 
 .sidebar-lane-item:hover {
@@ -2232,12 +2304,6 @@ body {
     flex-direction: column;
 }
 
-/* Hide detail pane on mobile by default (safeguard) */
-@media (max-width: 991.98px) {
-    .task-detail-pane {
-        display: none !important;
-    }
-}
 
 .detail-header {
     background: rgba(255, 255, 255, 0.02);
@@ -2319,4 +2385,56 @@ kbd {
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 4px;
+}
+
+/* ============================================== 
+   MOBILE TASK DETAILS (Slide-up from bottom)
+   ============================================== */
+@media (max-width: 991.98px) {
+    .task-detail-pane {
+        width: 100% !important;
+        height: 85vh !important;
+        top: auto !important;
+        bottom: 0 !important;
+        right: 0 !important;
+        left: 0 !important;
+        border-left: none !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 24px 24px 0 0 !important;
+        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6) !important;
+        transform: translateY(0);
+    }
+
+    .detail-header {
+        padding: 1rem 1.25rem !important;
+    }
+
+    .detail-body {
+        padding: 1.25rem !important;
+    }
+
+    /* Adjust footer for mobile keyboard safety */
+    .detail-footer {
+        padding: 1.25rem 1.25rem 2rem !important;
+    }
+
+    /* Transition states for mobile */
+    .pane-hidden {
+        transform: translateY(100%) !important;
+    }
+
+    .pane-visible {
+        transform: translateY(0) !important;
+    }
+}
+
+/* Transition states for desktop */
+@media (min-width: 992px) {
+    .pane-hidden {
+        transform: translateX(100%);
+    }
+
+    .pane-visible {
+        transform: translateX(0);
+    }
 }

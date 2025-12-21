@@ -13,7 +13,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
@@ -75,9 +74,10 @@ class TaskServiceTest {
 
         // Create TaskService with all dependencies including CacheManager
         // The 'self' parameter is set to the same instance for testing
+        // Note: IdempotencyService is now handled by AOP aspect, not injected here
         taskService = new TaskService(
                 taskDAO, swimLaneDAO, commentRepository,
-                asyncWriteService, userRepository, cacheManager, null, idempotencyService);
+                asyncWriteService, userRepository, cacheManager, null);
 
         // Use reflection to set the 'self' field for internal @Cacheable calls
         try {
@@ -90,9 +90,6 @@ class TaskServiceTest {
 
         // Set up cache mock to return cache when requested
         lenient().when(cacheManager.getCache(anyString())).thenReturn(cache);
-
-        // Mock IdempotencyService to allow operations by default
-        lenient().when(idempotencyService.isDuplicate(any())).thenReturn(false);
     }
 
     @AfterEach
@@ -754,5 +751,42 @@ class TaskServiceTest {
         // Verify put was called with list size 1
         verify(cache).put(eq(org.springframework.cache.interceptor.SimpleKey.EMPTY),
                 argThat(list -> ((List) list).size() == 1));
+    }
+
+    @Test
+    void moveTask_ShouldUpdateCache_WhenTaskInCache() {
+        Long taskId = 1L;
+        Long laneId = 2L;
+        Integer position = 0;
+
+        // Mock Cache
+        List<Task> cachedTasks = new ArrayList<>();
+        Task cachedTask = new Task();
+        cachedTask.setId(taskId);
+        cachedTasks.add(cachedTask);
+
+        org.springframework.cache.Cache.ValueWrapper wrapper = mock(org.springframework.cache.Cache.ValueWrapper.class);
+        when(wrapper.get()).thenReturn(cachedTasks);
+        when(cache.get(any())).thenReturn(wrapper);
+        lenient().when(cacheManager.getCache("tasks")).thenReturn(cache);
+
+        taskService.moveTask(taskId, TaskStatus.DONE, laneId, position);
+
+        // Verify cached task was updated
+        assertEquals(TaskStatus.DONE, cachedTask.getStatus());
+        assertEquals(laneId, cachedTask.getSwimLane().getId());
+    }
+
+    @Test
+    void getTasksBySwimLaneId_ShouldReturnFromDatabase_InUnitTest() {
+        Long swimLaneId = 1L;
+        Task task = new Task();
+        task.setId(1L);
+        when(taskDAO.findBySwimLaneId(swimLaneId)).thenReturn(java.util.Arrays.asList(task));
+
+        List<Task> result = taskService.getTasksBySwimLaneId(swimLaneId);
+
+        assertEquals(1, result.size());
+        verify(taskDAO).findBySwimLaneId(swimLaneId);
     }
 }
