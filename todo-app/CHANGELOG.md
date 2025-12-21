@@ -11,12 +11,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased] - 2025-12-21
 
 ### Added
-- **Double-Click Protection** (`70186b1`) - Multi-layer protection against duplicate button clicks:
-  - Frontend loading state flags in `store.js` for all mutating operations (except `moveTask`)
-  - Guard clauses at start of async functions to prevent duplicate API calls
-  - Modal buttons with `x-if` templates showing spinner during operations
-  - Backend `IdempotencyService` for duplicate detection with 5-second window
-  - Idempotency checks in `TaskService.createTask()` and `SwimLaneService.createSwimLane()`
+- **Double-Click Protection** (`70186b1`) - Multi-layer protection against duplicate button clicks on slow servers:
+  
+  **Frontend Layer (store.js & app.js):**
+  - Added loading state flags: `isCreatingTask`, `isCreatingLane`, `isDeletingLane`, `isCompletingLane`, `isReorderingLanes`, `isDeletingComment`, `isSubmittingModal`
+  - Guard clauses at start of async functions that return early if operation is already in progress
+  - `finally` blocks ensure flags are reset after API calls complete (success or failure)
+  - Excluded `moveTaskOptimistic` from protection to preserve drag-and-drop responsiveness
+  
+  **UI Layer (index.html):**
+  - Confirm modal buttons use `x-if` templates (not `x-show`) to completely remove hidden elements from DOM
+  - Spinner with "Processing..." text replaces button label during operations
+  - Both Cancel and Confirm buttons disabled during active operations
+  - Input modal Save button shows "Saving..." spinner during submission
+  
+  **Backend Layer (IdempotencyService.java):**
+  - New service using `ConcurrentHashMap` to track in-flight operations
+  - 5-second duplicate detection window with automatic cleanup
+  - `isDuplicate(key)` checks if operation was recently initiated
+  - `complete(key)` removes key after successful database write
+  - Task idempotency key: `createTask:{taskName}:{laneId}`
+  - Lane idempotency key: `createLane:{userId}:{laneName}`
+  
+  **Protected Operations:**
+  | Operation | Frontend Guard | Backend Guard |
+  |-----------|----------------|---------------|
+  | Create Task | ✅ | ✅ |
+  | Create Lane | ✅ | ✅ |
+  | Delete Lane | ✅ | ❌ |
+  | Complete Lane | ✅ | ❌ |
+  | Reorder Lanes | ✅ | ❌ |
+  | Delete Comment | ✅ | ❌ |
+  | Submit Modal | ✅ | ❌ |
+  | Move Task | ❌ | ❌ |
+
 - **CacheWarmupService** (`a0c5e6f`) - Pre-warms user and task caches on application startup to ensure O(1) retrieval for first-time requests.
 - **CacheLoggingInterceptor** (`2a9c690`) - Real-time monitoring of cache hits/misses for API endpoints, logged with `[CACHE HIT]` or `[CACHE MISS]` prefixes.
 - **Spring Security Integration** (`e54629b`) - Comprehensive authentication and authorization flow:
