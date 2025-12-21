@@ -47,12 +47,15 @@ class TaskServiceTest {
 
     @Mock
     private UserRepository userRepository;
-    
+
     @Mock
     private org.springframework.cache.CacheManager cacheManager;
-    
+
     @Mock
     private org.springframework.cache.Cache cache;
+
+    @Mock
+    private IdempotencyService idempotencyService;
 
     @Mock
     private SecurityContext securityContext;
@@ -69,13 +72,13 @@ class TaskServiceTest {
         testUser = new User();
         testUser.setId(1L);
         testUser.setEmail("testuser@example.com");
-        
+
         // Create TaskService with all dependencies including CacheManager
         // The 'self' parameter is set to the same instance for testing
         taskService = new TaskService(
-                taskDAO, swimLaneDAO, commentRepository, 
-                asyncWriteService, userRepository, cacheManager, null);
-        
+                taskDAO, swimLaneDAO, commentRepository,
+                asyncWriteService, userRepository, cacheManager, null, idempotencyService);
+
         // Use reflection to set the 'self' field for internal @Cacheable calls
         try {
             java.lang.reflect.Field selfField = TaskService.class.getDeclaredField("self");
@@ -84,9 +87,12 @@ class TaskServiceTest {
         } catch (Exception e) {
             throw new RuntimeException("Failed to set self field", e);
         }
-        
+
         // Set up cache mock to return cache when requested
         lenient().when(cacheManager.getCache(anyString())).thenReturn(cache);
+
+        // Mock IdempotencyService to allow operations by default
+        lenient().when(idempotencyService.isDuplicate(any())).thenReturn(false);
     }
 
     @AfterEach
@@ -562,6 +568,7 @@ class TaskServiceTest {
 
         assertTrue(result.isEmpty());
     }
+
     @Test
     void getTasksForCurrentUser_ShouldThrowRuntimeException_WhenAuthenticationIsNull() {
         when(securityContext.getAuthentication()).thenReturn(null);
@@ -622,18 +629,18 @@ class TaskServiceTest {
         Long taskId = 1L;
         Task existingTask = new Task();
         existingTask.setId(taskId);
-        
+
         Task updatedInfo = new Task();
         updatedInfo.setName("New");
 
         when(taskDAO.findById(taskId)).thenReturn(Optional.of(existingTask));
-        
+
         // Mock Cache Miss (wrapper is null)
         when(cache.get(any())).thenReturn(null);
         lenient().when(cacheManager.getCache("tasks")).thenReturn(cache);
 
         taskService.updateTask(taskId, updatedInfo);
-        
+
         // Should succeed without error
         assertEquals("New", existingTask.getName());
     }
@@ -643,12 +650,12 @@ class TaskServiceTest {
         Long taskId = 1L;
         Task existingTask = new Task();
         existingTask.setId(taskId);
-        
+
         Task updatedInfo = new Task();
         updatedInfo.setName("New");
 
         when(taskDAO.findById(taskId)).thenReturn(Optional.of(existingTask));
-        
+
         // Mock Wrapper returns null list
         org.springframework.cache.Cache.ValueWrapper wrapper = mock(org.springframework.cache.Cache.ValueWrapper.class);
         when(wrapper.get()).thenReturn(null);
@@ -656,7 +663,7 @@ class TaskServiceTest {
         lenient().when(cacheManager.getCache("tasks")).thenReturn(cache);
 
         taskService.updateTask(taskId, updatedInfo);
-        
+
         assertEquals("New", existingTask.getName());
     }
 
@@ -665,17 +672,17 @@ class TaskServiceTest {
         Long taskId = 1L;
         Task existingTask = new Task();
         existingTask.setId(taskId);
-        
+
         Task updatedInfo = new Task();
         updatedInfo.setName("New");
 
         when(taskDAO.findById(taskId)).thenReturn(Optional.of(existingTask));
-        
+
         // Mock CacheManager returns null
         when(cacheManager.getCache("tasks")).thenReturn(null);
 
         taskService.updateTask(taskId, updatedInfo);
-        
+
         assertEquals("New", existingTask.getName());
     }
 
@@ -684,12 +691,12 @@ class TaskServiceTest {
         Long taskId = 1L;
         Task existingTask = new Task();
         existingTask.setId(taskId);
-        
+
         Task updatedInfo = new Task();
         updatedInfo.setName("New");
 
         when(taskDAO.findById(taskId)).thenReturn(Optional.of(existingTask));
-        
+
         // Mock Cache has OTHER task but not this one
         List<Task> cachedTasks = new ArrayList<>();
         Task otherTask = new Task();
@@ -702,14 +709,14 @@ class TaskServiceTest {
         lenient().when(cacheManager.getCache("tasks")).thenReturn(cache);
 
         taskService.updateTask(taskId, updatedInfo);
-        
+
         assertEquals("New", existingTask.getName());
     }
 
     @Test
     void deleteTask_ShouldRemoveFromCache_WhenTaskInCache() {
         Long taskId = 1L;
-        
+
         // Mock Cache
         List<Task> cachedTasks = new ArrayList<>();
         Task cachedTask = new Task();
@@ -745,6 +752,7 @@ class TaskServiceTest {
         taskService.createTask(newTask);
 
         // Verify put was called with list size 1
-        verify(cache).put(eq(org.springframework.cache.interceptor.SimpleKey.EMPTY), argThat(list -> ((List)list).size() == 1));
+        verify(cache).put(eq(org.springframework.cache.interceptor.SimpleKey.EMPTY),
+                argThat(list -> ((List) list).size() == 1));
     }
 }

@@ -36,14 +36,17 @@ class SwimLaneServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private IdempotencyService idempotencyService;
+
     private SwimLaneService swimLaneService;
 
     private User testUser;
 
     @BeforeEach
     void setUp() {
-        swimLaneService = new SwimLaneService(swimLaneDAO, asyncWriteService, userRepository);
-        
+        swimLaneService = new SwimLaneService(swimLaneDAO, asyncWriteService, userRepository, idempotencyService);
+
         // Create test user
         testUser = new User();
         testUser.setId(1L);
@@ -57,8 +60,12 @@ class SwimLaneServiceTest {
         lenient().when(securityContext.getAuthentication()).thenReturn(auth);
         SecurityContextHolder.setContext(securityContext);
 
-        // Mock UserRepository to return test user (lenient to avoid UnnecessaryStubbingException)
+        // Mock UserRepository to return test user (lenient to avoid
+        // UnnecessaryStubbingException)
         lenient().when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
+
+        // Mock IdempotencyService to allow operations by default
+        lenient().when(idempotencyService.isDuplicate(any())).thenReturn(false);
     }
 
     @AfterEach
@@ -388,6 +395,7 @@ class SwimLaneServiceTest {
 
         assertThrows(RuntimeException.class, () -> swimLaneService.getAllSwimLanes());
     }
+
     @Test
     void reorderSwimLanes_ShouldFilterOutLanesWithNullUser() {
         SwimLane myLane = new SwimLane();
@@ -422,5 +430,3 @@ class SwimLaneServiceTest {
         assertThrows(RuntimeException.class, () -> swimLaneService.getAllSwimLanes());
     }
 }
-
-

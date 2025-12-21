@@ -21,12 +21,14 @@ public class SwimLaneService {
     private final SwimLaneDAO swimLaneDAO;
     private final AsyncWriteService asyncWriteService;
     private final UserRepository userRepository;
+    private final IdempotencyService idempotencyService;
 
     public SwimLaneService(SwimLaneDAO swimLaneDAO, AsyncWriteService asyncWriteService,
-            UserRepository userRepository) {
+            UserRepository userRepository, IdempotencyService idempotencyService) {
         this.swimLaneDAO = swimLaneDAO;
         this.asyncWriteService = asyncWriteService;
         this.userRepository = userRepository;
+        this.idempotencyService = idempotencyService;
     }
 
     /**
@@ -76,15 +78,27 @@ public class SwimLaneService {
 
     @CacheEvict(value = { "lanes", "userLanes" }, allEntries = true)
     public SwimLane createSwimLane(SwimLane swimLane) {
-        log.info("[CACHE EVICT] Invalidating 'lanes' cache - creating new swimlane");
         User user = getCurrentUser();
+
+        // Idempotency check - prevent duplicate lanes from rapid clicks
+        String idempotencyKey = "createLane:" + user.getId() + ":" + swimLane.getName();
+        if (idempotencyService.isDuplicate(idempotencyKey)) {
+            log.warn("[IDEMPOTENCY] Duplicate lane creation rejected: {}", swimLane.getName());
+            throw new IllegalStateException("Duplicate lane creation detected. Please wait.");
+        }
+
+        log.info("[CACHE EVICT] Invalidating 'lanes' cache - creating new swimlane");
         swimLane.setUser(user);
 
         // Set position to max + 1 for this user
         Integer maxPos = swimLaneDAO.findMaxPositionByUserId(user.getId());
         swimLane.setPosition(maxPos == null ? 0 : maxPos + 1);
         log.info("Creating new swimlane '{}' for user: {}", swimLane.getName(), user.getEmail());
-        return swimLaneDAO.save(swimLane);
+        SwimLane saved = swimLaneDAO.save(swimLane);
+
+        // Mark operation complete to allow same lane name to be created again
+        idempotencyService.complete(idempotencyKey);
+        return saved;
     }
 
     public SwimLane completeSwimLane(Long id) {

@@ -1282,7 +1282,14 @@ Alpine.data('todoApp', () => ({
     async executeDeleteComment(commentId) {
         if (!this.taskDetail.task) return;
 
+        // Guard: Prevent duplicate delete calls
+        if (this.isDeletingComment) {
+            console.warn('[App] executeDeleteComment - Already deleting, ignoring');
+            return;
+        }
+        this.isDeletingComment = true;
         this.taskDetail.isLoading = true;
+
         try {
             const taskId = this.taskDetail.task.id;
             await Api.deleteComment(taskId, commentId);
@@ -1299,7 +1306,9 @@ Alpine.data('todoApp', () => ({
             console.error('[App] Failed to delete comment:', e);
             this.showError('Failed to delete comment');
         } finally {
+            this.isDeletingComment = false;
             this.taskDetail.isLoading = false;
+            this.closeModal();
         }
     }
 }));

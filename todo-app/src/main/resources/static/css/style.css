@@ -836,6 +836,31 @@ body {
     }
 }
 
+/* ===========================================================================
+   LOADING STATE STYLES (Double-Click Protection)
+   =========================================================================== */
+
+/* Disabled button during loading - enhanced visual feedback */
+.btn:disabled,
+.btn[disabled] {
+    opacity: 0.7;
+    cursor: not-allowed !important;
+    pointer-events: none;
+}
+
+/* Spinner sizing in buttons */
+.btn .spinner-border-sm {
+    width: 0.875rem;
+    height: 0.875rem;
+    border-width: 0.15em;
+    vertical-align: middle;
+}
+
+/* Ensure flex containers in buttons align properly */
+.btn .d-flex {
+    display: inline-flex !important;
+}
+
 /* Bootstrap Overrides for Dark Mode */
 .modal-content {
     background-color: #1e293b;

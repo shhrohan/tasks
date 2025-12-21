@@ -11,6 +11,20 @@ export const Store = {
     tasks: [],
     loading: false,
 
+    // ==========================================================================
+    // LOADING STATE FLAGS (Double-Click Protection)
+    // Prevents duplicate API calls from rapid button clicks on slow servers
+    // ==========================================================================
+    isCreatingTask: false,
+    isCreatingLane: false,
+    isDeletingLane: false,
+    isCompletingLane: false,
+    isReorderingLanes: false,
+    isAddingComment: false,
+    isUpdatingComment: false,
+    isDeletingComment: false,
+    isSubmittingModal: false,
+
     // UI State
     showSaved: false,
     showErrorToast: false, // New error state
@@ -184,10 +198,12 @@ export const Store = {
     confirmModalAction() {
         console.log('[Store] Generic Confirm Action Triggered');
         const { action, payload } = this.modal;
+        // Note: Modal is closed by individual action handlers after async completion
+        // This ensures the spinner shows during the operation
         if (action === 'deleteLane') this.deleteLaneRecursive(payload);
         if (action === 'completeLane') this.completeLaneRecursive(payload);
         if (action === 'deleteComment') this.executeDeleteComment(payload);
-        this.closeModal();
+        // Do NOT close modal here - let async handlers close it in their finally blocks
     },
 
     // 2. Input Modal
@@ -258,28 +274,46 @@ export const Store = {
 
 
     async submitInputModal() {
-        console.log('[Store] Submitting Input Modal', this.inputModal);
-        const val = this.inputModal.value.trim();
-        if (!val) {
-            console.warn('[Store] Input empty, ignoring');
+        // Guard: Prevent duplicate submissions
+        if (this.isSubmittingModal) {
+            console.warn('[Store] submitInputModal - Already submitting, ignoring');
             return;
         }
+        this.isSubmittingModal = true;
+        console.log('[Store] Submitting Input Modal', this.inputModal);
 
-        if (this.inputModal.mode === 'SWIMLANE') {
-            await this.createSwimLane(val);
-        } else if (this.inputModal.mode === 'TASK') {
-            const laneId = this.inputModal.payload.laneId;
-            const status = this.inputModal.status || 'TODO';
-            const tags = this.inputModal.tags || [];
-            await this.createTask(val, laneId, status, tags);
+        try {
+            const val = this.inputModal.value.trim();
+            if (!val) {
+                console.warn('[Store] Input empty, ignoring');
+                return;
+            }
+
+            if (this.inputModal.mode === 'SWIMLANE') {
+                await this.createSwimLane(val);
+            } else if (this.inputModal.mode === 'TASK') {
+                const laneId = this.inputModal.payload.laneId;
+                const status = this.inputModal.status || 'TODO';
+                const tags = this.inputModal.tags || [];
+                await this.createTask(val, laneId, status, tags);
+            }
+            this.closeInputModal();
+        } finally {
+            this.isSubmittingModal = false;
         }
-        this.closeInputModal();
     },
 
     // --- Create Actions ---
 
     async createSwimLane(name) {
+        // Guard: Prevent duplicate lane creation
+        if (this.isCreatingLane) {
+            console.warn('[Store] createSwimLane - Already creating, ignoring');
+            return;
+        }
+        this.isCreatingLane = true;
         console.log('[Store] createSwimLane - Calling API with:', { name });
+
         try {
             const newLane = await Api.createSwimLane(name);
             console.log('[Store] createSwimLane - Created successfully:', newLane);
@@ -290,11 +324,20 @@ export const Store = {
         } catch (e) {
             console.error('[Store] createSwimLane - FAILED:', e);
             this.showError('Error creating lane');
+        } finally {
+            this.isCreatingLane = false;
         }
     },
 
     async createTask(name, laneId, status = 'TODO', tags = []) {
+        // Guard: Prevent duplicate task creation
+        if (this.isCreatingTask) {
+            console.warn('[Store] createTask - Already creating, ignoring');
+            return;
+        }
+        this.isCreatingTask = true;
         console.log('[Store] createTask - Calling API with:', { name, laneId, status, tags });
+
         try {
             const lane = this.lanes.find(l => l.id === laneId);
             if (!lane) {
@@ -321,6 +364,8 @@ export const Store = {
         } catch (e) {
             console.error('[Store] createTask - FAILED:', e);
             this.showError('Error creating task');
+        } finally {
+            this.isCreatingTask = false;
         }
     },
 
@@ -376,8 +421,14 @@ export const Store = {
     },
 
     async reorderLanesOptimistic(newIds) {
+        // Guard: Prevent duplicate reorder calls
+        if (this.isReorderingLanes) {
+            console.warn('[Store] reorderLanesOptimistic - Already reordering, ignoring');
+            return;
+        }
+        this.isReorderingLanes = true;
         console.log('[Store] reorderLanesOptimistic - Calling API with:', { newIds });
-        // this.triggerSave(); // Moved to after success
+
         try {
             await Api.reorderSwimlanes(newIds);
             console.log('[Store] reorderLanesOptimistic - Reorder successful');
@@ -386,11 +437,20 @@ export const Store = {
             console.error('[Store] reorderLanesOptimistic - FAILED:', e);
             this.loadData();
             this.showError('Failed to reorder lanes');
+        } finally {
+            this.isReorderingLanes = false;
         }
     },
 
     async deleteLaneRecursive(laneId) {
+        // Guard: Prevent duplicate delete calls
+        if (this.isDeletingLane) {
+            console.warn('[Store] deleteLaneRecursive - Already deleting, ignoring');
+            return;
+        }
+        this.isDeletingLane = true;
         console.log('[Store] deleteLaneRecursive - Calling API with:', { laneId });
+
         const originalLanes = [...this.lanes];
         this.lanes = this.lanes.filter(l => l.id !== laneId);
 
@@ -402,11 +462,21 @@ export const Store = {
             console.error('[Store] deleteLaneRecursive - FAILED:', e);
             this.lanes = originalLanes;
             this.showError('Failed to delete lane');
+        } finally {
+            this.isDeletingLane = false;
+            this.closeModal();
         }
     },
 
     async completeLaneRecursive(laneId) {
+        // Guard: Prevent duplicate complete calls
+        if (this.isCompletingLane) {
+            console.warn('[Store] completeLaneRecursive - Already completing, ignoring');
+            return;
+        }
+        this.isCompletingLane = true;
         console.log('[Store] completeLaneRecursive - Calling API with:', { laneId });
+
         const lane = this.lanes.find(l => l.id === laneId);
         if (lane) lane.isCompleted = true;
 
@@ -423,6 +493,9 @@ export const Store = {
                 this.lanes.push(lane);
                 this.loadData();
             }
+        } finally {
+            this.isCompletingLane = false;
+            this.closeModal();
         }
     },
 

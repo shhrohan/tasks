@@ -36,13 +36,14 @@ public class TaskService {
     private final AsyncWriteService asyncWriteService;
     private final UserRepository userRepository;
     private final CacheManager cacheManager;
-    
+    private final IdempotencyService idempotencyService;
+
     // Self-injection for @Cacheable proxy calls within same class
     private final TaskService self;
 
     public TaskService(TaskDAO taskDAO, SwimLaneDAO swimLaneDAO, CommentRepository commentRepository,
-            AsyncWriteService asyncWriteService, UserRepository userRepository, 
-            CacheManager cacheManager, @Lazy TaskService self) {
+            AsyncWriteService asyncWriteService, UserRepository userRepository,
+            CacheManager cacheManager, @Lazy TaskService self, IdempotencyService idempotencyService) {
         this.taskDAO = taskDAO;
         this.swimLaneDAO = swimLaneDAO;
         this.commentRepository = commentRepository;
@@ -50,17 +51,18 @@ public class TaskService {
         this.userRepository = userRepository;
         this.cacheManager = cacheManager;
         this.self = self;
+        this.idempotencyService = idempotencyService;
     }
-    
+
     // =========================================================================
     // WRITE-THROUGH CACHE HELPER
     // =========================================================================
-    
+
     /**
      * Update a task in the cache without evicting the entire cache.
      * This implements write-through caching for better performance.
      * 
-     * @param taskId The ID of the task to update
+     * @param taskId  The ID of the task to update
      * @param updater A function to apply updates to the task
      */
     @SuppressWarnings("unchecked")
@@ -70,18 +72,18 @@ public class TaskService {
             log.warn("[CACHE] 'tasks' cache not found, skipping write-through");
             return;
         }
-        
+
         Cache.ValueWrapper wrapper = cache.get(org.springframework.cache.interceptor.SimpleKey.EMPTY);
         if (wrapper == null) {
             log.info("[CACHE] No cached tasks found, skipping write-through update");
             return;
         }
-        
+
         List<Task> cachedTasks = (List<Task>) wrapper.get();
         if (cachedTasks == null) {
             return;
         }
-        
+
         // Find and update the task in the cached list
         for (Task task : cachedTasks) {
             if (task.getId().equals(taskId)) {
@@ -92,48 +94,54 @@ public class TaskService {
         }
         log.debug("[CACHE] Task {} not found in cache for write-through update", taskId);
     }
-    
+
     /**
      * Remove a task from the cache without evicting the entire cache.
      */
     @SuppressWarnings("unchecked")
     private void removeTaskFromCache(Long taskId) {
         Cache cache = cacheManager.getCache("tasks");
-        if (cache == null) return;
-        
+        if (cache == null)
+            return;
+
         Cache.ValueWrapper wrapper = cache.get(org.springframework.cache.interceptor.SimpleKey.EMPTY);
-        if (wrapper == null) return;
-        
+        if (wrapper == null)
+            return;
+
         List<Task> cachedTasks = (List<Task>) wrapper.get();
-        if (cachedTasks == null) return;
-        
+        if (cachedTasks == null)
+            return;
+
         // Create new list without the deleted task
         List<Task> updatedList = new ArrayList<>(cachedTasks);
         updatedList.removeIf(t -> t.getId().equals(taskId));
-        
+
         // Put the updated list back in cache
         cache.put(org.springframework.cache.interceptor.SimpleKey.EMPTY, updatedList);
         log.info("[CACHE WRITE-THROUGH] Removed task {} from cache", taskId);
     }
-    
+
     /**
      * Add a new task to the cache.
      */
     @SuppressWarnings("unchecked")
     private void addTaskToCache(Task task) {
         Cache cache = cacheManager.getCache("tasks");
-        if (cache == null) return;
-        
+        if (cache == null)
+            return;
+
         Cache.ValueWrapper wrapper = cache.get(org.springframework.cache.interceptor.SimpleKey.EMPTY);
-        if (wrapper == null) return;
-        
+        if (wrapper == null)
+            return;
+
         List<Task> cachedTasks = (List<Task>) wrapper.get();
-        if (cachedTasks == null) return;
-        
+        if (cachedTasks == null)
+            return;
+
         // Create new list with the new task
         List<Task> updatedList = new ArrayList<>(cachedTasks);
         updatedList.add(task);
-        
+
         // Put the updated list back in cache
         cache.put(org.springframework.cache.interceptor.SimpleKey.EMPTY, updatedList);
         log.info("[CACHE WRITE-THROUGH] Added task {} to cache", task.getId());
@@ -200,8 +208,17 @@ public class TaskService {
 
     /**
      * Create a new task and add it to the cache (write-through).
+     * Includes idempotency check to prevent duplicate tasks from rapid clicks.
      */
     public Task createTask(Task task) {
+        // Idempotency check - prevent duplicate tasks from rapid clicks
+        String idempotencyKey = "createTask:" + task.getName() + ":" +
+                (task.getSwimLane() != null ? task.getSwimLane().getId() : "null");
+        if (idempotencyService.isDuplicate(idempotencyKey)) {
+            log.warn("[IDEMPOTENCY] Duplicate task creation rejected: {}", task.getName());
+            throw new IllegalStateException("Duplicate task creation detected. Please wait.");
+        }
+
         log.info("[CACHE WRITE-THROUGH] Creating new task");
         log.debug("Creating task: {}", task);
         if (task.getStatus() == null) {
@@ -209,6 +226,9 @@ public class TaskService {
         }
         Task savedTask = taskDAO.save(task);
         addTaskToCache(savedTask);
+
+        // Mark operation complete to allow same task name to be created again
+        idempotencyService.complete(idempotencyKey);
         return savedTask;
     }
 
@@ -230,7 +250,7 @@ public class TaskService {
                                 });
                         existing.setSwimLane(lane);
                     }
-                    
+
                     // Write-through: Update cache immediately
                     updateTaskInCache(id, cached -> {
                         cached.setName(existing.getName());
@@ -238,7 +258,7 @@ public class TaskService {
                         cached.setTags(existing.getTags());
                         cached.setSwimLane(existing.getSwimLane());
                     });
-                    
+
                     asyncWriteService.saveTask(existing);
                     log.info("Returning immediate response to UI for task {}", id);
                     return existing;
@@ -265,7 +285,7 @@ public class TaskService {
     @Transactional
     public Task moveTask(Long id, TaskStatus newStatus, Long swimLaneId, Integer position) {
         long start = System.currentTimeMillis();
-        log.info("[CACHE WRITE-THROUGH] Moving task {} to status={}, lane={}, position={}", 
+        log.info("[CACHE WRITE-THROUGH] Moving task {} to status={}, lane={}, position={}",
                 id, newStatus, swimLaneId, position);
 
         // Write-through: Update cache immediately
