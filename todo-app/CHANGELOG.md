@@ -11,6 +11,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased] - 2025-12-21
 
 ### Added
+- **Mobile Sidebar Refinement** - Enhanced mobile experience with permanent push layout:
+  - **Push Layout**: Sidebar now pushes/shrinks main content instead of overlaying it, keeping both visible.
+  - **Relative Width**: Converted sidebar width to `12.5em` for better scaling with device font settings.
+  - **Word Wrapping**: Implemented `break-word` wrapping for long swimlane names in the sidebar.
+  - **Cleaner UI**: Removed header hamburger and footer collapse buttons in favor of the persistent navbar trigger.
 - **AOP-Based Idempotency** - Comprehensive protection against duplicate operations using Spring AOP:
   
   **Custom Annotation (`@Idempotent`):**
