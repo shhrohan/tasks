@@ -312,6 +312,35 @@ body {
     background: rgba(15, 23, 42, 0.5);
 }
 
+/* ============================================
+   DRAG VISUAL FEEDBACK - Shows valid drop zones
+   ============================================ */
+/* Active lane during drag - highlighted */
+.swimlane-row.drag-active-lane {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.4), 0 10px 30px rgba(0, 0, 0, 0.3);
+    border-color: rgba(59, 130, 246, 0.5);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+/* Disabled lanes during drag - dimmed with no-drop indicator */
+.swimlane-row.drag-disabled-lane {
+    opacity: 0.4;
+    pointer-events: none;
+    position: relative;
+}
+
+.swimlane-row.drag-disabled-lane::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 16px;
+    pointer-events: none;
+}
+
 .swimlane-header {
     background: rgba(255, 255, 255, 0.03);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);

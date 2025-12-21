@@ -88,8 +88,6 @@ export const Store = {
         // Calculate percentages (avoid division by zero)
         const pct = (count) => total > 0 ? Math.round((count / total) * 100) : 0;
 
-        console.log(`[Store] getLaneStats(${laneId}):`, { total, todo, inProgress, done, blocked, deferred });
-
         return {
             total,
             todo,

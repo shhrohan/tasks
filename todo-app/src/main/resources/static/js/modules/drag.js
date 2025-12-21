@@ -40,10 +40,11 @@ export const Drag = {
      * 
      * @param {HTMLElement} col - The .lane-column element to initialize
      * @param {Object} scope - The Alpine component instance (provides moveTaskOptimistic)
+     * @param {Object} Alpine - The Alpine global object (for mutateDom)
      * 
      * IMPORTANT: This must be called AFTER task cards exist in the DOM!
      */
-    initOneColumn(col, scope) {
+    initOneColumn(col, scope, Alpine) {
         // =====================================================================
         // IDEMPOTENCY CHECK
         // Prevents duplicate Sortable instances which cause unpredictable behavior
@@ -84,7 +85,9 @@ export const Drag = {
         // =====================================================================
         try {
             col.sortableInstance = new Sortable(col, {
-                group: 'tasks',           // All columns share same group = cross-column drag
+                // Use lane-specific group to prevent cross-swimlane dragging
+                // Tasks can only move between columns within the SAME lane
+                group: `tasks-lane-${laneId}`,
                 animation: 150,           // Smooth animation duration (ms)
                 delay: 0,                 // No delay for desktop
                 delayOnTouchOnly: true,   // Delay only on touch devices (prevents scroll conflict)
@@ -95,67 +98,124 @@ export const Drag = {
                 // CRITICAL: These options prevent Alpine.js errors during mobile/touch drag
                 // When elements are cloned, they lose Alpine.js context causing "task is not defined" errors
                 removeCloneOnHide: true,  // Remove clone immediately when hidden (prevents re-evaluation)
-                forceFallback: false,     // Use native HTML5 drag when possible (avoids cloning issues)
+                forceFallback: true,      // Use forceFallback to ensure a ghost element is created
 
                 /**
                  * onChoose: Fired when user clicks/touches an item to start drag
-                 * If this doesn't fire, there's a CSS hit-testing issue (likely 3D transforms)
                  */
-                onChoose: (evt) => {
-                    console.log('[Drag] onChoose - User selected item:', {
-                        taskId: evt.item.getAttribute('data-task-id'),
-                        element: evt.item
-                    });
+                // onChoose: Fired when user clicks/touches an item to start drag
+                onChoose(evt) {
+                    const item = evt.item;
+                    if (!item) return;
+
+                    // Log for debugging
+                    console.log(
+                        '[Drag] onChoose - item:',
+                        item.getAttribute('data-task-id'),
+                        'tagName:',
+                        item.tagName
+                    );
+
+                    // IMPORTANT: prevent Alpine from re‑initializing this element or its clone.
+                    // Alpine will skip any node that has x-ignore.
+                    item.setAttribute('x-ignore', '');
+
+                    // Extra safety: if inner .task-card exists, mark it too.
+                    const innerCard = item.matches('.task-card')
+                        ? item
+                        : item.querySelector('.task-card');
+
+                    if (innerCard && innerCard !== item) {
+                        innerCard.setAttribute('x-ignore', '');
+                        console.log(
+                            '[Drag] onChoose - Added x-ignore to inner .task-card',
+                            innerCard.getAttribute('data-task-id')
+                        );
+                    }
+
+                    console.log(
+                        '[Drag] onChoose - x-ignore applied',
+                        item.getAttribute('data-task-id')
+                    );
+                },
+
+                /**
+                 * onUnchoose: Fired when the drag operation is completed or canceled
+                 * Ensure we clean up x-ignore just in case mouseup/touchend missed it
+                 */
+                // onUnchoose: Fired when drag completes or is cancelled
+                onUnchoose(evt) {
+                    const item = evt.item;
+                    if (!item) return;
+
+                    // Remove x-ignore so Alpine becomes reactive again.
+                    item.removeAttribute('x-ignore');
+
+                    // Also remove from inner .task-card if we added it.
+                    const innerCard = item.matches('.task-card')
+                        ? item
+                        : item.querySelector('.task-card');
+
+                    if (innerCard && innerCard !== item) {
+                        innerCard.removeAttribute('x-ignore');
+                    }
+
+                    console.log(
+                        '[Drag] onUnchoose - Removed x-ignore from item',
+                        item.getAttribute('data-task-id')
+                    );
                 },
 
                 /**
                  * onStart: Fired when drag actually begins (after threshold)
+                 * We add visual feedback by dimming other swimlanes
                  */
                 onStart: (evt) => {
+                    const currentLaneId = evt.from.getAttribute('data-lane-id');
                     console.log('[Drag] onStart - Drag began:', {
                         taskId: evt.item.getAttribute('data-task-id'),
                         fromColumn: evt.from.getAttribute('data-status'),
-                        fromLane: evt.from.getAttribute('data-lane-id')
+                        fromLane: currentLaneId
+                    });
+
+                    // Add visual feedback: highlight current lane, dim others
+                    document.querySelectorAll('.swimlane-row').forEach(row => {
+                        const rowLaneId = row.querySelector('.lane-column')?.getAttribute('data-lane-id');
+                        if (rowLaneId === currentLaneId) {
+                            row.classList.add('drag-active-lane');
+                        } else {
+                            row.classList.add('drag-disabled-lane');
+                        }
                     });
                 },
 
-                /**
-                 * onClone: Fired when element is cloned (for ghost/fallback)
-                 * CRITICAL: Replace clone's inner content to prevent Alpine errors.
-                 * The clone is created outside the x-for loop context, so `task` 
-                 * variable is not defined. We replace the content with static HTML.
-                 */
-                onClone: (evt) => {
-                    const clone = evt.clone;
-                    if (clone) {
-                        // Get task name from the original element before replacing content
-                        const taskName = clone.querySelector('.card-title')?.textContent || 'Task';
-                        const taskId = clone.getAttribute('data-task-id');
+                // NOTE: onClone is NOT used because it doesn't fire reliably for fallback ghosts 
+                // in a way that lets us modify the clone before Alpine sees it. 
+                // The onChoose x-ignore inheritance strategy is more robust.
 
-                        // Add x-ignore to tell Alpine to skip this element entirely
-                        clone.setAttribute('x-ignore', '');
-
-                        // Replace innerHTML with static content (no Alpine bindings)
-                        clone.innerHTML = `
-                            <div class="card-body p-2">
-                                <p class="h6 card-title text-white mb-1">${taskName}</p>
-                            </div>
-                        `;
-
-                        console.log('[Drag] onClone - Created static ghost for task:', taskId);
-                    }
-                },
 
                 /**
                  * onMove: Fired continuously while dragging
-                 * Return false to cancel the move to current position
+                 * Return false to BLOCK the move to a different swimlane
                  */
                 onMove: (evt) => {
-                    console.log('[Drag] onMove - Dragging over:', {
+                    const fromLaneId = evt.from?.getAttribute('data-lane-id');
+                    const toLaneId = evt.to?.getAttribute('data-lane-id');
+
+                    // Block moves between different swimlanes
+                    if (fromLaneId !== toLaneId) {
+                        console.log('[Drag] onMove - BLOCKED: Cannot move between swimlanes', {
+                            fromLane: fromLaneId,
+                            toLane: toLaneId
+                        });
+                        return false; // Block the move
+                    }
+
+                    console.log('[Drag] onMove - Allowed:', {
                         targetColumn: evt.to?.getAttribute('data-status'),
-                        targetLane: evt.to?.getAttribute('data-lane-id')
+                        targetLane: toLaneId
                     });
-                    return true; // Allow move
+                    return true; // Allow move within same lane
                 },
 
                 /**
@@ -163,6 +223,11 @@ export const Drag = {
                  * This is where we update the backend
                  */
                 onEnd: (evt) => {
+                    // Clear visual feedback classes from all swimlanes
+                    document.querySelectorAll('.swimlane-row').forEach(row => {
+                        row.classList.remove('drag-active-lane', 'drag-disabled-lane');
+                    });
+
                     const item = evt.item;
                     const to = evt.to;
                     const from = evt.from;
