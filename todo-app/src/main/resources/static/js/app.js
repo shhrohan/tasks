@@ -264,6 +264,7 @@ Alpine.data('todoApp', () => ({
     toggleMobileSidebar() {
         this.mobileSidebarOpen = !this.mobileSidebarOpen;
         console.log('[App] toggleMobileSidebar:', this.mobileSidebarOpen);
+        this.updateSidebarBodyClasses();
     },
 
     /**
@@ -274,6 +275,7 @@ Alpine.data('todoApp', () => ({
         this.activeLaneId = laneId;
         if (!this.sidebarPinned) {
             this.mobileSidebarOpen = false; // Auto-close sidebar only if not pinned
+            this.updateSidebarBodyClasses();
         }
 
         // Scroll to top of content
@@ -286,6 +288,24 @@ Alpine.data('todoApp', () => ({
     toggleSidebarPin() {
         this.sidebarPinned = !this.sidebarPinned;
         console.log('[App] toggleSidebarPin:', this.sidebarPinned);
+        this.updateSidebarBodyClasses();
+    },
+
+    /**
+     * Update body classes for sidebar state (used by CSS for push layout)
+     */
+    updateSidebarBodyClasses() {
+        const body = document.body;
+        if (this.mobileSidebarOpen) {
+            body.classList.add('sidebar-open');
+        } else {
+            body.classList.remove('sidebar-open');
+        }
+        if (this.sidebarPinned) {
+            body.classList.add('sidebar-pinned');
+        } else {
+            body.classList.remove('sidebar-pinned');
+        }
     },
 
     /**

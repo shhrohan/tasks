@@ -1970,19 +1970,25 @@ body {
    circular progress rings, checkmark on active.
    ============================================ */
 
-/* Backdrop overlay */
+/* Backdrop overlay - hidden in push mode, shown only when NOT pinned */
 .mobile-sidebar-backdrop {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
     z-index: 1040;
+    /* Only show when sidebar is open but NOT pinned */
 }
 
-/* Sidebar drawer - matches mockup */
+/* Hide backdrop when sidebar is pinned (push mode) */
+body.sidebar-pinned .mobile-sidebar-backdrop {
+    display: none !important;
+}
+
+/* Sidebar drawer - push layout on mobile */
 .mobile-sidebar {
     position: fixed;
     top: 0;
@@ -1997,6 +2003,24 @@ body {
     flex-direction: column;
     overflow: hidden;
     transform: translateX(0);
+}
+
+/* Main content shrinks when sidebar is open AND pinned */
+@media (max-width: 991.98px) {
+
+    body.sidebar-open.sidebar-pinned .navbar,
+    body.sidebar-open.sidebar-pinned main.container-fluid,
+    body.sidebar-open.sidebar-pinned .tag-filter-bar {
+        margin-left: 280px;
+        transition: margin-left 0.3s ease;
+    }
+
+    body:not(.sidebar-open) .navbar,
+    body:not(.sidebar-open) main.container-fluid,
+    body:not(.sidebar-open) .tag-filter-bar {
+        margin-left: 0;
+        transition: margin-left 0.3s ease;
+    }
 }
 
 /* Transition classes */
