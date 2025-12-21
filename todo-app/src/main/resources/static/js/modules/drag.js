@@ -85,8 +85,9 @@ export const Drag = {
         // =====================================================================
         try {
             col.sortableInstance = new Sortable(col, {
-                // Use a shared group to allow cross-swimlane dragging
-                group: 'tasks-shared',
+                // Use lane-specific group to prevent cross-swimlane dragging
+                // Tasks can only move between columns within the SAME lane
+                group: `tasks-lane-${laneId}`,
                 animation: 150,           // Smooth animation duration (ms)
                 delay: 0,                 // No delay for desktop
                 delayOnTouchOnly: true,   // Delay only on touch devices (prevents scroll conflict)
@@ -167,6 +168,7 @@ export const Drag = {
 
                 /**
                  * onStart: Fired when drag actually begins (after threshold)
+                 * We add visual feedback by dimming other swimlanes
                  */
                 onStart: (evt) => {
                     const currentLaneId = evt.from.getAttribute('data-lane-id');
@@ -176,18 +178,44 @@ export const Drag = {
                         fromLane: currentLaneId
                     });
 
-                    // Add visual feedback to all rows to indicate they are active
+                    // Add visual feedback: highlight current lane, dim others
                     document.querySelectorAll('.swimlane-row').forEach(row => {
-                        row.classList.add('drag-active-lane');
+                        const rowLaneId = row.querySelector('.lane-column')?.getAttribute('data-lane-id');
+                        if (rowLaneId === currentLaneId) {
+                            row.classList.add('drag-active-lane');
+                        } else {
+                            row.classList.add('drag-disabled-lane');
+                        }
                     });
                 },
 
+                // NOTE: onClone is NOT used because it doesn't fire reliably for fallback ghosts 
+                // in a way that lets us modify the clone before Alpine sees it. 
+                // The onChoose x-ignore inheritance strategy is more robust.
+
+
                 /**
                  * onMove: Fired continuously while dragging
+                 * Return false to BLOCK the move to a different swimlane
                  */
                 onMove: (evt) => {
-                    // Allow all moves!
-                    return true;
+                    const fromLaneId = evt.from?.getAttribute('data-lane-id');
+                    const toLaneId = evt.to?.getAttribute('data-lane-id');
+
+                    // Block moves between different swimlanes
+                    if (fromLaneId !== toLaneId) {
+                        console.log('[Drag] onMove - BLOCKED: Cannot move between swimlanes', {
+                            fromLane: fromLaneId,
+                            toLane: toLaneId
+                        });
+                        return false; // Block the move
+                    }
+
+                    console.log('[Drag] onMove - Allowed:', {
+                        targetColumn: evt.to?.getAttribute('data-status'),
+                        targetLane: toLaneId
+                    });
+                    return true; // Allow move within same lane
                 },
 
                 /**
