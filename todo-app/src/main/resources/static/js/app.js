@@ -331,6 +331,16 @@ Alpine.data('todoApp', () => ({
         return laneId === this.activeLaneId;
     },
 
+    isSidebarLaneVisible(laneId) {
+        // If no tags selected, show ALL lanes for discovery on mobile sidebar
+        if (!this.selectedTags || this.selectedTags.length === 0) {
+            return true;
+        }
+
+        // If tags are selected, show only lanes that have matching tasks
+        return this.laneHasMatchingTasks(laneId);
+    },
+
     /**
      * Get lane name by ID (for sidebar display)
      */
@@ -593,10 +603,28 @@ Alpine.data('todoApp', () => ({
      */
     getAllUniqueTags() {
         const tagSet = new Set();
-        this.tasks.forEach(task => {
-            const tags = this.getTags(task.tags);
-            tags.forEach(tag => tagSet.add(tag));
-        });
+
+        // If no tags are selected, show ALL unique tags for discovery (especially important on mobile)
+        if (!this.selectedTags || this.selectedTags.length === 0) {
+            this.tasks.forEach(task => {
+                const tags = this.getTags(task.tags);
+                tags.forEach(tag => tagSet.add(tag));
+            });
+        } else {
+            // If tags are selected, show tags from visible lanes to allow narrowing down
+            this.lanes.forEach(lane => {
+                if (this.isLaneVisible(lane.id)) {
+                    const laneTasks = this.tasks.filter(t => t.swimLane && t.swimLane.id === lane.id);
+                    laneTasks.forEach(task => {
+                        const tags = this.getTags(task.tags);
+                        tags.forEach(tag => tagSet.add(tag));
+                    });
+                }
+            });
+            // ALWAYS include selected tags so they can be unselected
+            this.selectedTags.forEach(tag => tagSet.add(tag));
+        }
+
         return Array.from(tagSet).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
     },
 
@@ -816,8 +844,6 @@ Alpine.data('todoApp', () => ({
      * Open task detail pane
      */
     openTaskDetail(taskId) {
-        if (this.isMobile) return; // Desktop only for now
-
         console.log('[App] openTaskDetail:', taskId);
         const task = this.tasks.find(t => t.id === taskId);
         if (task) {

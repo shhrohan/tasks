@@ -2304,12 +2304,6 @@ body.sidebar-pinned .mobile-sidebar-backdrop {
     flex-direction: column;
 }
 
-/* Hide detail pane on mobile by default (safeguard) */
-@media (max-width: 991.98px) {
-    .task-detail-pane {
-        display: none !important;
-    }
-}
 
 .detail-header {
     background: rgba(255, 255, 255, 0.02);
@@ -2391,4 +2385,56 @@ kbd {
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 4px;
+}
+
+/* ============================================== 
+   MOBILE TASK DETAILS (Slide-up from bottom)
+   ============================================== */
+@media (max-width: 991.98px) {
+    .task-detail-pane {
+        width: 100% !important;
+        height: 85vh !important;
+        top: auto !important;
+        bottom: 0 !important;
+        right: 0 !important;
+        left: 0 !important;
+        border-left: none !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 24px 24px 0 0 !important;
+        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6) !important;
+        transform: translateY(0);
+    }
+
+    .detail-header {
+        padding: 1rem 1.25rem !important;
+    }
+
+    .detail-body {
+        padding: 1.25rem !important;
+    }
+
+    /* Adjust footer for mobile keyboard safety */
+    .detail-footer {
+        padding: 1.25rem 1.25rem 2rem !important;
+    }
+
+    /* Transition states for mobile */
+    .pane-hidden {
+        transform: translateY(100%) !important;
+    }
+
+    .pane-visible {
+        transform: translateY(0) !important;
+    }
+}
+
+/* Transition states for desktop */
+@media (min-width: 992px) {
+    .pane-hidden {
+        transform: translateX(100%);
+    }
+
+    .pane-visible {
+        transform: translateX(0);
+    }
 }

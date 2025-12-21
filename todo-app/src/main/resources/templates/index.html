@@ -196,7 +196,7 @@ DRAG-AND-DROP CRITICAL NOTES:
         <div class="mobile-sidebar-body">
             <template x-for="lane in lanes" :key="lane.id">
                 <button class="sidebar-lane-item" :class="{'active': activeLaneId === lane.id}"
-                    @click="selectLane(lane.id)">
+                    x-show="isSidebarLaneVisible(lane.id)" @click="selectLane(lane.id)">
                     <span class="lane-name" x-text="lane.name"></span>
                     <div class="lane-progress-ring">
                         <!-- Circular progress indicator -->
@@ -217,7 +217,7 @@ DRAG-AND-DROP CRITICAL NOTES:
     </aside>
 
     <!-- Tag Filter Bar (Collapsible on mobile) -->
-    <div class="tag-filter-bar glass-panel px-3 py-2" x-show="getAllUniqueTags().length > 0" x-data="{expanded: false}">
+    <div class="tag-filter-bar glass-panel px-3 py-2" x-data="{expanded: false}">
         <div class="d-flex align-items-center justify-content-between">
             <button class="btn btn-sm btn-link text-secondary p-0 d-flex align-items-center gap-2"
                 @click="expanded = !expanded">
@@ -370,9 +370,10 @@ DRAG-AND-DROP CRITICAL NOTES:
 
                             <!-- Swimlane Body (Columns) -->
                             <div class="swimlane-content row g-3 px-3 pb-3 pt-0" x-show="!lane.collapsed" x-transition>
-                                <!-- Add Task Button Col -->
-                                <div
-                                    class="col-12 col-lg-2 d-flex align-items-center justify-content-center border-end border-secondary">
+                                <!-- Add Task Button Col (Hidden when filtering tags) -->
+                                <div x-show="selectedTags.length === 0"
+                                    class="col-12 col-lg-2 align-items-center justify-content-center border-end border-secondary"
+                                    :class="{'d-flex': selectedTags.length === 0}">
                                     <button class="btn btn-outline-primary btn-sm" @click.stop="openTaskModal(lane.id)">
                                         <i class="fa-solid fa-plus"></i> Add Task
                                     </button>
@@ -633,12 +634,12 @@ DRAG-AND-DROP CRITICAL NOTES:
 
     </main>
 
-    <!-- Task Detail Pane (Desktop Only Sidebar) -->
-    <aside class="task-detail-pane glass-panel" x-show="taskDetail.open && !isMobile"
-        x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="translate-x-full"
-        x-transition:enter-end="translate-x-0" x-transition:leave="transition ease-in duration-200 transform"
-        x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full"
-        @click.outside="closeTaskDetail()" @keydown.window="handleDetailKeydown($event)" x-cloak>
+    <!-- Task Detail Pane (Slide-in on Desktop, Slide-up on Mobile) -->
+    <aside class="task-detail-pane glass-panel" x-show="taskDetail.open"
+        x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="pane-hidden"
+        x-transition:enter-end="pane-visible" x-transition:leave="transition ease-in duration-200 transform"
+        x-transition:leave-start="pane-visible" x-transition:leave-end="pane-hidden" @click.outside="closeTaskDetail()"
+        @keydown.window="handleDetailKeydown($event)" x-cloak>
 
         <template x-if="taskDetail.task">
             <div class="h-100 d-flex flex-column">

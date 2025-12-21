@@ -8,7 +8,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [Unreleased] - 2025-12-21
+## [Unreleased] - 2025-12-22
+
+### Added
+- **Mobile Task Details Slide-up** - Enhanced task detail experience for smaller screens:
+  - **Slide-up Animation**: Task details now slide up from the bottom on mobile instead of sliding in from the right.
+  - **Fixed Layout**: Optimized pane dimensions (`85vh` height, `100%` width) and rounded top corners for a native app feel.
+- **Tag Bar Discovery & Persistence** - Improved tag filtering logic:
+  - **Discovery Mode**: On mobile, the tag bar reveals all system tags by default (even if the active lane is empty) to aid in navigation and task discovery.
+  - **Filter Persistence**: Selected tags always remain visible in the tag bar, allowing users to unselect them regardless of other filter conflicts.
+  - **Permanent Visibility**: The tag filter area is now always visible across all views, ensuring users always have access to filter controls.
+- **Improved UI Specificity** - Resolved CSS conflicts causing unexpected behavior:
+  - **Add Task Visibility**: Fixed a conflict between Bootstrap's `d-flex` (`!important`) and Alpine's `x-show` that prevented the "Add Task" button from being hidden when filters were active.
+- **Mobile Sidebar Lane Filtering**: Swimlanes in the mobile sidebar now only show lanes containing tasks that match active tag filters. If no tags are selected, all lanes are shown.
+- **Enhanced Code Coverage**: Achieved **96% backend instruction coverage**, exceeding the 93% target. Added comprehensive tests for `IdempotencyAspect`, `IdempotencyService`, `GlobalExceptionHandler`, and `CacheLoggingInterceptor`.
+
+### Changed
+- **Mobile Details Accessibility**: Removed restricted logic that prevented task details from opening on mobile devices.
+- **Dynamic CSS Transitions**: Refactored transition logic to use shared CSS classes (`pane-visible`, `pane-hidden`) for smoother cross-device animations.
+
+## [1.3.2] - 2025-12-21
 
 ### Added
 - **Mobile Sidebar Refinement** - Enhanced mobile experience with permanent push layout:
