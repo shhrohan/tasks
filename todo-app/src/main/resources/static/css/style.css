@@ -1993,7 +1993,8 @@ body.sidebar-pinned .mobile-sidebar-backdrop {
     position: fixed;
     top: 0;
     left: 0;
-    width: 280px;
+    width: 12.5em;
+    /* Approximately 200px */
     height: 100vh;
     z-index: 1050;
     background: linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(10, 15, 30, 0.99) 100%);
@@ -2011,15 +2012,20 @@ body.sidebar-pinned .mobile-sidebar-backdrop {
     body.sidebar-open.sidebar-pinned .navbar,
     body.sidebar-open.sidebar-pinned main.container-fluid,
     body.sidebar-open.sidebar-pinned .tag-filter-bar {
-        margin-left: 280px;
-        transition: margin-left 0.3s ease;
+        margin-left: 12.5em;
+        width: calc(100% - 12.5em);
+        transition: margin-left 0.3s ease, width 0.3s ease;
     }
 
     body:not(.sidebar-open) .navbar,
     body:not(.sidebar-open) main.container-fluid,
-    body:not(.sidebar-open) .tag-filter-bar {
+    body:not(.sidebar-open) .tag-filter-bar,
+    body:not(.sidebar-pinned) .navbar,
+    body:not(.sidebar-pinned) main.container-fluid,
+    body:not(.sidebar-pinned) .tag-filter-bar {
         margin-left: 0;
-        transition: margin-left 0.3s ease;
+        width: 100%;
+        transition: margin-left 0.3s ease, width 0.3s ease;
     }
 }
 
@@ -2115,7 +2121,7 @@ body.sidebar-pinned .mobile-sidebar-backdrop {
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: 0.875rem 1rem;
+    padding: 0.6rem 0.8rem;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
@@ -2123,7 +2129,17 @@ body.sidebar-pinned .mobile-sidebar-backdrop {
     text-align: left;
     cursor: pointer;
     transition: all 0.2s ease;
-    min-height: 52px;
+    min-height: 3.5rem;
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+.lane-name {
+    word-wrap: break-word;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    flex: 1;
+    margin-right: 0.5rem;
 }
 
 .sidebar-lane-item:hover {

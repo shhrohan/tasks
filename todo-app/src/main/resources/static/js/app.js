@@ -263,6 +263,8 @@ Alpine.data('todoApp', () => ({
      */
     toggleMobileSidebar() {
         this.mobileSidebarOpen = !this.mobileSidebarOpen;
+        // Always use push mode when sidebar is open
+        this.sidebarPinned = this.mobileSidebarOpen;
         console.log('[App] toggleMobileSidebar:', this.mobileSidebarOpen);
         this.updateSidebarBodyClasses();
     },
