@@ -45,7 +45,8 @@ class SwimLaneServiceTest {
 
     @BeforeEach
     void setUp() {
-        swimLaneService = new SwimLaneService(swimLaneDAO, asyncWriteService, userRepository, idempotencyService);
+        // Note: IdempotencyService is now handled by AOP aspect, not injected here
+        swimLaneService = new SwimLaneService(swimLaneDAO, asyncWriteService, userRepository);
 
         // Create test user
         testUser = new User();
@@ -63,9 +64,6 @@ class SwimLaneServiceTest {
         // Mock UserRepository to return test user (lenient to avoid
         // UnnecessaryStubbingException)
         lenient().when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
-
-        // Mock IdempotencyService to allow operations by default
-        lenient().when(idempotencyService.isDuplicate(any())).thenReturn(false);
     }
 
     @AfterEach

@@ -75,9 +75,10 @@ class TaskServiceTest {
 
         // Create TaskService with all dependencies including CacheManager
         // The 'self' parameter is set to the same instance for testing
+        // Note: IdempotencyService is now handled by AOP aspect, not injected here
         taskService = new TaskService(
                 taskDAO, swimLaneDAO, commentRepository,
-                asyncWriteService, userRepository, cacheManager, null, idempotencyService);
+                asyncWriteService, userRepository, cacheManager, null);
 
         // Use reflection to set the 'self' field for internal @Cacheable calls
         try {
@@ -90,9 +91,6 @@ class TaskServiceTest {
 
         // Set up cache mock to return cache when requested
         lenient().when(cacheManager.getCache(anyString())).thenReturn(cache);
-
-        // Mock IdempotencyService to allow operations by default
-        lenient().when(idempotencyService.isDuplicate(any())).thenReturn(false);
     }
 
     @AfterEach

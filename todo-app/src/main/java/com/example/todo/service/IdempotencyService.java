@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Idempotency service to prevent duplicate operations from rapid button clicks.
- * Uses a time-based key expiration approach (5 seconds window).
+ * Uses a time-based key expiration approach with configurable window.
  * 
  * This is a lightweight, in-memory solution for single-instance deployments.
  * For multi-instance deployments, consider using Redis or database-backed
@@ -19,25 +19,41 @@ import java.util.concurrent.ConcurrentHashMap;
 public class IdempotencyService {
 
     private final ConcurrentHashMap<String, Instant> recentOperations = new ConcurrentHashMap<>();
-    private static final long IDEMPOTENCY_WINDOW_SECONDS = 5;
+    private static final long DEFAULT_WINDOW_SECONDS = 5;
 
     /**
-     * Check if an operation is a duplicate within the idempotency window.
-     * Uses putIfAbsent for atomic check-and-set.
+     * Check if an operation is a duplicate within the default 5-second window.
      * 
-     * @param key Unique key for the operation (e.g.,
-     *            "createTask:userId:taskName:laneId")
+     * @param key Unique key for the operation
      * @return true if this is a duplicate (should be rejected), false if OK to
      *         proceed
      */
     public boolean isDuplicate(String key) {
-        cleanup();
+        return isDuplicate(key, DEFAULT_WINDOW_SECONDS);
+    }
+
+    /**
+     * Check if an operation is a duplicate within the specified time window.
+     * Uses putIfAbsent for atomic check-and-set.
+     * 
+     * @param key           Unique key for the operation
+     * @param windowSeconds Time window in seconds for duplicate detection
+     * @return true if this is a duplicate (should be rejected), false if OK to
+     *         proceed
+     */
+    public boolean isDuplicate(String key, long windowSeconds) {
+        cleanup(windowSeconds);
         Instant now = Instant.now();
         Instant existing = recentOperations.putIfAbsent(key, now);
 
         if (existing != null) {
-            log.warn("[IDEMPOTENCY] Duplicate operation detected: {}", key);
-            return true;
+            // Check if existing entry is still within window
+            if (existing.plusSeconds(windowSeconds).isAfter(now)) {
+                log.warn("[IDEMPOTENCY] Duplicate operation detected: {}", key);
+                return true;
+            }
+            // Existing entry expired, replace it
+            recentOperations.put(key, now);
         }
         log.debug("[IDEMPOTENCY] Operation registered: {}", key);
         return false;
@@ -45,8 +61,7 @@ public class IdempotencyService {
 
     /**
      * Mark an operation as complete (remove from tracking).
-     * Call this after successful completion to allow the same operation to be
-     * performed again.
+     * Call this after successful completion to allow the same operation again.
      * 
      * @param key The same key used in isDuplicate()
      */
@@ -57,10 +72,9 @@ public class IdempotencyService {
 
     /**
      * Clean up expired entries to prevent memory leaks.
-     * Runs lazily on each isDuplicate() call.
      */
-    private void cleanup() {
-        Instant cutoff = Instant.now().minusSeconds(IDEMPOTENCY_WINDOW_SECONDS);
+    private void cleanup(long windowSeconds) {
+        Instant cutoff = Instant.now().minusSeconds(windowSeconds);
         int removed = 0;
         var iterator = recentOperations.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -72,5 +86,12 @@ public class IdempotencyService {
         if (removed > 0) {
             log.debug("[IDEMPOTENCY] Cleaned up {} expired entries", removed);
         }
+    }
+
+    /**
+     * Get current count of tracked operations (for testing/monitoring).
+     */
+    public int getActiveOperationCount() {
+        return recentOperations.size();
     }
 }

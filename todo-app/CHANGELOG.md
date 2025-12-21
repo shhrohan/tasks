@@ -11,39 +11,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased] - 2025-12-21
 
 ### Added
-- **Double-Click Protection** (`70186b1`) - Multi-layer protection against duplicate button clicks on slow servers:
+- **AOP-Based Idempotency** - Comprehensive protection against duplicate operations using Spring AOP:
+  
+  **Custom Annotation (`@Idempotent`):**
+  - Declarative idempotency via annotation on service methods
+  - SpEL expressions for flexible key generation
+  - Configurable time window (default 5 seconds)
+  
+  **AOP Aspect (`IdempotencyAspect.java`):**
+  - Intercepts `@Idempotent` annotated methods
+  - Evaluates SpEL expressions against method parameters
+  - Throws `DuplicateOperationException` (→ 409 Conflict) for duplicates
+  - Automatic key cleanup after operation completes
   
   **Frontend Layer (store.js & app.js):**
-  - Added loading state flags: `isCreatingTask`, `isCreatingLane`, `isDeletingLane`, `isCompletingLane`, `isReorderingLanes`, `isDeletingComment`, `isSubmittingModal`
-  - Guard clauses at start of async functions that return early if operation is already in progress
-  - `finally` blocks ensure flags are reset after API calls complete (success or failure)
-  - Excluded `moveTaskOptimistic` from protection to preserve drag-and-drop responsiveness
+  - Loading state flags for all mutating operations
+  - Guard clauses prevent duplicate API calls
+  - Modal spinners show during operations
   
-  **UI Layer (index.html):**
-  - Confirm modal buttons use `x-if` templates (not `x-show`) to completely remove hidden elements from DOM
-  - Spinner with "Processing..." text replaces button label during operations
-  - Both Cancel and Confirm buttons disabled during active operations
-  - Input modal Save button shows "Saving..." spinner during submission
-  
-  **Backend Layer (IdempotencyService.java):**
-  - New service using `ConcurrentHashMap` to track in-flight operations
-  - 5-second duplicate detection window with automatic cleanup
-  - `isDuplicate(key)` checks if operation was recently initiated
-  - `complete(key)` removes key after successful database write
-  - Task idempotency key: `createTask:{taskName}:{laneId}`
-  - Lane idempotency key: `createLane:{userId}:{laneName}`
-  
-  **Protected Operations:**
-  | Operation | Frontend Guard | Backend Guard |
-  |-----------|----------------|---------------|
-  | Create Task | ✅ | ✅ |
-  | Create Lane | ✅ | ✅ |
-  | Delete Lane | ✅ | ❌ |
-  | Complete Lane | ✅ | ❌ |
-  | Reorder Lanes | ✅ | ❌ |
-  | Delete Comment | ✅ | ❌ |
-  | Submit Modal | ✅ | ❌ |
-  | Move Task | ❌ | ❌ |
+  **Idempotency Coverage Matrix:**
+  | Operation | Frontend | Backend | Key Expression |
+  |-----------|:--------:|:-------:|----------------|
+  | **Task Operations** ||||
+  | Create Task | ✅ | ✅ | `'createTask:' + #task.name + ':' + #task.swimLane.id` |
+  | Delete Task | ✅ | ✅ | `'deleteTask:' + #id` |
+  | Update Task | ❌ | ❌ | *(Inherently idempotent - same update = same result)* |
+  | Move Task | ❌ | ❌ | *(Preserves drag-drop responsiveness)* |
+  | **Lane Operations** ||||
+  | Create Lane | ✅ | ✅ | `'createLane:' + #swimLane.name` |
+  | Delete Lane | ✅ | ✅ | `'deleteLane:' + #id` |
+  | Complete Lane | ✅ | ✅ | `'completeLane:' + #id` |
+  | Reorder Lanes | ✅ | ✅ | `'reorderLanes:' + #orderedIds.hashCode()` |
+  | **Comment Operations** ||||
+  | Add Comment | ✅ | ✅ | `'addComment:' + #taskId + ':' + #text.hashCode()` |
+  | Update Comment | ✅ | ✅ | `'updateComment:' + #commentId + ':' + #newText.hashCode()` |
+  | Delete Comment | ✅ | ✅ | `'deleteComment:' + #taskId + ':' + #commentId` |
+
 
 - **CacheWarmupService** (`a0c5e6f`) - Pre-warms user and task caches on application startup to ensure O(1) retrieval for first-time requests.
 - **CacheLoggingInterceptor** (`2a9c690`) - Real-time monitoring of cache hits/misses for API endpoints, logged with `[CACHE HIT]` or `[CACHE MISS]` prefixes.
