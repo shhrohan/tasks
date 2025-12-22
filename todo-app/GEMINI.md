@@ -23,8 +23,9 @@
 ### STAGE 1: PRE-IMPLEMENTATION (COMPLETE BEFORE CODING)
 
 1. **STOP & THINK**  
-   Ask: "Is this **BEST and CLEANEST and MODULAR and FUTURE-PROOF and ROBUST and EXTENSIBLE** way to get a task done?"  
-   - PROPOSE better alternatives if you find the request aor any part of solution sub-optimal.  
+    - **PAUSE** before every change. Ask: "Is this the **BEST**/**CLEANEST**/**EFFICIENT**/**SCALABLE**/**MAINTAINABLE**/**TESTABLE**/**EXTENSIBLE**/**PERFORMANT**/**SECURE**/**RELIABLE**?"
+   - PROPOSE better alternatives if you find the request aor any part of solution sub-optimal.
+   - Try to think of unique and innovative solutions with user guidance where necessary.
    - REFUSE bad patterns: explicitly say `"REJECTED: Sub-optimal pattern, proposing X instead"`.
 
 2. **UNDERSTAND SCOPE**  

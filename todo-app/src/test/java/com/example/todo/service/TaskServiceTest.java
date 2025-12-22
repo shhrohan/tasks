@@ -789,4 +789,125 @@ class TaskServiceTest {
         assertEquals(1, result.size());
         verify(taskDAO).findBySwimLaneId(swimLaneId);
     }
+
+    // --- Additional Branch Coverage Tests ---
+
+    @Test
+    void removeTaskFromCache_ShouldHandleNullCache() {
+        Long taskId = 1L;
+        when(cacheManager.getCache("tasks")).thenReturn(null);
+
+        // Should not throw exception
+        taskService.deleteTask(taskId);
+    }
+
+    @Test
+    void removeTaskFromCache_ShouldHandleNullWrapper() {
+        Long taskId = 1L;
+        lenient().when(cacheManager.getCache("tasks")).thenReturn(cache);
+        when(cache.get(any())).thenReturn(null);
+
+        taskService.deleteTask(taskId);
+    }
+
+    @Test
+    void removeTaskFromCache_ShouldHandleNullCacheList() {
+        Long taskId = 1L;
+        lenient().when(cacheManager.getCache("tasks")).thenReturn(cache);
+        org.springframework.cache.Cache.ValueWrapper wrapper = mock(org.springframework.cache.Cache.ValueWrapper.class);
+        when(wrapper.get()).thenReturn(null);
+        when(cache.get(any())).thenReturn(wrapper);
+
+        taskService.deleteTask(taskId);
+    }
+
+    @Test
+    void addTaskToCache_ShouldHandleNullCache() {
+        Task task = new Task();
+        task.setId(1L);
+        when(taskDAO.save(any(Task.class))).thenReturn(task);
+        when(cacheManager.getCache("tasks")).thenReturn(null);
+
+        taskService.createTask(task);
+    }
+
+    @Test
+    void addTaskToCache_ShouldHandleNullWrapper() {
+        Task task = new Task();
+        task.setId(1L);
+        when(taskDAO.save(any(Task.class))).thenReturn(task);
+
+        lenient().when(cacheManager.getCache("tasks")).thenReturn(cache);
+        when(cache.get(any())).thenReturn(null);
+
+        taskService.createTask(task);
+    }
+
+    @Test
+    void addTaskToCache_ShouldHandleNullCacheList() {
+        Task task = new Task();
+        task.setId(1L);
+        when(taskDAO.save(any(Task.class))).thenReturn(task);
+
+        lenient().when(cacheManager.getCache("tasks")).thenReturn(cache);
+        org.springframework.cache.Cache.ValueWrapper wrapper = mock(org.springframework.cache.Cache.ValueWrapper.class);
+        when(wrapper.get()).thenReturn(null);
+        when(cache.get(any())).thenReturn(wrapper);
+
+        taskService.createTask(task);
+    }
+
+    @Test
+    void updateTaskInCache_ShouldHandleCacheMissInLoop() {
+        Long taskId = 1L;
+
+        // Task found in DB
+        Task existing = new Task();
+        existing.setId(taskId);
+        when(taskDAO.findById(taskId)).thenReturn(Optional.of(existing));
+
+        // Cache contains DIFFERENT tasks
+        List<Task> cachedTasks = new ArrayList<>();
+        Task otherTask = new Task();
+        otherTask.setId(2L);
+        cachedTasks.add(otherTask);
+
+        org.springframework.cache.Cache.ValueWrapper wrapper = mock(org.springframework.cache.Cache.ValueWrapper.class);
+        when(wrapper.get()).thenReturn(cachedTasks);
+        when(cache.get(any())).thenReturn(wrapper);
+        lenient().when(cacheManager.getCache("tasks")).thenReturn(cache);
+
+        // Update task - should traverse loop and log "Task not found in cache"
+        Task detail = new Task();
+        detail.setName("New");
+        taskService.updateTask(taskId, detail);
+    }
+
+    @Test
+    void moveTask_ShouldHandleNullCache() {
+        Long taskId = 1L;
+        when(cacheManager.getCache("tasks")).thenReturn(null);
+
+        taskService.moveTask(taskId, TaskStatus.DONE, 1L, 0);
+    }
+
+    @Test
+    void moveTask_ShouldHandleNullWrapper() {
+        Long taskId = 1L;
+        lenient().when(cacheManager.getCache("tasks")).thenReturn(cache);
+        when(cache.get(any())).thenReturn(null);
+
+        taskService.moveTask(taskId, TaskStatus.DONE, 1L, 0);
+    }
+
+    @Test
+    void moveTask_ShouldHandleNullCacheList() {
+        Long taskId = 1L;
+        lenient().when(cacheManager.getCache("tasks")).thenReturn(cache);
+        org.springframework.cache.Cache.ValueWrapper wrapper = mock(org.springframework.cache.Cache.ValueWrapper.class);
+        when(wrapper.get()).thenReturn(null);
+        when(cache.get(any())).thenReturn(wrapper);
+
+        taskService.moveTask(taskId, TaskStatus.DONE, 1L, 0);
+    }
 }

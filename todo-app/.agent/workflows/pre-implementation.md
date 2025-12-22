@@ -7,8 +7,9 @@ description: Pre-implementation checklist and context gathering protocol
 This workflow enforces the **Stage 1: Pre-Implementation** protocols defined in `GEMINI.md`. Run this before starting any coding task to ensure alignment and optimizing.
 
 ## 1. Stop & Think (Optimization)
-- [ ] **Pause** and ask: "Is this the best/cleanest way?"
+- [ ] **Pause** and ask: "Is this the **BEST**/**CLEANEST**/**EFFICIENT**/**SCALABLE**/**MAINTAINABLE**/**TESTABLE**/**EXTENSIBLE**/**PERFORMANT**/**SECURE**/**RELIABLE**?"
 - [ ] **Propose** better alternatives if the request is sub-optimal.
+- [ ] **Innovate** by thinking of unique solutions with user guidance.
 - [ ] **Refuse** blind obedience to bad patterns.
 
 ## 2. Understand Scope
