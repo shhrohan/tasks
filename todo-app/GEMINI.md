@@ -75,7 +75,8 @@
       mvn test
       ```  
       - Ensure new features / bug fixes have corresponding unit or integration tests.  
-      - DO NOT ask for commit approval before tests are passing.  
+    - **VERIFY** tests pass before asking for commit approval.
+- **BRANCH COVERAGE**: Maintain >90% branch coverage for service and utility classes.  
    5. ASK THE USER FOR PERMISSION TO COMMIT:  
       - Message format:  
         `"Validation complete: app restarted, browser verified, tests passing. Do you approve a commit now?"`
