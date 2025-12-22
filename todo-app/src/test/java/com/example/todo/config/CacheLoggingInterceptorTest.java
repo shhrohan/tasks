@@ -173,4 +173,41 @@ class CacheLoggingInterceptorTest {
                 // Assert nothing happened
                 verify(cacheManager, never()).getCacheNames();
         }
+
+        @Test
+        void preHandle_ShouldSkipNonApiRequests() {
+                when(request.getRequestURI()).thenReturn("/index.html");
+
+                boolean result = interceptor.preHandle(request, response, new Object());
+
+                assertTrue(result);
+                verify(cacheManager, never()).getCacheNames();
+        }
+
+        @Test
+        void afterCompletion_ShouldSkipNonApiRequests() {
+                when(request.getRequestURI()).thenReturn("/index.html");
+
+                interceptor.afterCompletion(request, response, new Object(), null);
+
+                verify(cacheManager, never()).getCacheNames();
+        }
+
+        @Test
+        void getCacheStats_ShouldIgnoreNonCaffeineCaches() {
+                when(request.getRequestURI()).thenReturn("/api/tasks");
+                when(cacheManager.getCacheNames()).thenReturn(Collections.singletonList("otherCache"));
+
+                // Mock a generic Cache that is NOT a CaffeineCache
+                Cache genericCache = mock(Cache.class);
+                when(cacheManager.getCache("otherCache")).thenReturn(genericCache);
+
+                interceptor.preHandle(request, response, new Object());
+                interceptor.afterCompletion(request, response, new Object(), null);
+
+                // Verification: Should call getCacheNames but NOT cast/access stats
+                verify(cacheManager, atLeastOnce()).getCacheNames();
+                // Implicitly verified by not throwing ClassCastException or
+                // NullPointerException
+        }
 }
