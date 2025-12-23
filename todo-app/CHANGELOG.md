@@ -22,6 +22,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - **Add Task Visibility**: Fixed a conflict between Bootstrap's `d-flex` (`!important`) and Alpine's `x-show` that prevented the "Add Task" button from being hidden when filters were active.
 - **Mobile Sidebar Lane Filtering**: Swimlanes in the mobile sidebar now only show lanes containing tasks that match active tag filters. If no tags are selected, all lanes are shown.
 - **Enhanced Code Coverage**: Achieved **96% backend instruction coverage** and **93% branch coverage**, exceeding all targets. Added comprehensive tests for `IdempotencyAspect`, `IdempotencyService`, `GlobalExceptionHandler`, and `CacheLoggingInterceptor`.
+- **Task Detail Tag Management**: capability to add and remove tags directly from the task details pane, with immediate backend persistence.
+- **Comment Timestamps**: Display creation date and time for all task comments.
 
 ### Changed
 - **Mobile Details Accessibility**: Removed restricted logic that prevented task details from opening on mobile devices.

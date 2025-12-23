@@ -157,6 +157,8 @@ This is a full-stack, single-page web application for managing tasks and to-do i
 - **Glassmorphism UI**: Modern, translucent design aesthetic with dynamic CSS transitions.  
 - **Task Filters**: Hide Done and Blocked Only filter buttons in navbar.  
 - **Tag Filter Bar**: Sticky, permanently visible tag bar with discovery mode (shows all tags on mobile by default) and persistence (selected tags always stay visible).  
+- **Task Detail Tag Management**: Add and remove tags directly from the task details pane with immediate persistence.
+- **Comment Timestamps**: Visual indicators for when comments were created.
 - **AOP Idempotency**: Transparent protection against duplicate/concurrent operations using Spring AOP and custom annotations.
 
 ---

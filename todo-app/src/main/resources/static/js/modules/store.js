@@ -371,6 +371,27 @@ export const Store = {
 
     // --- Actions ---
 
+    async updateTask(taskId, taskPayload) {
+        console.log('[Store] updateTask - Calling API with:', { taskId, taskPayload });
+        try {
+            const updatedTask = await Api.updateTask(taskId, taskPayload);
+            console.log('[Store] updateTask - Updated successfully:', updatedTask);
+
+            // Update local state (Optimistic / Immediate feedback)
+            const index = this.tasks.findIndex(t => t.id === taskId);
+            if (index !== -1) {
+                this.tasks[index] = { ...this.tasks[index], ...updatedTask };
+            }
+            this.triggerSave();
+            return updatedTask;
+        } catch (e) {
+            console.error('[Store] updateTask - FAILED:', e);
+            this.showError('Error updating task');
+            throw e;
+        }
+    },
+
+
     async moveTaskOptimistic(taskId, newStatus, newLaneId, newIndex) {
         const startTime = performance.now();
         console.log('[Store] moveTaskOptimistic - Params:', { taskId, newStatus, newLaneId, newIndex });

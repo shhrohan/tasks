@@ -665,13 +665,32 @@ DRAG-AND-DROP CRITICAL NOTES:
                     <!-- Tags -->
                     <div class="mb-4">
                         <label class="text-uppercase text-secondary fw-bold small mb-2 d-block">Tags</label>
-                        <div class="d-flex flex-wrap gap-2">
+
+                        <!-- Tag List -->
+                        <div class="d-flex flex-wrap gap-2 mb-2">
                             <template x-for="tag in getTags(taskDetail.task?.tags)" :key="tag">
-                                <span class="tag-capsule active" x-text="tag"></span>
+                                <span class="badge bg-primary d-flex align-items-center gap-1 py-2 px-3"
+                                    style="font-size: 0.85rem;">
+                                    <span x-text="tag"></span>
+                                    <button type="button" class="btn-close btn-close-white ms-1"
+                                        style="font-size: 0.5rem;" @click="removeTaskTag(tag)" aria-label="Remove tag"
+                                        :disabled="taskDetail.isLoading"></button>
+                                </span>
                             </template>
-                            <template x-if="getTags(taskDetail.task?.tags).length === 0">
-                                <span class="text-secondary small fst-italic">No tags</span>
-                            </template>
+                        </div>
+
+                        <!-- Add Tag Input -->
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-dark border-secondary text-secondary">
+                                <i class="fa-solid fa-tag"></i>
+                            </span>
+                            <input type="text" class="form-control bg-dark text-white border-secondary"
+                                placeholder="Add tag (Press Enter)..." x-model="taskDetail.tagInput"
+                                @keydown.enter.prevent="addTaskTag()" :disabled="taskDetail.isLoading">
+                            <button class="btn btn-outline-secondary" type="button" @click="addTaskTag()"
+                                :disabled="!taskDetail.tagInput.trim() || taskDetail.isLoading">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
                         </div>
                     </div>
 
@@ -694,15 +713,17 @@ DRAG-AND-DROP CRITICAL NOTES:
                                 :key="comment.id || index">
                                 <div class="comment-item mb-3 p-3 rounded bg-dark border border-secondary"
                                     :class="{'border-primary': taskDetail.editingCommentId === comment.id, 'comment-selected': isCommentSelected(index)}">
-                                    <div class="d-flex justify-content-between mb-1">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
                                         <div class="d-flex align-items-center gap-2">
-                                            <span class="fw-bold text-primary small">User</span>
-                                            <span class="text-muted smaller"
-                                                x-text="comment.createdAt ? new Date(comment.createdAt).toLocaleString() : new Date().toLocaleString()"></span>
+                                            <span class="text-secondary small fw-bold">User</span>
+                                            <span class="text-secondary opacity-75 small" style="font-size: 0.75rem;"
+                                                x-text="formatDate(comment.createdAt)"
+                                                x-show="comment.createdAt"></span>
                                         </div>
-                                        <!-- Actions -->
-                                        <div class="comment-actions d-flex gap-2"
-                                            x-show="taskDetail.editingCommentId !== comment.id">
+
+                                        <!-- Edit/Delete buttons -->
+                                        <div class="d-flex gap-2"
+                                            x-show="!taskDetail.editingCommentId || taskDetail.editingCommentId !== comment.id">
                                             <button class="btn btn-link btn-sm p-0 text-secondary hover-opacity-100"
                                                 @click="startEditComment(comment)" title="Edit">
                                                 <i class="fa-solid fa-pen-to-square"></i>

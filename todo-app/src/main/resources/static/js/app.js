@@ -99,7 +99,8 @@ Alpine.data('todoApp', () => ({
         isLoading: false,
         editingCommentId: null,
         editingCommentText: '',
-        selectedCommentIndex: -1  // For arrow key navigation
+        selectedCommentIndex: -1,  // For arrow key navigation
+        tagInput: ''               // For adding new tags
     },
 
     // Import Store methods (modal management, API wrappers, etc.)
@@ -111,6 +112,8 @@ Alpine.data('todoApp', () => ({
     // =========================================================================
     async init() {
         console.log('[App] ====== Component Initializing ======');
+        // Ensure taskDetail is fully initialized to prevent Alpine errors
+        this.taskDetail = { ...this.taskDetail, tagInput: '' };
 
         // ---------------------------------------------------------------------
         // DEBUG: Global click listener for task cards
@@ -1336,6 +1339,25 @@ Alpine.data('todoApp', () => ({
     },
 
     /**
+     * Format date string to locale string
+     */
+    formatDate(dateString) {
+        if (!dateString) return '';
+        try {
+            // Handle array format [year, month, day, hour, minute, second, nano]
+            if (Array.isArray(dateString)) {
+                const [year, month, day, hour, minute, second] = dateString;
+                // Note: month is 1-based in Java, 0-based in JS Date
+                return new Date(year, month - 1, day, hour, minute, second).toLocaleString();
+            }
+            return new Date(dateString).toLocaleString();
+        } catch (e) {
+            console.error('Date parse error:', e);
+            return dateString;
+        }
+    },
+
+    /**
      * Execute delete comment after modal confirmation
      */
     async executeDeleteComment(commentId) {
@@ -1368,6 +1390,95 @@ Alpine.data('todoApp', () => ({
             this.isDeletingComment = false;
             this.taskDetail.isLoading = false;
             this.closeModal();
+        }
+    },
+
+    // =========================================================================
+    // TASK TAG MANAGEMENT
+    // =========================================================================
+
+    /**
+     * Add a tag to the currently open task
+     */
+    async addTaskTag() {
+        const tag = this.taskDetail.tagInput.trim();
+        if (!tag || !this.taskDetail.task) return;
+
+        console.log('[App] addTaskTag:', tag);
+        const task = this.taskDetail.task;
+
+        // Parse existing tags
+        let currentTags = this.getTags(task.tags); // Helper in app.js
+
+        // Deduplicate (case-insensitive check)
+        if (currentTags.some(t => t.toLowerCase() === tag.toLowerCase())) {
+            this.taskDetail.tagInput = ''; // Clear input even if duplicate
+            return;
+        }
+
+        // Add new tag
+        currentTags.push(tag);
+
+        // Optimistic update
+        this.taskDetail.isLoading = true;
+        const tagsJson = JSON.stringify(currentTags);
+
+        // Prepare payload (Full task object to be safe, but overriding tags)
+        const payload = {
+            ...task,
+            tags: tagsJson,
+            // Ensure swimLane object has ID if it exists
+            swimLane: task.swimLane ? { id: task.swimLane.id } : null
+        };
+
+        try {
+            await this.updateTask(task.id, payload);
+            this.taskDetail.tagInput = '';
+
+            // Local state update is handled by updateTask's optimistic logic + SSE
+            // But we ensure taskDetail reflects it immediately
+            this.taskDetail.task.tags = tagsJson;
+
+        } catch (e) {
+            console.error('[App] Failed to add tag:', e);
+            // Revert is complex here, but updateTask handles its own error toast
+        } finally {
+            this.taskDetail.isLoading = false;
+        }
+    },
+
+    /**
+     * Remove a tag from the currently open task
+     */
+    async removeTaskTag(tagToRemove) {
+        if (!this.taskDetail.task) return;
+
+        console.log('[App] removeTaskTag:', tagToRemove);
+        const task = this.taskDetail.task;
+
+        // Filter out tag
+        let currentTags = this.getTags(task.tags);
+        const newTags = currentTags.filter(t => t !== tagToRemove);
+
+        if (newTags.length === currentTags.length) return; // No change
+
+        // Optimistic Update
+        this.taskDetail.isLoading = true;
+        const tagsJson = JSON.stringify(newTags);
+
+        const payload = {
+            ...task,
+            tags: tagsJson,
+            swimLane: task.swimLane ? { id: task.swimLane.id } : null
+        };
+
+        try {
+            await this.updateTask(task.id, payload);
+            this.taskDetail.task.tags = tagsJson;
+        } catch (e) {
+            console.error('[App] Failed to remove tag:', e);
+        } finally {
+            this.taskDetail.isLoading = false;
         }
     }
 }));
