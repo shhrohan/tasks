@@ -51,6 +51,13 @@ export const Store = {
         mode: '', // 'TASK' or 'SWIMLANE'
         payload: null
     },
+    userModal: {
+        open: false,
+        name: '',
+        email: '',
+        joinedAt: '',
+        isEditing: false
+    },
     columns: ['TODO', 'IN_PROGRESS', 'DONE', 'BLOCKED', 'DEFERRED'],
 
     // Init
@@ -255,6 +262,46 @@ export const Store = {
             this.inputModal.tags = [];
             this.inputModal.tagInput = '';
         }, 300);
+    },
+
+    // 3. User Modal
+    openUserModal() {
+        console.log('[Store] Opening User Profile Modal');
+        const user = window.initialData.user;
+        this.userModal.name = user.name;
+        this.userModal.email = user.email;
+        this.userModal.joinedAt = user.joinedAt || 'N/A';
+        this.userModal.isEditing = false;
+        this.userModal.open = true;
+        document.body.style.overflow = 'hidden';
+    },
+
+    closeUserModal() {
+        console.log('[Store] Closing User Profile Modal');
+        this.userModal.open = false;
+        this.userModal.isEditing = false;
+        document.body.style.overflow = '';
+    },
+
+    async updatePersona() {
+        // Guard: empty name
+        if (!this.userModal.name.trim()) return;
+
+        console.log('[Store] updatePersona - Calling API with name:', this.userModal.name);
+        try {
+            const updatedUser = await Api.updateUser(this.userModal.name);
+            console.log('[Store] updatePersona - Updated successfully:', updatedUser);
+
+            // Update window.initialData.user for consistency
+            window.initialData.user.name = updatedUser.name;
+            window.initialData.user.firstName = updatedUser.name.split(' ')[0];
+
+            this.userModal.isEditing = false;
+            this.triggerSave();
+        } catch (e) {
+            console.error('[Store] updatePersona - FAILED:', e);
+            this.showError('Error updating profile');
+        }
     },
 
     // Tag management for input modal

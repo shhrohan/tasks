@@ -162,13 +162,27 @@ DRAG-AND-DROP CRITICAL NOTES:
                     <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
                         <i class="fa-solid fa-user"></i>
-                        <span class="d-none d-lg-inline ms-1" th:text="${#authentication?.name ?: 'User'}">User</span>
+                        <span class="d-none d-lg-inline ms-1"
+                            x-text="window.initialData?.user?.name || 'User'">User</span>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
+                    <ul
+                        class="dropdown-menu dropdown-menu-end dropdown-menu-dark p-2 glass-panel border border-secondary shadow-lg">
+                        <li class="mb-1">
+                            <a class="dropdown-item rounded d-flex align-items-center gap-2 py-2" href="#"
+                                @click.prevent="openUserModal()">
+                                <i class="fa-solid fa-user-circle text-primary"></i>
+                                <span>Profile</span>
+                            </a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider opacity-25">
+                        </li>
                         <li>
                             <form th:action="@{/logout}" method="post" class="m-0">
-                                <button type="submit" class="dropdown-item">
-                                    <i class="fa-solid fa-sign-out-alt me-2"></i>Logout
+                                <button type="submit"
+                                    class="dropdown-item rounded d-flex align-items-center gap-2 py-2 text-danger">
+                                    <i class="fa-solid fa-sign-out-alt"></i>
+                                    <span>Logout</span>
                                 </button>
                             </form>
                         </li>
@@ -528,6 +542,70 @@ DRAG-AND-DROP CRITICAL NOTES:
             </div>
         </div>
 
+        <!-- 3. User Profile Modal -->
+        <div class="custom-modal-overlay" x-show="userModal.open" x-transition.opacity
+            :class="{ 'active': userModal.open }" style="display: none !important;" x-init="$el.style.display = ''">
+            <div class="custom-modal-card" @click.outside="closeUserModal()">
+                <div class="px-4 py-4 text-center"
+                    style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <div class="profile-avatar-lg mb-3 mx-auto">
+                        <i class="fa-solid fa-user-astronaut fa-3x text-primary-gradient"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1" x-text="userModal.name"></h3>
+                    <p class="text-secondary small mb-0" x-text="userModal.email"></p>
+                </div>
+
+                <div class="custom-modal-body p-4">
+                    <div class="mb-4">
+                        <label class="form-label text-muted text-uppercase fw-bold small mb-2"
+                            style="letter-spacing: 0.05em;">Display Name</label>
+                        <div class="d-flex gap-2">
+                            <template x-if="!userModal.isEditing">
+                                <div class="flex-grow-1 p-2 glass-panel border border-secondary rounded text-white d-flex justify-content-between align-items-center"
+                                    style="background: rgba(255,255,255,0.03);">
+                                    <span x-text="userModal.name"></span>
+                                    <button class="btn btn-sm btn-link text-primary p-0 text-decoration-none"
+                                        @click="userModal.isEditing = true">
+                                        <i class="fa-solid fa-pen-to-square"></i> Edit
+                                    </button>
+                                </div>
+                            </template>
+                            <template x-if="userModal.isEditing">
+                                <div class="flex-grow-1 d-flex gap-2">
+                                    <input type="text" class="form-control bg-dark text-white border-primary"
+                                        x-model="userModal.name" @keyup.enter="updatePersona()" autofocus>
+                                    <button class="btn btn-success btn-sm" @click="updatePersona()">
+                                        <i class="fa-solid fa-check"></i>
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm"
+                                        @click="userModal.isEditing = false">
+                                        <i class="fa-solid fa-times"></i>
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label text-muted text-uppercase fw-bold small mb-1">Email</label>
+                            <div class="text-white bg-dark-subtle p-2 rounded border border-secondary"
+                                x-text="userModal.email" style="font-size: 0.9rem;"></div>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label text-muted text-uppercase fw-bold small mb-1">Joined</label>
+                            <div class="text-white bg-dark-subtle p-2 rounded border border-secondary"
+                                x-text="formatDate(userModal.joinedAt)" style="font-size: 0.9rem;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="custom-modal-footer bg-dark-subtle border-top border-secondary">
+                    <button type="button" class="btn btn-secondary w-100" @click="closeUserModal()">Close</button>
+                </div>
+            </div>
+        </div>
+
         <!-- 2. Input Modal (Task/Swimlane) -->
         <div class="custom-modal-overlay" x-show="inputModal.open" x-transition.opacity
             :class="{ 'active': inputModal.open }" style="display: none !important;" x-init="$el.style.display = ''">
@@ -664,7 +742,9 @@ DRAG-AND-DROP CRITICAL NOTES:
                 <div class="detail-body p-4 flex-grow-1 overflow-auto">
                     <!-- Tags -->
                     <div class="mb-4">
-                        <label class="text-uppercase text-secondary fw-bold small mb-2 d-block">Tags</label>
+                        <label class="form-label text-light text-uppercase fw-bold mb-2"
+                            style="font-size: 0.9rem; letter-spacing: 0.05em;">Tags <span
+                                class="text-muted fw-normal">(press Enter to add)</span></label>
 
                         <!-- Tag List -->
                         <div class="d-flex flex-wrap gap-2 mb-2">
@@ -680,18 +760,9 @@ DRAG-AND-DROP CRITICAL NOTES:
                         </div>
 
                         <!-- Add Tag Input -->
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text bg-dark border-secondary text-secondary">
-                                <i class="fa-solid fa-tag"></i>
-                            </span>
-                            <input type="text" class="form-control bg-dark text-white border-secondary"
-                                placeholder="Add tag (Press Enter)..." x-model="taskDetail.tagInput"
-                                @keydown.enter.prevent="addTaskTag()" :disabled="taskDetail.isLoading">
-                            <button class="btn btn-outline-secondary" type="button" @click="addTaskTag()"
-                                :disabled="!taskDetail.tagInput.trim() || taskDetail.isLoading">
-                                <i class="fa-solid fa-plus"></i>
-                            </button>
-                        </div>
+                        <input type="text" class="form-control bg-dark text-white border-secondary"
+                            placeholder="Type a tag and press Enter..." x-model="taskDetail.tagInput"
+                            @keydown.enter.prevent="addTaskTag()" :disabled="taskDetail.isLoading">
                     </div>
 
                     <!-- Status -->
@@ -715,7 +786,8 @@ DRAG-AND-DROP CRITICAL NOTES:
                                     :class="{'border-primary': taskDetail.editingCommentId === comment.id, 'comment-selected': isCommentSelected(index)}">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <div class="d-flex align-items-center gap-2">
-                                            <span class="text-secondary small fw-bold">User</span>
+                                            <span class="text-secondary small fw-bold"
+                                                x-text="window.initialData.user.name"></span>
                                             <span class="text-secondary opacity-75 small" style="font-size: 0.75rem;"
                                                 x-text="formatDate(comment.createdAt)"
                                                 x-show="comment.createdAt"></span>
@@ -805,6 +877,18 @@ DRAG-AND-DROP CRITICAL NOTES:
     <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 
+    <script th:inline="javascript">
+        try {
+            // Thymeleaf will correctly escape the JSON string for JS
+            var rawJson = [[${ initialDataJson }]];
+            window.initialData = JSON.parse(rawJson);
+            console.log('[App] Initial Data Loaded (Success):', window.initialData);
+        } catch (e) {
+            console.error('[App] CRITICAL: Failed to parse initialData:', e);
+            // Fallback to prevent crash
+            window.initialData = { user: { name: 'Guest' }, lanes: [], tasks: [] };
+        }
+    </script>
     <script>
         // ============================================
         // SESSION MANAGEMENT

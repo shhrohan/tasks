@@ -10,6 +10,9 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.example.todo.repository.UserRepository;
+import com.example.todo.model.User;
 
 import java.util.HashMap;
 import java.util.List;
@@ -33,10 +36,14 @@ public class HomeController {
     private final TaskService taskService;
     private final ObjectMapper objectMapper;
 
-    public HomeController(SwimLaneService swimLaneService, TaskService taskService, ObjectMapper objectMapper) {
+    private final UserRepository userRepository;
+
+    public HomeController(SwimLaneService swimLaneService, TaskService taskService, ObjectMapper objectMapper,
+            UserRepository userRepository) {
         this.swimLaneService = swimLaneService;
         this.taskService = taskService;
         this.objectMapper = objectMapper;
+        this.userRepository = userRepository;
     }
 
     @GetMapping("/")
@@ -53,6 +60,16 @@ public class HomeController {
         Map<String, Object> initialData = new HashMap<>();
         initialData.put("lanes", lanes);
         initialData.put("tasks", tasks);
+
+        // Add user info (safe subset)
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByEmail(username).orElseThrow();
+        Map<String, String> userSafe = new HashMap<>();
+        userSafe.put("name", currentUser.getName());
+        userSafe.put("firstName", currentUser.getName().split(" ")[0]);
+        userSafe.put("email", currentUser.getEmail());
+        userSafe.put("joinedAt", currentUser.getCreatedAt() != null ? currentUser.getCreatedAt().toString() : "N/A");
+        initialData.put("user", userSafe);
 
         // Serialize to JSON and add to model
         String initialDataJson = objectMapper.writeValueAsString(initialData);

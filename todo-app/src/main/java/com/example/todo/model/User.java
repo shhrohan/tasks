@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "users", indexes = {
-    @Index(name = "idx_users_email", columnList = "email", unique = true)
+        @Index(name = "idx_users_email", columnList = "email", unique = true)
 })
 @Getter
 @Setter
@@ -28,6 +28,7 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @Column(name = "password_hash")
     private String passwordHash;
 
@@ -41,6 +42,3 @@ public class User {
         }
     }
 }
-
-
-

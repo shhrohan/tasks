@@ -1344,13 +1344,45 @@ Alpine.data('todoApp', () => ({
     formatDate(dateString) {
         if (!dateString) return '';
         try {
+            let date;
             // Handle array format [year, month, day, hour, minute, second, nano]
             if (Array.isArray(dateString)) {
                 const [year, month, day, hour, minute, second] = dateString;
-                // Note: month is 1-based in Java, 0-based in JS Date
-                return new Date(year, month - 1, day, hour, minute, second).toLocaleString();
+                date = new Date(year, month - 1, day, hour, minute, second);
+            } else {
+                date = new Date(dateString);
             }
-            return new Date(dateString).toLocaleString();
+
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const datePart = date.toLocaleDateString('en-GB', options); // "Monday, 10 December 2025"
+
+            // Calculate relative time
+            const now = new Date();
+            const diffMs = now - date; // Result in milliseconds
+            const diffSeconds = Math.floor(diffMs / 1000);
+
+            let relativePart = "Just now";
+
+            // Define intervals in seconds
+            const intervals = [
+                { label: 'year', seconds: 31536000 },
+                { label: 'month', seconds: 2592000 },
+                { label: 'week', seconds: 604800 },
+                { label: 'day', seconds: 86400 },
+                { label: 'hour', seconds: 3600 },
+                { label: 'minute', seconds: 60 }
+            ];
+
+            for (const interval of intervals) {
+                const count = Math.floor(diffSeconds / interval.seconds);
+                if (count >= 1) {
+                    relativePart = `${count} ${interval.label}${count !== 1 ? 's' : ''} ago`;
+                    break;
+                }
+            }
+
+            return `${datePart} (${relativePart})`;
+
         } catch (e) {
             console.error('Date parse error:', e);
             return dateString;

@@ -4,7 +4,6 @@ import com.example.todo.dao.UserDAO;
 import com.example.todo.model.User;
 import org.springframework.stereotype.Service;
 
-
 import java.util.Optional;
 
 import lombok.extern.log4j.Log4j2;
@@ -28,7 +27,6 @@ public class UserService {
         return userDAO.save(user);
     }
 
-
     /**
      * Gets or creates the default user for the application.
      * This is used during initial setup and for associating orphan swimlanes.
@@ -44,5 +42,13 @@ public class UserService {
                             .build();
                     return userDAO.save(defaultUser);
                 });
+    }
+
+    public User updateUser(String email, String newName) {
+        log.info("Updating user name for email: {} to {}", email, newName);
+        User user = userDAO.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        user.setName(newName);
+        return userDAO.save(user);
     }
 }

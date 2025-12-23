@@ -20,6 +20,7 @@
 
 const TASKS_URL = '/api/tasks';
 const SWIMLANES_URL = '/api/swimlanes';
+const USER_URL = '/api/user';
 const SSE_URL = '/api/sse/stream';
 
 // ===========================================================================
@@ -250,6 +251,23 @@ export const Api = {
         console.log(`[API] deleteSwimLane() - Params: { id: ${id} }`);
         await axios.delete(`${SWIMLANES_URL}/${id}`);
         console.log(`[API] deleteSwimLane(${id}) - Deleted successfully`);
+    },
+
+    // =========================================================================
+    // USER
+    // =========================================================================
+
+    /**
+     * Update user details (e.g. name)
+     * @param {string} name - New name
+     */
+    async updateUser(name) {
+        console.log(`[API] updateUser() - Params: { name: "${name}" }`);
+        const response = await axios.put(USER_URL, name, {
+            headers: { 'Content-Type': 'text/plain' }
+        });
+        console.log('[API] updateUser() - Response:', response.data);
+        return response.data;
     },
 
     // =========================================================================
