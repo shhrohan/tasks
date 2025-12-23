@@ -99,6 +99,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Tag Filter User Data Isolation** - Fixed bug where tag filter bar showed tags from all users' tasks instead of just the current user's tasks.
   - Added `getTasksForCurrentUser()` method to `TaskService` to filter tasks by user ownership.
   - Updated `HomeController.index()` to use the new filtered method.
+- **Modal Footer Styling** - Fixed transparent background on modal footer to match glassmorphism theme.
+- **User Profile Date** - Fixed "Invalid Date" display by handling 'N/A' values on the frontend.
+- **Dropdown Transparency** - Removed transparency from User Profile dropdown for better readability.
+
+### Changed
+- **User Profile Fields** - Removed Email and Joined Date fields from the User Profile modal for a cleaner look.
 
 ---
 

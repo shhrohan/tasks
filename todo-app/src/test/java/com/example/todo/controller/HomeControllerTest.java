@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import com.example.todo.repository.UserRepository;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ui.Model;
@@ -36,13 +37,23 @@ class HomeControllerTest {
     private ObjectMapper objectMapper;
 
     @Mock
+    private UserRepository userRepository;
+
+    @Mock
     private Model model;
+
+    @Mock
+    private org.springframework.security.core.Authentication authentication;
+
+    @Mock
+    private org.springframework.security.core.context.SecurityContext securityContext;
 
     @InjectMocks
     private HomeController homeController;
 
     private SwimLane testLane;
     private Task testTask;
+    private com.example.todo.model.User testUser;
 
     @BeforeEach
     void setUp() {
@@ -54,6 +65,18 @@ class HomeControllerTest {
         testTask.setId(1L);
         testTask.setName("Test Task");
         testTask.setStatus(TaskStatus.TODO);
+
+        testUser = new com.example.todo.model.User();
+        testUser.setEmail("test@example.com");
+        testUser.setName("Test User");
+
+        // Mock Security Context
+        org.springframework.security.core.context.SecurityContextHolder.setContext(securityContext);
+        lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
+        lenient().when(authentication.getName()).thenReturn("test@example.com");
+        
+        // Mock User Repository
+        lenient().when(userRepository.findByEmail("test@example.com")).thenReturn(java.util.Optional.of(testUser));
     }
 
     @Test

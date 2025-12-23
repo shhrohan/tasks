@@ -1343,6 +1343,8 @@ Alpine.data('todoApp', () => ({
      */
     formatDate(dateString) {
         if (!dateString) return '';
+        if (dateString === 'N/A') return 'N/A';
+
         try {
             let date;
             // Handle array format [year, month, day, hour, minute, second, nano]
@@ -1351,6 +1353,11 @@ Alpine.data('todoApp', () => ({
                 date = new Date(year, month - 1, day, hour, minute, second);
             } else {
                 date = new Date(dateString);
+            }
+
+            // Check for invalid date
+            if (isNaN(date.getTime())) {
+                return dateString;
             }
 
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };

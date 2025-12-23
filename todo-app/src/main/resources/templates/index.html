@@ -165,8 +165,8 @@ DRAG-AND-DROP CRITICAL NOTES:
                         <span class="d-none d-lg-inline ms-1"
                             x-text="window.initialData?.user?.name || 'User'">User</span>
                     </button>
-                    <ul
-                        class="dropdown-menu dropdown-menu-end dropdown-menu-dark p-2 glass-panel border border-secondary shadow-lg">
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark p-2 border border-secondary shadow-lg"
+                        style="background-color: #1e293b;">
                         <li class="mb-1">
                             <a class="dropdown-item rounded d-flex align-items-center gap-2 py-2" href="#"
                                 @click.prevent="openUserModal()">
@@ -552,7 +552,7 @@ DRAG-AND-DROP CRITICAL NOTES:
                         <i class="fa-solid fa-user-astronaut fa-3x text-primary-gradient"></i>
                     </div>
                     <h3 class="fw-bold mb-1" x-text="userModal.name"></h3>
-                    <p class="text-secondary small mb-0" x-text="userModal.email"></p>
+
                 </div>
 
                 <div class="custom-modal-body p-4">
@@ -586,21 +586,10 @@ DRAG-AND-DROP CRITICAL NOTES:
                         </div>
                     </div>
 
-                    <div class="row g-3">
-                        <div class="col-6">
-                            <label class="form-label text-muted text-uppercase fw-bold small mb-1">Email</label>
-                            <div class="text-white bg-dark-subtle p-2 rounded border border-secondary"
-                                x-text="userModal.email" style="font-size: 0.9rem;"></div>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label text-muted text-uppercase fw-bold small mb-1">Joined</label>
-                            <div class="text-white bg-dark-subtle p-2 rounded border border-secondary"
-                                x-text="formatDate(userModal.joinedAt)" style="font-size: 0.9rem;"></div>
-                        </div>
-                    </div>
+
                 </div>
 
-                <div class="custom-modal-footer bg-dark-subtle border-top border-secondary">
+                <div class="custom-modal-footer border-top border-secondary">
                     <button type="button" class="btn btn-secondary w-100" @click="closeUserModal()">Close</button>
                 </div>
             </div>
