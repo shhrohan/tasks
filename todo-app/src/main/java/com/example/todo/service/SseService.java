@@ -73,7 +73,7 @@ public class SseService {
         }
     }
 
-    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 30000)
+    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 10000)
     public void sendHeartbeat() {
         if (emitters.isEmpty())
             return;

@@ -295,6 +295,12 @@ export const Api = {
     // SERVER-SENT EVENTS (SSE) with Connection Status Tracking
     // =========================================================================
 
+    /** Active SSE connection */
+    currentEventSource: null,
+
+    /** Prevents stacking beforeunload listeners on reconnects */
+    beforeUnloadRegistered: false,
+
     /** Connection state */
     isConnected: true,
     reconnectAttempts: 0,
@@ -368,7 +374,29 @@ export const Api = {
      */
     initSSE(onTaskUpdate, onTaskDelete, onLaneUpdate) {
         console.log('[SSE] Initializing connection to', SSE_URL);
+
+        // Close any existing connection before creating a new one
+        if (this.currentEventSource) {
+            console.log('[SSE] Closing previous connection');
+            this.currentEventSource.close();
+            this.currentEventSource = null;
+        }
+
         const eventSource = new EventSource(SSE_URL);
+        this.currentEventSource = eventSource;
+
+        // Register cleanup on page unload/refresh (only once to prevent stacking)
+        if (!this.beforeUnloadRegistered) {
+            window.addEventListener('beforeunload', () => {
+                if (this.currentEventSource) {
+                    console.log('[SSE] Page unloading, closing connection');
+                    this.currentEventSource.close();
+                    this.currentEventSource = null;
+                }
+            });
+            this.beforeUnloadRegistered = true;
+            console.log('[SSE] Registered beforeunload cleanup handler');
+        }
 
         eventSource.onopen = () => {
             console.log('[SSE] Connection established');

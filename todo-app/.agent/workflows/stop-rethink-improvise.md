@@ -1,5 +1,5 @@
 ---
-description: Pre-implementation checklist and context gathering protocol
+description: stop rethink and improvise checklist
 ---
 
 # Pre-Implementation Workflow

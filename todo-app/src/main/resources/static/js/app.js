@@ -293,18 +293,45 @@ Alpine.data('todoApp', () => ({
      */
     toggleMobileSidebar() {
         this.mobileSidebarOpen = !this.mobileSidebarOpen;
-        // Always use push mode when sidebar is open
-        this.sidebarPinned = this.mobileSidebarOpen;
-        console.log('[App] toggleMobileSidebar:', this.mobileSidebarOpen);
+        // Don't auto-pin - let backdrop remain clickable to close
+        // User can manually pin if they want push mode
+        if (!this.mobileSidebarOpen) {
+            this.sidebarPinned = false; // Reset pin when closing
+        }
+        console.log('[App] toggleMobileSidebar:', this.mobileSidebarOpen, 'pinned:', this.sidebarPinned);
         this.updateSidebarBodyClasses();
     },
 
     /**
      * Select a swimlane on mobile (closes sidebar only if not pinned)
+     * Now also triggers instant lazy loading of tasks
      */
-    selectLane(laneId) {
+    async selectLane(laneId) {
         console.log('[App] selectLane:', laneId);
         this.activeLaneId = laneId;
+
+        // Find the lane and trigger lazy load if tasks not loaded
+        const lane = this.lanes.find(l => l.id === laneId);
+        if (lane && !lane.tasksLoaded) {
+            console.log(`[App] selectLane: Lazy loading tasks for lane ${laneId}`);
+            lane.loading = true;
+            lane.collapsed = false; // Expand the lane
+            try {
+                await this.fetchLaneTasks(laneId);
+                lane.tasksLoaded = true;
+                this.$nextTick(() => {
+                    this.reinitSortableForLane(laneId);
+                });
+            } catch (e) {
+                console.error(`[App] Failed to load tasks for lane ${laneId}:`, e);
+                this.showError('Failed to load tasks');
+            } finally {
+                lane.loading = false;
+            }
+        } else if (lane) {
+            lane.collapsed = false; // Just expand if already loaded
+        }
+
         if (!this.sidebarPinned) {
             this.mobileSidebarOpen = false; // Auto-close sidebar only if not pinned
             this.updateSidebarBodyClasses();
