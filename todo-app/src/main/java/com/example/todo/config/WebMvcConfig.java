@@ -49,7 +49,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
         // Cache favicon for 1 week
         registry.addResourceHandler("/favicon.png")
-                .addResourceLocations("classpath:/static/favicon.png")
+                .addResourceLocations("classpath:/static/")
                 .setCacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic());
     }
 }
