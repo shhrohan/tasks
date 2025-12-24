@@ -46,7 +46,7 @@ public class SwimLaneService {
                 .orElseThrow(() -> new RuntimeException("User not found: " + email));
     }
 
-    @Cacheable(value = "lanes", key = "#root.target.currentUserId")
+    @Cacheable(value = "lanesByUser", key = "#root.target.currentUserId")
     public List<SwimLane> getAllSwimLanes() {
         long start = System.currentTimeMillis();
         User user = getCurrentUser();
@@ -61,7 +61,7 @@ public class SwimLaneService {
         return getCurrentUser().getId();
     }
 
-    @Cacheable(value = "lanes", key = "'active-' + #root.target.currentUserId")
+    @Cacheable(value = "lanesByUser", key = "'active-' + #root.target.currentUserId")
     public List<SwimLane> getActiveSwimLanes() {
         long start = System.currentTimeMillis();
         User user = getCurrentUser();
@@ -73,16 +73,30 @@ public class SwimLaneService {
         return result;
     }
 
+    /**
+     * Get active swimlanes for a specific user ID (for cache warmup, bypasses SecurityContext).
+     */
+    @Cacheable(value = "lanesByUser", key = "'active-' + #userId")
+    public List<SwimLane> getActiveSwimLanesForUser(Long userId) {
+        long start = System.currentTimeMillis();
+        log.info("[CACHE MISS] Fetching ACTIVE swimlanes for userId: {}", userId);
+        List<SwimLane> result = swimLaneDAO
+                .findByUserIdAndIsCompletedFalseAndIsDeletedFalseOrderByPositionAsc(userId);
+        log.info("[TIMING] getActiveSwimLanesForUser({}) completed in {}ms, returned {} lanes",
+                userId, System.currentTimeMillis() - start, result.size());
+        return result;
+    }
+
     public List<SwimLane> getCompletedSwimLanes() {
         User user = getCurrentUser();
         return swimLaneDAO.findByUserIdAndIsCompletedTrueAndIsDeletedFalseOrderByPositionAsc(user.getId());
     }
 
     @Idempotent(keyExpression = "'createLane:' + #swimLane.name")
-    @CacheEvict(value = { "lanes", "userLanes" }, allEntries = true)
+    @CacheEvict(value = "lanesByUser", allEntries = true)
     public SwimLane createSwimLane(SwimLane swimLane) {
         User user = getCurrentUser();
-        log.info("[CACHE EVICT] Invalidating 'lanes' cache - creating new swimlane");
+        log.info("[CACHE EVICT] Invalidating 'lanesByUser' cache - creating new swimlane");
         swimLane.setUser(user);
 
         // Set position to max + 1 for this user
@@ -136,9 +150,9 @@ public class SwimLaneService {
     }
 
     @Idempotent(keyExpression = "'deleteLane:' + #id")
-    @CacheEvict(value = { "lanes", "userLanes" }, allEntries = true)
+    @CacheEvict(value = "lanesByUser", allEntries = true)
     public void deleteSwimLane(Long id) {
-        log.info("[CACHE EVICT] Invalidating 'lanes' cache - deleting swimlane {}", id);
+        log.info("[CACHE EVICT] Invalidating 'lanesByUser' cache - deleting swimlane {}", id);
         User user = getCurrentUser();
         log.debug("Soft deleting swimlane {}", id);
         SwimLane swimLane = swimLaneDAO.findById(id)
@@ -163,9 +177,9 @@ public class SwimLaneService {
     }
 
     @Idempotent(keyExpression = "'reorderLanes:' + #orderedIds.hashCode()")
-    @CacheEvict(value = { "lanes", "userLanes" }, allEntries = true)
+    @CacheEvict(value = "lanesByUser", allEntries = true)
     public void reorderSwimLanes(List<Long> orderedIds) {
-        log.info("[CACHE EVICT] Invalidating 'lanes' cache - reordering lanes");
+        log.info("[CACHE EVICT] Invalidating 'lanesByUser' cache - reordering lanes");
         User user = getCurrentUser();
         List<SwimLane> lanes = swimLaneDAO.findAllById(orderedIds);
 

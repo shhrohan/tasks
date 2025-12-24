@@ -116,7 +116,7 @@ DRAG-AND-DROP CRITICAL NOTES:
 
 <body class="bg-dark text-white" x-data="todoApp">
 
-    <!-- Navbar -->
+    <!-- Navbar - Simplified on mobile -->
     <nav class="navbar navbar-dark glass-panel sticky-top mb-4">
         <div class="container-fluid">
             <!-- Mobile: Sidebar Toggle (hidden on desktop) -->
@@ -126,23 +126,23 @@ DRAG-AND-DROP CRITICAL NOTES:
             </button>
 
             <a class="navbar-brand fw-bold" href="#">
-                <i class="fa-solid fa-cubes me-2"></i><span class="d-none d-sm-inline">TaskBoard 3D</span><span
-                    class="d-sm-none">Tasks</span>
+                <i class="fa-solid fa-cubes me-2"></i><span class="d-none d-md-inline">TaskBoard 3D</span><span
+                    class="d-md-none">Tasks</span>
             </a>
 
-            <div class="d-flex align-items-center gap-2 gap-lg-3">
+            <!-- Desktop: Full button bar -->
+            <div class="d-none d-md-flex align-items-center gap-2 gap-lg-3">
                 <!-- View Mode Toggle -->
                 <div class="btn-group me-2" role="group">
                     <button type="button" class="btn btn-sm"
                         :class="viewMode === 'ACTIVE' ? 'btn-primary' : 'btn-outline-secondary'"
                         @click="setViewMode('ACTIVE')" title="Show Active Lanes">
-                        <i class="fa-solid fa-list-check"></i><span class="d-none d-lg-inline ms-1">Active Lanes</span>
+                        <i class="fa-solid fa-list-check"></i><span class="d-none d-lg-inline ms-1">Active</span>
                     </button>
                     <button type="button" class="btn btn-sm"
                         :class="viewMode === 'COMPLETED' ? 'btn-primary' : 'btn-outline-secondary'"
                         @click="setViewMode('COMPLETED')" title="Show Completed Lanes">
-                        <i class="fa-solid fa-check-double"></i><span class="d-none d-lg-inline ms-1">Completed
-                            Lanes</span>
+                        <i class="fa-solid fa-check-double"></i><span class="d-none d-lg-inline ms-1">Done</span>
                     </button>
                 </div>
 
@@ -163,7 +163,7 @@ DRAG-AND-DROP CRITICAL NOTES:
                     <button type="button" class="btn btn-sm"
                         :class="showOnlyBlocked ? 'btn-danger' : 'btn-outline-secondary'"
                         @click="showOnlyBlocked = !showOnlyBlocked; hideDone = false" title="Show only blocked tasks">
-                        <i class="fa-solid fa-ban"></i><span class="d-none d-lg-inline ms-1">Blocked Only</span>
+                        <i class="fa-solid fa-ban"></i><span class="d-none d-lg-inline ms-1">Blocked</span>
                     </button>
                 </div>
 
@@ -178,7 +178,39 @@ DRAG-AND-DROP CRITICAL NOTES:
                         aria-expanded="false">
                         <i class="fa-solid fa-user"></i>
                         <span class="d-none d-lg-inline ms-1"
-                            x-text="window.initialData?.user?.name || 'User'">User</span>
+                            x-text="window.initialData?.user?.firstName || 'User'">User</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark p-2 border border-secondary shadow-lg"
+                        style="background-color: #1e293b;">
+                        <li class="mb-1">
+                            <a class="dropdown-item rounded d-flex align-items-center gap-2 py-2" href="#"
+                                @click.prevent="openUserModal()">
+                                <i class="fa-solid fa-user-circle text-primary"></i>
+                                <span>Profile</span>
+                            </a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider opacity-25">
+                        </li>
+                        <li>
+                            <form th:action="@{/logout}" method="post" class="m-0">
+                                <button type="submit"
+                                    class="dropdown-item rounded d-flex align-items-center gap-2 py-2 text-danger">
+                                    <i class="fa-solid fa-sign-out-alt"></i>
+                                    <span>Logout</span>
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Mobile: Compact user button only (rest goes to bottom nav) -->
+            <div class="d-md-none">
+                <div class="dropdown">
+                    <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                        <i class="fa-solid fa-user"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark p-2 border border-secondary shadow-lg"
                         style="background-color: #1e293b;">
@@ -207,7 +239,74 @@ DRAG-AND-DROP CRITICAL NOTES:
         </div>
     </nav>
 
-    <!-- Mobile Sidebar Drawer (Swimlane Navigation) -->
+    <!-- Mobile Header (visible on screens < 992px) -->
+    <header class="mobile-header d-lg-none">
+        <a class="mobile-header-brand" href="#">
+            <i class="fa-solid fa-cubes"></i>
+            <span>TaskBoard 3D</span>
+        </a>
+        <div class="dropdown">
+            <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                aria-expanded="false">
+                <i class="fa-solid fa-user"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark p-2 border border-secondary shadow-lg"
+                style="background-color: #1e293b;">
+                <li class="mb-1">
+                    <a class="dropdown-item rounded d-flex align-items-center gap-2 py-2" href="#"
+                        @click.prevent="openUserModal()">
+                        <i class="fa-solid fa-user-circle text-primary"></i>
+                        <span>Profile</span>
+                    </a>
+                </li>
+                <li>
+                    <hr class="dropdown-divider opacity-25">
+                </li>
+                <li>
+                    <form th:action="@{/logout}" method="post" class="m-0">
+                        <button type="submit"
+                            class="dropdown-item rounded d-flex align-items-center gap-2 py-2 text-danger">
+                            <i class="fa-solid fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </header>
+
+    <!-- Mobile Bottom Navigation Bar (visible on screens < 992px) -->
+    <nav class="mobile-bottom-nav d-lg-none" x-cloak>
+        <!-- Lanes button - toggles sidebar -->
+        <button class="bottom-nav-item" :class="{'active': mobileSidebarOpen}" @click="toggleMobileSidebar()">
+            <i class="fa-solid fa-layer-group"></i>
+            <span>Lanes</span>
+        </button>
+        <button class="bottom-nav-item" :class="{'active': viewMode === 'ACTIVE'}" @click="setViewMode('ACTIVE')">
+            <i class="fa-solid fa-list-check"></i>
+            <span>Active</span>
+        </button>
+        <button class="bottom-nav-item" :class="{'active': viewMode === 'COMPLETED'}" @click="setViewMode('COMPLETED')">
+            <i class="fa-solid fa-check-double"></i>
+            <span>Done</span>
+        </button>
+        <button class="bottom-nav-item" :class="{'active': hideDone}"
+            @click="hideDone = !hideDone; showOnlyBlocked = false">
+            <i class="fa-solid fa-eye-slash"></i>
+            <span>Hide ✓</span>
+        </button>
+        <button class="bottom-nav-item" :class="{'active': showOnlyBlocked}"
+            @click="showOnlyBlocked = !showOnlyBlocked; hideDone = false">
+            <i class="fa-solid fa-ban"></i>
+            <span>Blocked</span>
+        </button>
+        <button class="bottom-nav-item add-btn" @click="openSwimlaneModal()" x-show="viewMode === 'ACTIVE'">
+            <i class="fa-solid fa-plus"></i>
+            <span>Add</span>
+        </button>
+    </nav>
+
+    <!-- Mobile Sidebar Backdrop (tap to close) -->
     <div class="mobile-sidebar-backdrop" x-show="mobileSidebarOpen && isMobile"
         x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
@@ -216,20 +315,23 @@ DRAG-AND-DROP CRITICAL NOTES:
     </div>
 
     <aside class="mobile-sidebar" x-show="mobileSidebarOpen && isMobile"
-        x-transition:enter="transition ease-out duration-300" x-transition:enter-start="sidebar-hidden"
-        x-transition:enter-end="sidebar-visible" x-transition:leave="transition ease-in duration-200"
+        x-transition:enter="transition cubic-bezier(0.4, 0, 0.2, 1) duration-300"
+        x-transition:enter-start="sidebar-hidden" x-transition:enter-end="sidebar-visible"
+        x-transition:leave="transition cubic-bezier(0.4, 0, 0.2, 1) duration-300"
         x-transition:leave-start="sidebar-visible" x-transition:leave-end="sidebar-hidden" x-cloak>
 
-        <!-- Sidebar Header (Title only) -->
-        <div class="mobile-sidebar-header d-flex align-items-center px-3 py-2 border-bottom border-secondary">
-            <span class="text-uppercase text-secondary fw-bold small" style="letter-spacing: 0.05em;">Swimlanes</span>
+        <!-- Sidebar Header (title only) -->
+        <div class="mobile-sidebar-header">
+            <span>SWIMLANES</span>
         </div>
 
         <!-- Swimlane List -->
         <div class="mobile-sidebar-body">
             <template x-for="lane in lanes" :key="lane.id">
-                <button class="sidebar-lane-item" :class="{'active': activeLaneId === lane.id}"
-                    x-show="isSidebarLaneVisible(lane.id)" @click="selectLane(lane.id)">
+                <button class="sidebar-lane-item" :class="{
+                        'active': activeLaneId === lane.id,
+                        'disabled': selectedTags.length > 0 && !laneHasMatchingTasks(lane.id)
+                    }" x-show="isSidebarLaneVisible(lane.id)" @click="selectLane(lane.id)">
                     <span class="lane-name" x-text="lane.name"></span>
                     <div class="lane-progress-ring">
                         <!-- Circular progress indicator -->
@@ -267,9 +369,18 @@ DRAG-AND-DROP CRITICAL NOTES:
                     x-text="expanded ? 'Hide tags' : 'Tags (' + getAllUniqueTags().length + ')'"></span>
                 <i class="fa-solid d-lg-none" :class="expanded ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
             </button>
-            <span x-show="selectedTags.length > 0" class="badge bg-info">
-                <span x-text="selectedTags.length"></span> active
-            </span>
+            <div class="d-flex align-items-center gap-2">
+                <template x-if="selectedTags.length > 0">
+                    <span class="badge bg-info">
+                        <span x-text="selectedTags.length"></span> active
+                    </span>
+                </template>
+                <template x-if="selectedTags.length > 0">
+                    <button class="btn btn-link btn-sm text-secondary p-0" @click="clearSelectedTags()">
+                        <i class="fa-solid fa-times-circle"></i> Clear
+                    </button>
+                </template>
+            </div>
         </div>
         <!-- Desktop: Always show all tags -->
         <div class="d-none d-lg-flex align-items-center gap-2 flex-wrap mt-2">
@@ -278,10 +389,6 @@ DRAG-AND-DROP CRITICAL NOTES:
                     x-text="tag">
                 </button>
             </template>
-            <button class="btn btn-link btn-sm text-secondary p-0 ms-2" x-show="selectedTags.length > 0"
-                @click="clearSelectedTags()" title="Clear all filters">
-                <i class="fa-solid fa-times-circle"></i> Clear
-            </button>
         </div>
         <!-- Mobile: Expandable tag list -->
         <div class="d-lg-none mt-2" x-show="expanded" x-transition>
@@ -291,10 +398,6 @@ DRAG-AND-DROP CRITICAL NOTES:
                         x-text="tag">
                     </button>
                 </template>
-                <button class="btn btn-link btn-sm text-secondary p-0 ms-2" x-show="selectedTags.length > 0"
-                    @click="clearSelectedTags()" title="Clear all filters">
-                    <i class="fa-solid fa-times-circle"></i> Clear
-                </button>
             </div>
         </div>
     </div>
@@ -907,7 +1010,7 @@ DRAG-AND-DROP CRITICAL NOTES:
     <script th:inline="javascript">
         try {
             // Thymeleaf will correctly escape the JSON string for JS
-            var rawJson = [[${ initialDataJson }]];
+            var rawJson = /*[[${initialDataJson}]]*/ "{}";
             window.initialData = JSON.parse(rawJson);
             console.log('[App] Initial Data Loaded (Success):', window.initialData);
         } catch (e) {

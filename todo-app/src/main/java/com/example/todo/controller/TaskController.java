@@ -23,11 +23,8 @@ public class TaskController {
         this.taskService = taskService;
     }
 
-    @GetMapping
-    public List<Task> getAllTasks() {
-        log.info("Fetching all tasks");
-        return taskService.getAllTasks();
-    }
+    // Note: getAllTasks() endpoint removed - use /swimlane/{id} instead
+    // Tasks are now only fetched per lane for better performance and caching
 
     @GetMapping("/swimlane/{swimLaneId}")
     public List<Task> getTasksBySwimLane(@PathVariable Long swimLaneId) {

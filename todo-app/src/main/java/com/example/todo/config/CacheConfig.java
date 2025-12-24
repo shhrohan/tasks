@@ -29,11 +29,12 @@ public class CacheConfig {
     public CacheManager cacheManager() {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager();
         cacheManager.setCaffeine(caffeineCacheBuilder());
+        // Only 2 caches needed:
+        // - lanesByUser: Swimlanes per user
+        // - tasksByLane: Tasks grouped by lane ID (lazy-loaded)
         cacheManager.setCacheNames(java.util.List.of(
-                "lanes", // All active lanes
-                "tasks", // All tasks
-                "tasksByLane", // Tasks grouped by lane ID
-                "userLanes" // User-specific lanes
+                "lanesByUser",  // Active lanes per user
+                "tasksByLane"   // Tasks grouped by lane ID
         ));
         return cacheManager;
     }

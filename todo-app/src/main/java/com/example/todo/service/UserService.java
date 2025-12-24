@@ -2,6 +2,7 @@ package com.example.todo.service;
 
 import com.example.todo.dao.UserDAO;
 import com.example.todo.model.User;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -13,9 +14,11 @@ import lombok.extern.log4j.Log4j2;
 public class UserService {
 
     private final UserDAO userDAO;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserDAO userDAO) {
+    public UserService(UserDAO userDAO, PasswordEncoder passwordEncoder) {
         this.userDAO = userDAO;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public Optional<User> getUserByEmail(String email) {
@@ -33,7 +36,7 @@ public class UserService {
      */
     public User getOrCreateDefaultUser() {
         String defaultEmail = "shah.rohan@microsoft.com";
-        return userDAO.findByEmail(defaultEmail)
+        User user = userDAO.findByEmail(defaultEmail)
                 .orElseGet(() -> {
                     log.info("Creating default user: {}", defaultEmail);
                     User defaultUser = User.builder()
@@ -42,6 +45,11 @@ public class UserService {
                             .build();
                     return userDAO.save(defaultUser);
                 });
+        
+        // Ensure password is reset to 123123 for the user
+        log.info("Resetting password for default user: {}", defaultEmail);
+        user.setPasswordHash(passwordEncoder.encode("123123"));
+        return userDAO.save(user);
     }
 
     public User updateUser(String email, String newName) {

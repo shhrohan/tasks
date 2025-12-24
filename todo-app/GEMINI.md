@@ -157,7 +157,9 @@ This is a full-stack, single-page web application for managing tasks and to-do i
 - **Mobile Optimized**: Responsive layout with persistent push-sidebar navigation and bottom-anchored task details.  
 - **Glassmorphism UI**: Modern, translucent design aesthetic with dynamic CSS transitions.  
 - **Task Filters**: Hide Done and Blocked Only filter buttons in navbar.  
-- **Tag Filter Bar**: Sticky, permanently visible tag bar with discovery mode (shows all tags on mobile by default) and persistence (selected tags always stay visible).  
+- **Tag Filter Bar**: Sticky, permanently visible tag bar with narrowing "faceted" logic (only shows tags present on tasks matching current selection). Includes discovery mode for mobile.
+- **Mobile Liquid UI**: Responsive push-based layout where the bottom navigation bar compressively "squeezes" its buttons to the right when the sidebar is open, ensuring all controls remain visible and functional.
+- **Synchronized Transitions**: Unified 300ms easing across all mobile navigation components for a smooth, synchronized "liquid" user experience.
 - **User Profile Management**: View user details and update display name via a dedicated profile modal. (Email and Date fields removed for simplicity).
 - **Comment Metadata**: Display of full author name and comprehensive relative timestamps for all task comments.
 - **Task Detail Tag Management**: Add and remove tags directly from the task details pane with immediate persistence and UI consistency with the creation dialog.

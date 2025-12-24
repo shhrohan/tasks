@@ -293,11 +293,8 @@ Alpine.data('todoApp', () => ({
      */
     toggleMobileSidebar() {
         this.mobileSidebarOpen = !this.mobileSidebarOpen;
-        // Don't auto-pin - let backdrop remain clickable to close
-        // User can manually pin if they want push mode
-        if (!this.mobileSidebarOpen) {
-            this.sidebarPinned = false; // Reset pin when closing
-        }
+        // Always use push mode - content shrinks when sidebar is open
+        this.sidebarPinned = this.mobileSidebarOpen;
         console.log('[App] toggleMobileSidebar:', this.mobileSidebarOpen, 'pinned:', this.sidebarPinned);
         this.updateSidebarBodyClasses();
     },
@@ -332,9 +329,12 @@ Alpine.data('todoApp', () => ({
             lane.collapsed = false; // Just expand if already loaded
         }
 
-        if (!this.sidebarPinned) {
-            this.mobileSidebarOpen = false; // Auto-close sidebar only if not pinned
+        // ALWAYS close mobile sidebar after selection on mobile, regardless of pinning
+        if (this.isMobile && this.mobileSidebarOpen) {
+            this.mobileSidebarOpen = false;
+            this.sidebarPinned = false; // Unpin to restore layout
             this.updateSidebarBodyClasses();
+            console.log('[App] selectLane: Auto-closed sidebar on mobile');
         }
 
         // Scroll to top of content
@@ -404,19 +404,12 @@ Alpine.data('todoApp', () => ({
         const lane = this.lanes.find(l => l.id === laneId);
         if (!lane) return false;
 
-        // Sidebar should also follow the Active/Completed view mode
+        // Sidebar should only filter by Active/Completed view mode
+        // Tag filters should NOT affect sidebar visibility
         const matchesMode = (this.viewMode === 'ACTIVE' && !lane.isCompleted) ||
             (this.viewMode === 'COMPLETED' && lane.isCompleted);
 
-        if (!matchesMode) return false;
-
-        // If no tags selected, show ALL lanes for discovery on mobile sidebar
-        if (!this.selectedTags || this.selectedTags.length === 0) {
-            return true;
-        }
-
-        // If tags are selected, show only lanes that have matching tasks
-        return this.laneHasMatchingTasks(laneId);
+        return matchesMode;
     },
 
     /**
@@ -487,6 +480,7 @@ Alpine.data('todoApp', () => ({
                 lane.loading = false;
             }
         }
+
     },
 
     /**
@@ -653,8 +647,10 @@ Alpine.data('todoApp', () => ({
      */
     getTasks(laneId, status) {
         // Apply filters
-        if (this.hideDone && status === 'DONE') {
-            return []; // Hide entire DONE column when filter active
+        // If hideDone is active, only hide DONE column if NO tags are selected.
+        // If tags ARE selected, we want to see the matching DONE tasks.
+        if (this.hideDone && status === 'DONE' && (!this.selectedTags || this.selectedTags.length === 0)) {
+            return []; // Hide entire DONE column when filter active AND no tags selected
         }
         if (this.showOnlyBlocked && status !== 'BLOCKED') {
             return []; // Show only BLOCKED column when filter active
@@ -764,25 +760,26 @@ Alpine.data('todoApp', () => ({
      */
     getAllUniqueTags() {
         const tagSet = new Set();
+        const hasFilters = this.selectedTags && this.selectedTags.length > 0;
 
-        // If no tags are selected, show ALL unique tags for discovery (especially important on mobile)
-        if (!this.selectedTags || this.selectedTags.length === 0) {
-            this.tasks.forEach(task => {
-                const tags = this.getTags(task.tags);
-                tags.forEach(tag => tagSet.add(tag));
-            });
-        } else {
-            // If tags are selected, show tags from visible lanes to allow narrowing down
-            this.lanes.forEach(lane => {
-                if (this.isLaneVisible(lane.id)) {
-                    const laneTasks = this.tasks.filter(t => t.swimLane && t.swimLane.id === lane.id);
-                    laneTasks.forEach(task => {
-                        const tags = this.getTags(task.tags);
-                        tags.forEach(tag => tagSet.add(tag));
-                    });
-                }
-            });
-            // ALWAYS include selected tags so they can be unselected
+        this.tasks.forEach(task => {
+            const taskTags = this.getTags(task.tags);
+            const taskTagsLower = taskTags.map(t => t.toLowerCase());
+
+            // Narrowing logic:
+            // 1. If no filters, add all tags.
+            // 2. If filters, task must have ALL selected tags (AND logic) to contribute its other tags to the discovery bar.
+            const matchesFilters = !hasFilters || this.selectedTags.every(selectedTag =>
+                taskTagsLower.includes(selectedTag.toLowerCase())
+            );
+
+            if (matchesFilters) {
+                taskTags.forEach(tag => tagSet.add(tag));
+            }
+        });
+
+        // ALWAYS include selected tags so they can be unselected even if no tasks match anymore
+        if (hasFilters) {
             this.selectedTags.forEach(tag => tagSet.add(tag));
         }
 

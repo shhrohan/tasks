@@ -1,6 +1,7 @@
 package com.example.todo.service;
 
 import com.example.todo.dao.UserDAO;
+import com.example.todo.model.SwimLane;
 import com.example.todo.model.Task;
 import com.example.todo.model.TaskStatus;
 import com.example.todo.model.User;
@@ -23,12 +24,16 @@ class CacheWarmupServiceTest {
     private UserDAO userDAO;
 
     @Mock
+    private SwimLaneService swimLaneService;
+
+    @Mock
     private TaskService taskService;
 
     @InjectMocks
     private CacheWarmupService cacheWarmupService;
 
     private User testUser;
+    private SwimLane testLane;
     private Task testTask;
 
     @BeforeEach
@@ -36,6 +41,10 @@ class CacheWarmupServiceTest {
         testUser = new User();
         testUser.setId(1L);
         testUser.setEmail("test@example.com");
+
+        testLane = new SwimLane();
+        testLane.setId(1L);
+        testLane.setName("Test Lane");
 
         testTask = new Task();
         testTask.setId(1L);
@@ -47,7 +56,7 @@ class CacheWarmupServiceTest {
     void warmUpCaches_ShouldFetchAllUsers() {
         // Arrange
         when(userDAO.findAll()).thenReturn(Collections.singletonList(testUser));
-        when(taskService.getAllTasks()).thenReturn(Collections.emptyList());
+        when(swimLaneService.getActiveSwimLanesForUser(1L)).thenReturn(Collections.emptyList());
 
         // Act
         cacheWarmupService.warmUpCaches();
@@ -57,16 +66,31 @@ class CacheWarmupServiceTest {
     }
 
     @Test
-    void warmUpCaches_ShouldFetchAllTasks() {
+    void warmUpCaches_ShouldFetchLanesForAllUsers() {
         // Arrange
         when(userDAO.findAll()).thenReturn(Collections.singletonList(testUser));
-        when(taskService.getAllTasks()).thenReturn(Arrays.asList(testTask));
+        when(swimLaneService.getActiveSwimLanesForUser(1L)).thenReturn(Collections.singletonList(testLane));
+        when(taskService.getTasksBySwimLaneId(1L)).thenReturn(Collections.singletonList(testTask));
 
         // Act
         cacheWarmupService.warmUpCaches();
 
         // Assert
-        verify(taskService).getAllTasks();
+        verify(swimLaneService).getActiveSwimLanesForUser(1L);
+    }
+
+    @Test
+    void warmUpCaches_ShouldFetchTasksForAllLanes() {
+        // Arrange
+        when(userDAO.findAll()).thenReturn(Collections.singletonList(testUser));
+        when(swimLaneService.getActiveSwimLanesForUser(1L)).thenReturn(Collections.singletonList(testLane));
+        when(taskService.getTasksBySwimLaneId(1L)).thenReturn(Collections.singletonList(testTask));
+
+        // Act
+        cacheWarmupService.warmUpCaches();
+
+        // Assert
+        verify(taskService).getTasksBySwimLaneId(1L);
     }
 
     @Test
@@ -85,31 +109,38 @@ class CacheWarmupServiceTest {
     void warmUpCaches_ShouldHandleEmptyUserList() {
         // Arrange
         when(userDAO.findAll()).thenReturn(Collections.emptyList());
-        when(taskService.getAllTasks()).thenReturn(Collections.emptyList());
 
         // Act
         cacheWarmupService.warmUpCaches();
 
         // Assert
         verify(userDAO).findAll();
-        verify(taskService).getAllTasks();
+        verifyNoInteractions(swimLaneService);
+        verifyNoInteractions(taskService);
     }
 
     @Test
-    void warmUpCaches_ShouldHandleMultipleUsers() {
+    void warmUpCaches_ShouldHandleMultipleUsersAndLanes() {
         // Arrange
         User user2 = new User();
         user2.setId(2L);
         user2.setEmail("user2@example.com");
 
+        SwimLane lane2 = new SwimLane();
+        lane2.setId(2L);
+        lane2.setName("Lane 2");
+
         when(userDAO.findAll()).thenReturn(Arrays.asList(testUser, user2));
-        when(taskService.getAllTasks()).thenReturn(Collections.emptyList());
+        when(swimLaneService.getActiveSwimLanesForUser(1L)).thenReturn(Collections.singletonList(testLane));
+        when(swimLaneService.getActiveSwimLanesForUser(2L)).thenReturn(Collections.singletonList(lane2));
+        when(taskService.getTasksBySwimLaneId(anyLong())).thenReturn(Collections.emptyList());
 
         // Act
         cacheWarmupService.warmUpCaches();
 
         // Assert
         verify(userDAO).findAll();
-        verify(taskService).getAllTasks();
+        verify(swimLaneService).getActiveSwimLanesForUser(1L);
+        verify(swimLaneService).getActiveSwimLanesForUser(2L);
     }
 }

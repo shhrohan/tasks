@@ -1,10 +1,7 @@
 package com.example.todo.controller;
 
 import com.example.todo.model.SwimLane;
-import com.example.todo.model.Task;
-import com.example.todo.model.TaskStatus;
 import com.example.todo.service.SwimLaneService;
-import com.example.todo.service.TaskService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,9 +28,6 @@ class HomeControllerTest {
     private SwimLaneService swimLaneService;
 
     @Mock
-    private TaskService taskService;
-
-    @Mock
     private ObjectMapper objectMapper;
 
     @Mock
@@ -52,7 +46,6 @@ class HomeControllerTest {
     private HomeController homeController;
 
     private SwimLane testLane;
-    private Task testTask;
     private com.example.todo.model.User testUser;
 
     @BeforeEach
@@ -60,11 +53,6 @@ class HomeControllerTest {
         testLane = new SwimLane();
         testLane.setId(1L);
         testLane.setName("Test Lane");
-
-        testTask = new Task();
-        testTask.setId(1L);
-        testTask.setName("Test Task");
-        testTask.setStatus(TaskStatus.TODO);
 
         testUser = new com.example.todo.model.User();
         testUser.setEmail("test@example.com");
@@ -83,7 +71,6 @@ class HomeControllerTest {
     void index_ShouldReturnIndexView() throws Exception {
         // Arrange
         when(swimLaneService.getActiveSwimLanes()).thenReturn(Collections.emptyList());
-        when(taskService.getTasksForCurrentUser()).thenReturn(Collections.emptyList());
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");
 
         // Act
@@ -97,11 +84,9 @@ class HomeControllerTest {
     void index_ShouldAddInitialDataJsonToModel() throws Exception {
         // Arrange
         List<SwimLane> lanes = Arrays.asList(testLane);
-        List<Task> tasks = Arrays.asList(testTask);
         String expectedJson = "{\"lanes\":[],\"tasks\":[]}";
 
         when(swimLaneService.getActiveSwimLanes()).thenReturn(lanes);
-        when(taskService.getTasksForCurrentUser()).thenReturn(tasks);
         when(objectMapper.writeValueAsString(any())).thenReturn(expectedJson);
 
         // Act
@@ -115,7 +100,6 @@ class HomeControllerTest {
     void index_ShouldFetchActiveSwimLanes() throws Exception {
         // Arrange
         when(swimLaneService.getActiveSwimLanes()).thenReturn(Collections.emptyList());
-        when(taskService.getTasksForCurrentUser()).thenReturn(Collections.emptyList());
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");
 
         // Act
@@ -126,28 +110,25 @@ class HomeControllerTest {
     }
 
     @Test
-    void index_ShouldFetchAllTasks() throws Exception {
-        // Arrange
+    void index_ShouldNotFetchTasks_TasksAreLazyLoaded() throws Exception {
+        // Arrange - HomeController no longer fetches tasks, they are lazy-loaded
         when(swimLaneService.getActiveSwimLanes()).thenReturn(Collections.emptyList());
-        when(taskService.getTasksForCurrentUser()).thenReturn(Collections.emptyList());
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");
 
         // Act
         homeController.index(model);
 
-        // Assert
-        verify(taskService).getTasksForCurrentUser();
+        // Assert - tasks are empty in initial load, fetched per lane via API
+        verify(swimLaneService).getActiveSwimLanes();
     }
 
     @Test
     void index_ShouldSerializeDataToJson() throws Exception {
         // Arrange
         List<SwimLane> lanes = Arrays.asList(testLane);
-        List<Task> tasks = Arrays.asList(testTask);
 
         when(swimLaneService.getActiveSwimLanes()).thenReturn(lanes);
-        when(taskService.getTasksForCurrentUser()).thenReturn(tasks);
-        when(objectMapper.writeValueAsString(any())).thenReturn("{\"lanes\":[{\"id\":1}],\"tasks\":[{\"id\":1}]}");
+        when(objectMapper.writeValueAsString(any())).thenReturn("{\"lanes\":[{\"id\":1}],\"tasks\":[]}");
 
         // Act
         homeController.index(model);

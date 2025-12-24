@@ -11,22 +11,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased] - 2025-12-24
 
 ### Added
-- **Desktop Performance Optimization (Lazy Loading)**:
-  - **Lazy Task Fetching**: on desktop, swimlanes initially load in a collapsed state without fetching tasks, significantly reducing initial load payload and rendering time.
-  - **Async Expansion**: Tasks for a specific lane are fetched asynchronously only when the user expands the lane for the first time.
-  - **Master Expand All**: Updated "Expand All" button to concurrently trigger lazy loading for all visible lanes.
-- **Direct Backend View Switching**:
-  - Refactored "Active" and "Completed" view switching to always fetch fresh data from the backend, ensuring state consistency and eliminating client-side caching bugs.
-  - Consistent filtering across the main board and mobile sidebar.
+- **Liquid Mobile UI (Shrink/Expand)**:
+  - **Dynamic Bottom Nav**: Refined the "liquid" behavior where the bottom navigation bar squeezes its buttons to the right when the sidebar is open, ensuring all controls remain accessible on small screens.
+  - **Responsive Labels**: Navigation buttons preserve their labels on larger viewports (>450px) while automatically switching to icon-only mode on ultra-small devices to prevent crowding.
+- **Faceted Tag Filtering**:
+  - Implemented narrowing/faceted search logic for the tag filter bar. The bar now only displays tags that coexist on tasks matching the current selection, making multi-tag discovery intuitive and efficient.
+- **Improved Mobile Navigation**:
+  - **Auto-Close Sidebar**: Selecting a swimlane in the mobile sidebar now automatically closes the sidebar and navigates to the selected lane's tasks.
+  - **Synchronized Transitions**: Standardized all UI transitions (sidebar, content push, bottom nav) to 300ms with a consistent `cubic-bezier(0.4, 0, 0.2, 1)` easing for a perfectly unified feel.
 
 ### Fixed
-- **Alpine.js State Transitions**: Resolved "reading after" error by properly clearing task state and resetting `tasksLoaded` flags during view switches.
-- **Column Misalignment**: Fixed visual "shifting" of task columns in the "Completed" view by preserving spacer columns on desktop.
-- **Duplicate Key Warnings**: Ensured no duplicate task IDs are pushed to Alpine's reactive state during fast view/lane switching.
+- **Mobile Layout Shifting**: Resolved issues where the bottom nav would slide off-screen; it now stays pinned and compresses internally.
+- **Sidebar Layering**: Fixed z-index issues to ensure the full-width (or near full-width) mobile sidebar correctly overlays board content while remaining behind the bottom navigation.
+- **Thymeleaf JS Lint**: Fixed a persistent `',' expected` error in `index.html` by using standard comment-enabled Thymeleaf expression syntax.
 
 ### Changed
-- **Header Cleanup**: Removed the total task count badge from swimlane headers for a cleaner, more focused UI.
-- **Term Standardization**: Renamed "Done" button to "Mark As Complete" across all UI interaction points for better semantic clarity.
+- **Sidebar Auto-Close**: Redesigned `selectLane` to always unpin and close the sidebar on mobile after a selection is made, streamlining the mobile task tracking flow.
 
 ## [1.3.3] - 2025-12-22
 

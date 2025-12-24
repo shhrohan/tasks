@@ -1,9 +1,7 @@
 package com.example.todo.controller;
 
 import com.example.todo.model.SwimLane;
-import com.example.todo.model.Task;
 import com.example.todo.service.SwimLaneService;
-import com.example.todo.service.TaskService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
@@ -17,31 +15,30 @@ import com.example.todo.model.User;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
 
 /**
  * HomeController - Serves the main index page with initial data.
  * 
  * PERFORMANCE OPTIMIZATION:
- * This controller eliminates the API waterfall problem by embedding
- * initial lanes and tasks as JSON directly in the HTML. This improves
- * Cumulative Layout Shift (CLS) by preventing async loading shifts.
+ * Only sends lanes on initial load. Tasks are lazy-loaded when lanes are expanded.
+ * This reduces initial payload and speeds up time-to-interactive.
  * 
- * Results: CLS dropped from 0.98 to 0.07 (good threshold is <0.1)
+ * Caches used:
+ * - lanes: Swimlanes per user
+ * - tasksByLane: Tasks fetched on-demand when lane is expanded
  */
 @Controller
 @Log4j2
 public class HomeController {
 
     private final SwimLaneService swimLaneService;
-    private final TaskService taskService;
     private final ObjectMapper objectMapper;
-
     private final UserRepository userRepository;
 
-    public HomeController(SwimLaneService swimLaneService, TaskService taskService, ObjectMapper objectMapper,
+    public HomeController(SwimLaneService swimLaneService, ObjectMapper objectMapper,
             UserRepository userRepository) {
         this.swimLaneService = swimLaneService;
-        this.taskService = taskService;
         this.objectMapper = objectMapper;
         this.userRepository = userRepository;
     }
@@ -50,16 +47,15 @@ public class HomeController {
     public String index(Model model) throws JsonProcessingException {
         log.info("[HomeController] Serving index page with initial data");
 
-        // Fetch initial data
+        // Fetch only lanes (tasks are lazy-loaded when lane is expanded)
         List<SwimLane> lanes = swimLaneService.getActiveSwimLanes();
-        List<Task> tasks = taskService.getTasksForCurrentUser();
 
-        log.info("[HomeController] Loaded {} lanes and {} tasks", lanes.size(), tasks.size());
+        log.info("[HomeController] Loaded {} lanes (tasks will be lazy-loaded)", lanes.size());
 
-        // Create initial data object
+        // Create initial data object - NO tasks, only lanes
         Map<String, Object> initialData = new HashMap<>();
         initialData.put("lanes", lanes);
-        initialData.put("tasks", tasks);
+        initialData.put("tasks", Collections.emptyList()); // Empty - lazy loaded
 
         // Add user info (safe subset)
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
