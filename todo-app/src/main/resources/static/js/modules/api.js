@@ -192,6 +192,16 @@ export const Api = {
     // =========================================================================
 
     /**
+     * Fetch all swimlanes (including completed and active)
+     */
+    async fetchAllSwimLanes() {
+        console.log('[API] fetchAllSwimLanes() - Fetching all swimlanes');
+        const response = await axios.get(SWIMLANES_URL);
+        console.log(`[API] fetchAllSwimLanes() - Returned ${response.data.length} lanes`);
+        return response.data;
+    },
+
+    /**
      * Fetch all active (non-completed) swimlanes
      */
     async fetchSwimLanes() {
@@ -240,6 +250,17 @@ export const Api = {
         console.log(`[API] completeSwimLane() - Params: { id: ${id} }`);
         const response = await axios.patch(`${SWIMLANES_URL}/${id}/complete`);
         console.log('[API] completeSwimLane() - Response:', response.data);
+        return response.data;
+    },
+
+    /**
+     * Mark a swimlane as uncomplete (reactivate)
+     * @param {number} id - Swimlane ID
+     */
+    async uncompleteSwimLane(id) {
+        console.log(`[API] uncompleteSwimLane() - Params: { id: ${id} }`);
+        const response = await axios.patch(`${SWIMLANES_URL}/${id}/uncomplete`);
+        console.log('[API] uncompleteSwimLane() - Response:', response.data);
         return response.data;
     },
 

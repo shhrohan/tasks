@@ -8,28 +8,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [Unreleased] - 2025-12-22
+## [Unreleased] - 2025-12-24
 
 ### Added
-- **Mobile Task Details Slide-up** - Enhanced task detail experience for smaller screens:
-  - **Slide-up Animation**: Task details now slide up from the bottom on mobile instead of sliding in from the right.
-  - **Fixed Layout**: Optimized pane dimensions (`85vh` height, `100%` width) and rounded top corners for a native app feel.
-- **Tag Bar Discovery & Persistence** - Improved tag filtering logic:
-  - **Discovery Mode**: On mobile, the tag bar reveals all system tags by default (even if the active lane is empty) to aid in navigation and task discovery.
-  - **Filter Persistence**: Selected tags always remain visible in the tag bar, allowing users to unselect them regardless of other filter conflicts.
-  - **Permanent Visibility**: The tag filter area is now always visible across all views, ensuring users always have access to filter controls.
-- **Improved UI Specificity** - Resolved CSS conflicts causing unexpected behavior:
-  - **Add Task Visibility**: Fixed a conflict between Bootstrap's `d-flex` (`!important`) and Alpine's `x-show` that prevented the "Add Task" button from being hidden when filters were active.
-- **Mobile Sidebar Lane Filtering**: Swimlanes in the mobile sidebar now only show lanes containing tasks that match active tag filters. If no tags are selected, all lanes are shown.
-- **Enhanced Code Coverage**: Achieved **96% backend instruction coverage** and **93% branch coverage**, exceeding all targets. Added comprehensive tests for `IdempotencyAspect`, `IdempotencyService`, `GlobalExceptionHandler`, and `CacheLoggingInterceptor`.
-- **User Profile Management**: View user details and update display name via a dedicated profile modal.
-- **Comment Metadata**: Display of full author name and comprehensive relative timestamps for all task comments (e.g., "Monday, 10 December 2025 (13 Days ago)" or "2 hours ago").
-- **Task Detail Tag Management**: capability to add and remove tags directly from the task details pane, with immediate backend persistence and UI consistency with the creation dialog.
-- **Improved UI Robustness**: Fixed frontend initialization order for `initialData` to prevent "undefined" errors across different network speeds.
+- **Desktop Performance Optimization (Lazy Loading)**:
+  - **Lazy Task Fetching**: on desktop, swimlanes initially load in a collapsed state without fetching tasks, significantly reducing initial load payload and rendering time.
+  - **Async Expansion**: Tasks for a specific lane are fetched asynchronously only when the user expands the lane for the first time.
+  - **Master Expand All**: Updated "Expand All" button to concurrently trigger lazy loading for all visible lanes.
+- **Direct Backend View Switching**:
+  - Refactored "Active" and "Completed" view switching to always fetch fresh data from the backend, ensuring state consistency and eliminating client-side caching bugs.
+  - Consistent filtering across the main board and mobile sidebar.
+
+### Fixed
+- **Alpine.js State Transitions**: Resolved "reading after" error by properly clearing task state and resetting `tasksLoaded` flags during view switches.
+- **Column Misalignment**: Fixed visual "shifting" of task columns in the "Completed" view by preserving spacer columns on desktop.
+- **Duplicate Key Warnings**: Ensured no duplicate task IDs are pushed to Alpine's reactive state during fast view/lane switching.
 
 ### Changed
-- **Mobile Details Accessibility**: Removed restricted logic that prevented task details from opening on mobile devices.
-- **Dynamic CSS Transitions**: Refactored transition logic to use shared CSS classes (`pane-visible`, `pane-hidden`) for smoother cross-device animations.
+- **Header Cleanup**: Removed the total task count badge from swimlane headers for a cleaner, more focused UI.
+- **Term Standardization**: Renamed "Done" button to "Mark As Complete" across all UI interaction points for better semantic clarity.
+
+## [1.3.3] - 2025-12-22
 
 ## [1.3.2] - 2025-12-21
 

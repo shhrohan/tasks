@@ -220,7 +220,8 @@ export const Drag = {
             return;
         }
 
-        console.log('[Drag] Initializing Lane Sortable on .board-container');
+        const isMobile = window.innerWidth < 992;
+        console.log(`[Drag] Initializing Lane Sortable on .board-container (Mobile: ${isMobile})`);
 
         // Destroy existing instance to prevent duplicates
         if (containerElement.sortableInstance) {
@@ -232,6 +233,7 @@ export const Drag = {
             handle: '.swimlane-header', // Only drag lanes by their header
             animation: 150,
             ghostClass: 'lane-ghost',
+            disabled: isMobile, // Disable dragging on mobile initially
 
             onStart: (evt) => {
                 console.log('[Drag] Lane drag started:', {

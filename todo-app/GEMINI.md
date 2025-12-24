@@ -77,6 +77,7 @@
       - Ensure new features / bug fixes have corresponding unit or integration tests.  
     - **VERIFY** tests pass before asking for commit approval.
 - **BRANCH COVERAGE**: Maintain >90% branch coverage for service and utility classes.  
+- **NO BROWSER/UI TASKS (PERMANENT RULE)**: Never perform UI tasks or browser-based validations/testing. The USER will handle all visual and UI-related testing and verification. Do not use `browser_subagent` for these purposes.
    5. ASK THE USER FOR PERMISSION TO COMMIT:  
       - Message format:  
         `"Validation complete: app restarted, browser verified, tests passing. Do you approve a commit now?"`
@@ -244,6 +245,28 @@ spring.http.compression.min-response-size=1024
 ### Other Optimizations
 - `spring.jpa.open-in-view=false` – prevents N+1 lazy loading issues.  
 - Optimistic UI updates with SSE-based eventual consistency.
+
+---
+
+## Frontend Performance Optimizations
+
+The application employs viewport-aware loading strategies to maintain responsiveness.
+
+### Desktop Lazy Loading Pattern
+- **Objective**: Minimize initial DOM weight and memory usage on desktop.
+- **Implementation**:
+  - `init()`: Detects desktop via `isMobile` check and clears `initialData.tasks`. 
+  - All swimlanes start in `collapsed: true` and `tasksLoaded: false` state.
+  - **Async Fetch**: Expanding a lane triggers `fetchLaneTasks(laneId)` via `toggleLaneCollapse` override.
+  - **Sortable Re-init**: `reinitSortableForLane` is called after tasks DOM renders to enable drag-and-drop on lazy-loaded items.
+  - **Master Toggle**: `toggleAllLanes` override triggers concurrent lazy loading for all visible, un-loaded lanes.
+
+### View Mode Management
+- **States**: `ACTIVE` vs `COMPLETED`.
+- **Sync Protocol**:
+  - Switching `viewMode` via `setViewMode` triggers a full backend refresh for the target mode.
+  - `tasks` array is cleared to prevent cross-view data leakage and duplicate key errors in Alpine.
+  - Frontend re-syncs state immediately, then pulls fresh data to guarantee consistency after archival/restoration.
 
 ---
 

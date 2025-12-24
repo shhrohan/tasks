@@ -208,11 +208,15 @@ body {
     top: 56px;
     /* Below navbar */
     z-index: 999;
-    background: rgba(15, 23, 42, 0.9);
-    border-bottom: var(--glass-border);
+    background: rgba(30, 41, 59, 1);
+    /* Solid, lighter slate color */
+    border-bottom: 2px solid rgba(59, 130, 246, 0.4);
+    /* Thicker blue border */
     backdrop-filter: blur(10px);
     margin-bottom: 1.5rem;
     padding-bottom: 0.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    /* Stronger shadow */
 }
 
 /* Tag Capsules */
@@ -978,8 +982,11 @@ body {
     .tag-filter-bar {
         position: sticky;
         top: 56px;
+        background: rgba(30, 41, 59, 1) !important;
+        /* Force lighter solid color on mobile */
         padding: 0.75rem !important;
         margin-bottom: 1rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5) !important;
     }
 
     .tag-filter-bar .d-flex {
@@ -1067,9 +1074,9 @@ body {
     }
 
     .swimlane-header>.d-flex.justify-content-between {
-        flex-direction: column !important;
-        gap: 0.75rem !important;
-        align-items: stretch !important;
+        flex-direction: row !important;
+        gap: 0.5rem !important;
+        align-items: center !important;
     }
 
     /* Title row */
@@ -1078,6 +1085,7 @@ body {
     }
 
     /* Mobile Done button - compact size, right-aligned */
+    .swimlane-header .btn-success.d-lg-none,
     .swimlane-header .btn-outline-success.d-lg-none {
         width: auto !important;
         flex: 0 0 auto !important;
@@ -1139,8 +1147,8 @@ body {
        SWIMLANE CONTENT - Vertical Stacking
        ───────────────────────────────────────── */
     .swimlane-content.row {
-        display: flex !important;
-        flex-direction: column !important;
+        display: flex;
+        flex-direction: column;
         gap: 0 !important;
         padding: 0 1rem 1rem 1rem !important;
     }
@@ -1691,10 +1699,12 @@ body {
     }
 
     /* Mark completed button - icon only on very small */
+    .swimlane-header .btn-success span,
     .swimlane-header .btn-outline-success span {
         display: none;
     }
 
+    .swimlane-header .btn-success,
     .swimlane-header .btn-outline-success {
         min-width: 44px;
         max-width: 44px;
@@ -2269,8 +2279,8 @@ body.sidebar-pinned .mobile-sidebar-backdrop {
 /* Small screens: Full-width drawer */
 @media (max-width: 400px) {
     .mobile-sidebar {
-        width: 100%;
-        border-right: none;
+        width: 85%;
+        max-width: 320px;
     }
 }
 
@@ -2438,6 +2448,7 @@ kbd {
         transform: translateX(0);
     }
 }
+
 /* ============================================
    USER PROFILE MODAL STYLES
    ============================================ */

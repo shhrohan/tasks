@@ -10,6 +10,7 @@ export const Store = {
     lanes: [],
     tasks: [],
     loading: false,
+    viewMode: 'ACTIVE', // 'ACTIVE' or 'COMPLETED'
 
     // ==========================================================================
     // LOADING STATE FLAGS (Double-Click Protection)
@@ -79,13 +80,55 @@ export const Store = {
     },
 
     async loadData() {
-        // 1. Fetch Lanes First
-        const lanes = await Api.fetchSwimLanes();
+        // Fetch lanes based on current viewMode
+        console.log('[Store] loadData() - Fetching lanes for mode:', this.viewMode);
+        let lanes;
+        if (this.viewMode === 'COMPLETED') {
+            lanes = await Api.fetchCompletedSwimLanes();
+        } else {
+            lanes = await Api.fetchSwimLanes();
+        }
 
-        // Initialize UI state for lanes (collapsed, etc)
-        const activeLanes = lanes.map(l => ({ ...l, collapsed: true, loading: true }));
+        // Initialize UI state
+        const processedLanes = lanes.map(l => ({ ...l, collapsed: true, loading: true }));
 
-        return { lanes: activeLanes };
+        return { lanes: processedLanes };
+    },
+
+    async setViewMode(mode) {
+        if (this.viewMode === mode) return;
+
+        console.log('[Store] Switching viewMode to:', mode);
+        this.viewMode = mode;
+        this.loading = true;
+
+        try {
+            // Always reload everything from server as requested
+            if (typeof this.loadViaApi === 'function') {
+                await this.loadViaApi();
+            } else {
+                const data = await this.loadData();
+                this.lanes = data.lanes;
+                this.tasks = [];
+            }
+            console.log('[Store] View changed, data reloaded from server');
+        } catch (e) {
+            console.error('[Store] Failed to load ' + mode + ' lanes', e);
+            this.showError('Failed to load ' + mode.toLowerCase() + ' boards');
+        } finally {
+            this.loading = false;
+        }
+
+        // Re-init Sortable for visible lanes
+        if (this.$nextTick) {
+            this.$nextTick(() => {
+                this.lanes.forEach(lane => {
+                    if (this.isLaneVisible(lane.id)) {
+                        this.reinitSortableForLane(lane.id);
+                    }
+                });
+            });
+        }
     },
 
     getLaneStats(laneId) {
@@ -180,10 +223,15 @@ export const Store = {
             this.modal.type = 'danger';
             this.modal.confirmText = 'Delete';
         } else if (actionName === 'completeLane') {
-            this.modal.title = 'Complete Swimlane?';
-            this.modal.message = 'This will mark all tasks as done and hide the lane.';
+            this.modal.title = 'Mark Swimlane Complete?';
+            this.modal.message = 'This will mark all tasks as DONE and move the board to Completed view.';
             this.modal.type = 'success';
-            this.modal.confirmText = 'Complete';
+            this.modal.confirmText = 'Mark Complete';
+        } else if (actionName === 'uncompleteLane') {
+            this.modal.title = 'Reactivate Swimlane?';
+            this.modal.message = 'This will move the board back to Active view.';
+            this.modal.type = 'primary';
+            this.modal.confirmText = 'Reactivate';
         } else if (actionName === 'deleteComment') {
             this.modal.title = 'Delete Comment?';
             this.modal.message = 'Are you sure you want to delete this comment?';
@@ -209,6 +257,7 @@ export const Store = {
         // This ensures the spinner shows during the operation
         if (action === 'deleteLane') this.deleteLaneRecursive(payload);
         if (action === 'completeLane') this.completeLaneRecursive(payload);
+        if (action === 'uncompleteLane') this.uncompleteLaneRecursive(payload);
         if (action === 'deleteComment') this.executeDeleteComment(payload);
         // Do NOT close modal here - let async handlers close it in their finally blocks
     },
@@ -548,7 +597,9 @@ export const Store = {
         const lane = this.lanes.find(l => l.id === laneId);
         if (lane) lane.isCompleted = true;
 
-        this.lanes = this.lanes.filter(l => l.id !== laneId);
+        // Note: We no longer filter out of this.lanes here.
+        // The UI visibility logic (isLaneVisible) will handle hiding it 
+        // from the Active view instantly.
 
         try {
             await Api.completeSwimLane(laneId);
@@ -563,6 +614,33 @@ export const Store = {
             }
         } finally {
             this.isCompletingLane = false;
+            this.closeModal();
+        }
+    },
+
+    async uncompleteLaneRecursive(laneId) {
+        // Guard: Prevent duplicate calls
+        if (this.loading) return;
+
+        console.log('[Store] uncompleteLaneRecursive - Calling API with:', { laneId });
+
+        const lane = this.lanes.find(l => l.id === laneId);
+        if (lane) lane.isCompleted = false;
+
+        // Note: No filtering here. isLaneVisible handles the switch.
+
+        try {
+            await Api.uncompleteSwimLane(laneId);
+            console.log('[Store] uncompleteLaneRecursive - Reactivated successfully');
+            this.triggerSave();
+        } catch (e) {
+            console.error('[Store] uncompleteLaneRecursive - FAILED:', e);
+            if (lane) {
+                lane.isCompleted = true;
+                this.lanes.push(lane);
+            }
+            this.showError('Failed to reactivate lane');
+        } finally {
             this.closeModal();
         }
     },

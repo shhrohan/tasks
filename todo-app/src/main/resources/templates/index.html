@@ -131,6 +131,21 @@ DRAG-AND-DROP CRITICAL NOTES:
             </a>
 
             <div class="d-flex align-items-center gap-2 gap-lg-3">
+                <!-- View Mode Toggle -->
+                <div class="btn-group me-2" role="group">
+                    <button type="button" class="btn btn-sm"
+                        :class="viewMode === 'ACTIVE' ? 'btn-primary' : 'btn-outline-secondary'"
+                        @click="setViewMode('ACTIVE')" title="Show Active Lanes">
+                        <i class="fa-solid fa-list-check"></i><span class="d-none d-lg-inline ms-1">Active Lanes</span>
+                    </button>
+                    <button type="button" class="btn btn-sm"
+                        :class="viewMode === 'COMPLETED' ? 'btn-primary' : 'btn-outline-secondary'"
+                        @click="setViewMode('COMPLETED')" title="Show Completed Lanes">
+                        <i class="fa-solid fa-check-double"></i><span class="d-none d-lg-inline ms-1">Completed
+                            Lanes</span>
+                    </button>
+                </div>
+
                 <!-- Collapse/Expand All Button (hidden on mobile) -->
                 <button class="btn btn-outline-light btn-sm d-none d-lg-flex align-items-center gap-2"
                     @click="toggleAllLanes()"
@@ -153,7 +168,7 @@ DRAG-AND-DROP CRITICAL NOTES:
                 </div>
 
                 <!-- Add Swimlane Button -->
-                <button class="btn btn-primary btn-sm" @click="openSwimlaneModal()">
+                <button class="btn btn-primary btn-sm" @click="openSwimlaneModal()" x-show="viewMode === 'ACTIVE'">
                     <i class="fa-solid fa-plus"></i><span class="d-none d-lg-inline ms-1">New Board</span>
                 </button>
 
@@ -233,7 +248,7 @@ DRAG-AND-DROP CRITICAL NOTES:
     <!-- Tag Filter Bar (Collapsible on mobile) -->
     <div class="tag-filter-bar glass-panel px-3 py-2" x-data="{expanded: false}">
         <div class="d-flex align-items-center justify-content-between">
-            <button class="btn btn-sm btn-link text-secondary p-0 d-flex align-items-center gap-2"
+            <button class="btn btn-sm btn-link text-light p-0 d-flex align-items-center gap-2"
                 @click="expanded = !expanded">
                 <i class="fa-solid fa-tags"></i>
                 <span class="d-none d-lg-inline">Filter by tag:</span>
@@ -312,18 +327,25 @@ DRAG-AND-DROP CRITICAL NOTES:
                                         <!-- Lane name on both mobile and desktop -->
                                         <span class="h5 mb-0 fw-bold d-lg-none" x-text="lane.name"></span>
                                         <span class="h4 mb-0 fw-bold d-none d-lg-inline" x-text="lane.name"></span>
-                                        <span class="badge bg-primary rounded-pill"
-                                            x-text="getLaneStats(lane.id).total"></span>
                                         <div x-show="lane.loading" class="spinner-border spinner-border-sm text-primary"
                                             role="status"></div>
-
-                                        <!-- Mobile: Mark As Done button -->
-                                        <button class="btn btn-sm btn-outline-success d-lg-none px-2 py-1"
-                                            @click.stop="confirmAction('completeLane', lane.id)" title="Mark As Done">
-                                            <i class="fa-solid fa-circle-check me-1"></i>
-                                            <span class="small">Done</span>
-                                        </button>
                                     </div>
+
+                                    <!-- Mobile: Mark As Done button (Right Aligned) -->
+                                    <button class="btn btn-sm btn-success d-lg-none px-2 py-1"
+                                        x-show="viewMode === 'ACTIVE'"
+                                        @click.stop="confirmAction('completeLane', lane.id)" title="Mark As Complete">
+                                        <i class="fa-solid fa-circle-check me-1"></i>
+                                        <span class="small">Complete</span>
+                                    </button>
+
+                                    <!-- Mobile: Reactivate Button -->
+                                    <button class="btn btn-sm btn-primary d-lg-none px-2 py-1"
+                                        x-show="viewMode === 'COMPLETED'"
+                                        @click.stop="confirmAction('uncompleteLane', lane.id)" title="Reactivate Board">
+                                        <i class="fa-solid fa-rotate-left me-1"></i>
+                                        <span class="small">Reactivate</span>
+                                    </button>
 
                                     <!-- Center: Progress Bar (Inline in Header) - Desktop only -->
                                     <div class="swimlane-progress-inline flex-grow-1 mx-3 ms-auto d-none d-lg-flex"
@@ -350,7 +372,7 @@ DRAG-AND-DROP CRITICAL NOTES:
                                                 <div class="badge rounded-pill bg-success shadow-sm status-pill-lg"
                                                     :style="'flex-grow: ' + getLaneStats(lane.id).done"
                                                     x-text="getLaneStats(lane.id).donePct + '% (' + getLaneStats(lane.id).done + ')'"
-                                                    title="Done"></div>
+                                                    title="Complete"></div>
                                             </template>
 
                                             <!-- Blocked -->
@@ -373,10 +395,15 @@ DRAG-AND-DROP CRITICAL NOTES:
 
                                     <!-- Right: Actions - Desktop only (mobile button is inline above) -->
                                     <div class="d-none d-lg-flex gap-2 ms-auto">
-                                        <button class="btn btn-sm btn-outline-success"
+                                        <button class="btn btn-sm btn-outline-success" x-show="viewMode === 'ACTIVE'"
                                             @click.stop="confirmAction('completeLane', lane.id)"
-                                            title="Mark As Completed">
-                                            <i class="fa-solid fa-check me-2"></i>Mark As Completed
+                                            title="Mark As Complete">
+                                            <i class="fa-solid fa-check me-2"></i>Mark As Complete
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-primary" x-show="viewMode === 'COMPLETED'"
+                                            @click.stop="confirmAction('uncompleteLane', lane.id)"
+                                            title="Reactivate Swimlane">
+                                            <i class="fa-solid fa-rotate-left me-2"></i>Reactivate Board
                                         </button>
                                     </div>
                                 </div>
@@ -384,11 +411,11 @@ DRAG-AND-DROP CRITICAL NOTES:
 
                             <!-- Swimlane Body (Columns) -->
                             <div class="swimlane-content row g-3 px-3 pb-3 pt-0" x-show="!lane.collapsed" x-transition>
-                                <!-- Add Task Button Col (Hidden when filtering tags) -->
-                                <div x-show="selectedTags.length === 0"
-                                    class="col-12 col-lg-2 align-items-center justify-content-center border-end border-secondary"
-                                    :class="{'d-flex': selectedTags.length === 0}">
-                                    <button class="btn btn-outline-primary btn-sm" @click.stop="openTaskModal(lane.id)">
+                                <!-- Add Task Button Col (Always present on desktop for alignment, button hidden when filtering or completed) -->
+                                <div class="col-12 col-lg-2 align-items-center justify-content-center border-end border-secondary"
+                                    :class="{'d-flex': selectedTags.length === 0 && viewMode === 'ACTIVE', 'd-none d-lg-flex': selectedTags.length > 0 || viewMode === 'COMPLETED'}">
+                                    <button x-show="selectedTags.length === 0 && viewMode === 'ACTIVE'"
+                                        class="btn btn-outline-primary btn-sm" @click.stop="openTaskModal(lane.id)">
                                         <i class="fa-solid fa-plus"></i> Add Task
                                     </button>
                                 </div>

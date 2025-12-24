@@ -154,11 +154,24 @@ Alpine.data('todoApp', () => ({
 
                     console.log(`[App] Loaded ${this.lanes.length} lanes and ${this.tasks.length} tasks from initial data`);
 
-                    // Expand lanes that have tasks
+                    // Initial Load: Force collapsed state on Desktop (Optimization requested)
+                    if (!this.isMobile) {
+                        console.log('[App] Desktop mode: clearing initial tasks for lazy loading');
+                        this.tasks = [];
+                    }
+
                     this.lanes.forEach(lane => {
-                        const laneTasks = this.tasks.filter(t => t.swimLane && t.swimLane.id === lane.id);
                         lane.loading = false;
-                        lane.collapsed = laneTasks.length === 0;
+                        lane.tasksLoaded = false;
+
+                        if (!this.isMobile) {
+                            lane.collapsed = true;
+                        } else {
+                            // Mobile: Keep existing logic (expand if tasks present in initial data)
+                            const laneTasks = this.tasks.filter(t => t.swimLane && t.swimLane.id === lane.id);
+                            lane.collapsed = laneTasks.length === 0;
+                            if (laneTasks.length > 0) lane.tasksLoaded = true;
+                        }
                     });
 
                     // Initialize Sortable after DOM renders
@@ -223,7 +236,8 @@ Alpine.data('todoApp', () => ({
         // ---------------------------------------------------------------------
         this.$watch('selectedTags', (value) => {
             const isFilterActive = value.length > 0;
-            console.log('[App] Tag filter state changed. isFilterActive:', isFilterActive);
+            const shouldDisableLanes = isFilterActive || this.isMobile;
+            console.log('[App] Tag filter state changed. isFilterActive:', isFilterActive, 'isMobile:', this.isMobile);
 
             // Update all task Sortable instances
             document.querySelectorAll('.lane-column').forEach(col => {
@@ -235,7 +249,20 @@ Alpine.data('todoApp', () => ({
             // Update lane reorder Sortable instance
             const boardContainer = document.querySelector('.board-container');
             if (boardContainer && boardContainer.sortableInstance) {
-                boardContainer.sortableInstance.option('disabled', isFilterActive);
+                boardContainer.sortableInstance.option('disabled', shouldDisableLanes);
+            }
+        });
+
+        // Watch for mobile viewport changes to enable/disable lane reordering
+        this.$watch('isMobile', (isMobile) => {
+            console.log('[App] isMobile changed:', isMobile);
+            const isFilterActive = this.selectedTags.length > 0;
+            const shouldDisableLanes = isFilterActive || isMobile;
+
+            const boardContainer = document.querySelector('.board-container');
+            if (boardContainer && boardContainer.sortableInstance) {
+                console.log(`[App] Updating lane Sortable disabled state to: ${shouldDisableLanes}`);
+                boardContainer.sortableInstance.option('disabled', shouldDisableLanes);
             }
         });
 
@@ -320,6 +347,18 @@ Alpine.data('todoApp', () => ({
      * - On mobile without tags: show only active lane
      */
     isLaneVisible(laneId) {
+        const lane = this.lanes.find(l => l.id === laneId);
+        if (!lane) return false;
+
+        // --- View Mode Filter ---
+        // 'Active' mode shows only non-completed lanes
+        // 'Completed' mode shows only completed lanes
+        const matchesMode = (this.viewMode === 'ACTIVE' && !lane.isCompleted) ||
+            (this.viewMode === 'COMPLETED' && lane.isCompleted);
+
+        if (!matchesMode) return false;
+
+        // --- Tag & Device Filters ---
         // On desktop, show all lanes (filtered by tags)
         if (!this.isMobile) {
             return this.laneHasMatchingTasks(laneId);
@@ -335,6 +374,15 @@ Alpine.data('todoApp', () => ({
     },
 
     isSidebarLaneVisible(laneId) {
+        const lane = this.lanes.find(l => l.id === laneId);
+        if (!lane) return false;
+
+        // Sidebar should also follow the Active/Completed view mode
+        const matchesMode = (this.viewMode === 'ACTIVE' && !lane.isCompleted) ||
+            (this.viewMode === 'COMPLETED' && lane.isCompleted);
+
+        if (!matchesMode) return false;
+
         // If no tags selected, show ALL lanes for discovery on mobile sidebar
         if (!this.selectedTags || this.selectedTags.length === 0) {
             return true;
@@ -342,6 +390,76 @@ Alpine.data('todoApp', () => ({
 
         // If tags are selected, show only lanes that have matching tasks
         return this.laneHasMatchingTasks(laneId);
+    },
+
+    /**
+     * Override Store.toggleAllLanes to support lazy-loading
+     */
+    async toggleAllLanes() {
+        const anyExpanded = this.lanes.some(l => !l.collapsed);
+        const targetCollapsedState = anyExpanded ? true : false;
+
+        console.log(`[App] toggleAllLanes - Setting collapsed state to: ${targetCollapsedState}`);
+
+        this.lanes.forEach(lane => {
+            lane.collapsed = targetCollapsedState;
+        });
+
+        // If we just expanded all, trigger lazy load for all visible lanes
+        if (!targetCollapsedState) {
+            const lanesToLoad = this.lanes.filter(l =>
+                !l.tasksLoaded && this.isLaneVisible(l.id)
+            );
+
+            const loadPromises = lanesToLoad.map(async (lane) => {
+                lane.loading = true;
+                try {
+                    await this.fetchLaneTasks(lane.id);
+                    lane.tasksLoaded = true;
+                    this.$nextTick(() => {
+                        this.reinitSortableForLane(lane.id);
+                    });
+                } catch (e) {
+                    console.error(`[App] Failed to lazy load lane ${lane.id}:`, e);
+                } finally {
+                    lane.loading = false;
+                }
+            });
+            await Promise.all(loadPromises);
+        }
+    },
+
+    /**
+     * Override Store.toggleLaneCollapse to add lazy-loading for desktop
+     */
+    async toggleLaneCollapse(laneId) {
+        const lane = this.lanes.find(l => l.id === laneId);
+        if (!lane) return;
+
+        // Toggle collapsed state
+        lane.collapsed = !lane.collapsed;
+        console.log(`[App] Lane ${laneId} toggled to: ${lane.collapsed ? 'collapsed' : 'expanded'}`);
+
+        // Lazy load tasks if expanding for the first time
+        if (!lane.collapsed && !lane.tasksLoaded) {
+            console.log(`[App] Desktop Optimization: Lazy fetching tasks for lane ${laneId}`);
+            lane.loading = true;
+            try {
+                // this.fetchLaneTasks already pushes tasks to this.tasks
+                await this.fetchLaneTasks(laneId);
+                lane.tasksLoaded = true;
+
+                // Re-init Sortable so drag-and-drop works for newly loaded cards
+                this.$nextTick(() => {
+                    this.reinitSortableForLane(laneId);
+                });
+            } catch (e) {
+                console.error(`[App] Failed to lazy load tasks for lane ${laneId}:`, e);
+                this.showError('Failed to load tasks');
+            } finally {
+                lane.loading = false;
+            }
+        }
     },
 
     /**
@@ -358,32 +476,45 @@ Alpine.data('todoApp', () => ({
      */
     async loadViaApi() {
         console.log('[App] loadViaApi: Starting async API fetch...');
-        const data = await Store.loadData();
+        const data = await this.loadData();
         this.lanes = data.lanes;
-        console.log(`[App] Loaded ${this.lanes.length} lanes via API`);
 
-        // Load tasks per lane
-        const lanePromises = this.lanes.map(async (lane) => {
-            try {
-                const newTasks = await Store.fetchLaneTasks(lane.id);
-                this.tasks.push(...newTasks);
+        // CRITICAL BUG FIX: Clear tasks array before re-fetching
+        this.tasks = [];
 
-                const localLane = this.lanes.find(l => l.id === lane.id);
-                if (localLane) {
-                    localLane.loading = false;
-                    localLane.collapsed = newTasks.length === 0;
+        console.log(`[App] Loaded ${this.lanes.length} lanes via API. Tasks cleared.`);
+
+        if (this.isMobile) {
+            console.log('[App] loadViaApi: Mobile mode - eager loading all tasks');
+            // Mobile: Eager load all tasks to keep swipe transitions fast
+            const lanePromises = this.lanes.map(async (lane) => {
+                try {
+                    const newTasks = await this.fetchLaneTasks(lane.id);
+                    const localLane = this.lanes.find(l => l.id === lane.id);
+                    if (localLane) {
+                        localLane.loading = false;
+                        localLane.tasksLoaded = true;
+                        localLane.collapsed = newTasks.length === 0;
+                    }
+                    this.$nextTick(() => {
+                        this.reinitSortableForLane(lane.id);
+                    });
+                } catch (e) {
+                    console.error(`[App] Error fetching tasks for lane ${lane.id}:`, e);
                 }
+            });
+            await Promise.all(lanePromises);
+        } else {
+            console.log('[App] loadViaApi: Desktop mode - lazy loading tasks (lanes starting collapsed)');
+            // Desktop: Optimization - lanes start collapsed and empty
+            this.lanes.forEach(lane => {
+                lane.loading = false;
+                lane.collapsed = true;
+                lane.tasksLoaded = false;
+            });
+        }
 
-                this.$nextTick(() => {
-                    this.reinitSortableForLane(lane.id);
-                });
-            } catch (e) {
-                console.error(`[App] Error fetching tasks for lane ${lane.id}:`, e);
-            }
-        });
-
-        await Promise.all(lanePromises);
-        console.log('[App] All lanes loaded via API');
+        console.log('[App] Data load phase complete');
         this.isLoading = false;
     },
 
