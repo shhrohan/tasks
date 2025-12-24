@@ -20,6 +20,7 @@ git commit -am "feat/fix: Final description"
 ## 3. Documentation Updates
 - [ ] **Update** `CHANGELOG.md` under `[Unreleased]`.
 - [ ] **Update** `GEMINI.md` with new patterns or instructions.
+- [ ] **Update** `walkthrough.md` with proof of work and verification results.
 - [ ] **Review** `task.md` for completion status.
 
 ## 4. Merge Policy

@@ -8,7 +8,14 @@ This workflow guides autonomous debugging sessions.
 
 ## 1. Information Gathering
 - [ ] **Read** relevant files to understand context.
-- [ ] **Check** logs (`target/surefire-reports` or app logs).
+- [ ] **Check** logs and terminal output:
+// turbo
+```bash
+# Check startup log
+tail -n 50 startup.log
+# Check for any error logs in target
+find target/surefire-reports -name "*.txt" -exec head -n 20 {} +
+```
 - [ ] **Reproduce** the issue with a test case if possible.
 
 ## 2. Analysis

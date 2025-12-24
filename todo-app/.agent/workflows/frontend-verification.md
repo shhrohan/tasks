@@ -19,5 +19,9 @@ This workflow enforces **Stage 2.1: Frontend Verification** protocols from `GEMI
 - [ ] **Log**: Ensure `console.log('[App] ...')` is present for execution proof.
 
 ## 3. Verification
-- [ ] **Restart** application.
-- [ ] **Verify** persistence of the change.
+// turbo
+Restart application and verify persistence:
+```bash
+pkill -f 'spring-boot:run' || true
+mvn spring-boot:run
+```

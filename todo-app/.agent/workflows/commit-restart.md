@@ -8,8 +8,12 @@ This workflow enforces **Stage 2: Implementation** protocols from `GEMINI.md`.
 
 ## 1. Apply & Restart
 // turbo
-Apply changes and restart the backend:
+Apply changes, kill existing process, and restart the backend:
 ```bash
+# Kill existing Spring Boot/Java process if running
+pkill -f 'spring-boot:run' || true
+pkill -f 'java -jar' || true
+# Restart the application
 mvn spring-boot:run
 ```
 

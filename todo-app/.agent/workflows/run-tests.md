@@ -15,13 +15,14 @@ mvn test
 
 ## 2. Coverage Verification
 // turbo
-Check coverage report:
+Check coverage report (Mac/Linux compatible):
 ```bash
 mvn clean test
-Get-Content target/site/jacoco/index.html | Select-String -Pattern "Total" -Context 0,5
+grep -A 5 "Total" target/site/jacoco/index.html | head -n 6
 ```
 
 ## 3. Compliance Check
 - [ ] **Verify** new features/fixes have tests.
+- [ ] **Branch Coverage**: Maintain >90% branch coverage for service and utility classes.
 - [ ] **Pass** all tests before asking for commit approval.
 - [ ] **Warn** user if skipping tests (only if explicitly requested).

@@ -24,11 +24,17 @@ This workflow enforces the **Stage 1: Pre-Implementation** protocols defined in 
 
 ## 4. Context Gathering (Automated)
 // turbo
-Run the following checks to understand the current state:
-
+Check project status and recent commits:
 ```bash
 git status
 git branch
+git log -n 5 --oneline
+```
+
+// turbo
+Verify project structure:
+```bash
+ls -R | grep ":$" | head -n 20
 ```
 
 // turbo
