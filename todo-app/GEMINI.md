@@ -134,9 +134,14 @@ When the user says they are **confident of the changes** (or uses similar wordin
  - UPDATE existing sections if behavior or patterns changed.  
  - DELETE outdated or misleading instructions.
 
+12.1 **MANDATORY PRE-PUSH TEST**  
+- **ALWAYS** run `mvn test` immediately before pushing the `main` branch to `remote origin`.  
+- If any test fails, **ABORT** the push and fix the issue.
+
 13. **NO AUTOMATIC MERGE TO MAIN**  
  - NEVER merge to `main` or push to `main` unless the user explicitly says so.  
  - DO NOT ask or suggest merging to main. Wait for the user to initiate.
+ - **CRITICAL**: Before pushing to `main`, ensure `mvn test` has passed in the final state.
 
 14. **FINAL CONFIRMATION MESSAGE**  
  - After performing all required documentation and commit tasks, summarize:  
