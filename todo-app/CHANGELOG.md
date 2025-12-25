@@ -14,6 +14,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Liquid Mobile UI (Shrink/Expand)**:
   - **Dynamic Bottom Nav**: Refined the "liquid" behavior where the bottom navigation bar squeezes its buttons to the right when the sidebar is open, ensuring all controls remain accessible on small screens.
   - **Responsive Labels**: Navigation buttons preserve their labels on larger viewports (>450px) while automatically switching to icon-only mode on ultra-small devices to prevent crowding.
+- **Test Stabilization**: Made async writes synchronous during integration tests to prevent `JpaObjectRetrievalFailureException` caused by transaction visibility issues.
+- **Improved Factory Defaults**: Added `@ConditionalOnMissingBean` to `asyncWriteExecutor` for easier testing overrides.
+- **Fixed Unit Tests**: Resolved NPE in `UserServiceTest` by properly mocking `PasswordEncoder`.
+- **Cleaned Up Deprecated Tests**: Removed legacy `getAllTasks` test from `TaskControllerTest`.
 - **Faceted Tag Filtering**:
   - Implemented narrowing/faceted search logic for the tag filter bar. The bar now only displays tags that coexist on tasks matching the current selection, making multi-tag discovery intuitive and efficient.
 - **Improved Mobile Navigation**:

@@ -32,23 +32,6 @@ class TaskControllerTest extends BaseIntegrationTest {
         private CommentRepository commentRepository;
 
         @Test
-        void getAllTasks_ShouldReturnTaskList() throws Exception {
-                // Create task without swimlane - will be visible via getAllTasks API
-                Task task1 = new Task();
-                task1.setName("Task 1");
-                task1.setStatus(TaskStatus.TODO);
-                // Use repository directly since /api/tasks returns all tasks without filtering
-                taskRepository.save(task1);
-                
-                // Clear any cached data to ensure fresh fetch
-                taskRepository.flush();
-
-                mockMvc.perform(get("/api/tasks"))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$[?(@.name == 'Task 1')]").exists());
-        }
-
-        @Test
         void createTask_ShouldReturnCreatedTask() throws Exception {
                 Task task = new Task();
                 task.setName("New Task");

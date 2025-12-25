@@ -13,6 +13,7 @@ public class TodoApplication {
     }
 
     @org.springframework.context.annotation.Bean(name = "asyncWriteExecutor")
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean(name = "asyncWriteExecutor")
     public java.util.concurrent.Executor asyncWriteExecutor() {
         org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor executor = new org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor();
         executor.setCorePoolSize(1);
