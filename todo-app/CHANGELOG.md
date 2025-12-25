@@ -23,6 +23,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Improved Mobile Navigation**:
   - **Auto-Close Sidebar**: Selecting a swimlane in the mobile sidebar now automatically closes the sidebar and navigates to the selected lane's tasks.
   - **Synchronized Transitions**: Standardized all UI transitions (sidebar, content push, bottom nav) to 300ms with a consistent `cubic-bezier(0.4, 0, 0.2, 1)` easing for a perfectly unified feel.
+- **Coverage Milestone**: Achieved >93% branch and instruction coverage across all project packages.
+- **New Test Suites**: Added `UserControllerTest`, `UserDAOTest`, `TodoApplicationTest`, and comprehensive model tests (`CommentTest`, `TaskTest`, etc.).
 
 ### Fixed
 - **Mobile Layout Shifting**: Resolved issues where the bottom nav would slide off-screen; it now stays pinned and compresses internally.

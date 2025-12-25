@@ -252,6 +252,26 @@ class TaskControllerTest extends BaseIntegrationTest {
         }
 
         @Test
+    void addComment_ShouldHandlePartialQuotes() throws Exception {
+        Task task = new Task();
+        task.setName("Comment Partial Task");
+        task.setStatus(TaskStatus.TODO);
+        task = taskRepository.save(task);
+
+        // Only starts with quote
+        mockMvc.perform(post("/api/tasks/{id}/comments", task.getId())
+                .content("\"Only Start"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.text").value("\"Only Start"));
+
+        // Only ends with quote
+        mockMvc.perform(post("/api/tasks/{id}/comments", task.getId())
+                .content("Only End\""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.text").value("Only End\""));
+    }
+
+        @Test
         void addComment_ShouldHandleJsonWrappedText() throws Exception {
                 Task task = new Task();
                 task.setName("Comment Task JSON");

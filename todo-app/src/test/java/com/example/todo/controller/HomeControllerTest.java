@@ -15,10 +15,12 @@ import org.springframework.ui.Model;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -123,17 +125,38 @@ class HomeControllerTest {
     }
 
     @Test
-    void index_ShouldSerializeDataToJson() throws Exception {
+    void index_ShouldHandleUserWithCreatedAt() throws Exception {
         // Arrange
-        List<SwimLane> lanes = Arrays.asList(testLane);
-
-        when(swimLaneService.getActiveSwimLanes()).thenReturn(lanes);
-        when(objectMapper.writeValueAsString(any())).thenReturn("{\"lanes\":[{\"id\":1}],\"tasks\":[]}");
+        testUser.setCreatedAt(java.time.LocalDateTime.now());
+        when(swimLaneService.getActiveSwimLanes()).thenReturn(Collections.emptyList());
+        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
 
         // Act
         homeController.index(model);
 
         // Assert
-        verify(objectMapper).writeValueAsString(any());
+        verify(objectMapper).writeValueAsString(argThat(map -> {
+            Map<String, Object> data = (Map<String, Object>) map;
+            Map<String, String> user = (Map<String, String>) data.get("user");
+            return user.containsKey("joinedAt") && !user.get("joinedAt").equals("N/A");
+        }));
+    }
+
+    @Test
+    void index_ShouldHandleUserWithoutCreatedAt() throws Exception {
+        // Arrange
+        testUser.setCreatedAt(null);
+        when(swimLaneService.getActiveSwimLanes()).thenReturn(Collections.emptyList());
+        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+
+        // Act
+        homeController.index(model);
+
+        // Assert
+        verify(objectMapper).writeValueAsString(argThat(map -> {
+            Map<String, Object> data = (Map<String, Object>) map;
+            Map<String, String> user = (Map<String, String>) data.get("user");
+            return "N/A".equals(user.get("joinedAt"));
+        }));
     }
 }

@@ -96,6 +96,7 @@
 8. **TESTS ARE NOT OPTIONAL**  
 - EVERY new feature or bug fix MUST have corresponding tests (unit or integration).  
 - DO NOT consider work "done" unless tests exist and pass.  
+- **MANDATORY COVERAGE**: Maintain >93% instruction and branch coverage across ALL packages.
 - If the user explicitly requests skipping tests, warn them and clearly restate what is being skipped.
 
 #### 2.5 CHANGELOG MANAGEMENT
