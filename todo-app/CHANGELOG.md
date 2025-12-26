@@ -13,6 +13,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - **Balanced Liquid Mobile UI**:
   - **Balanced Liquid Mobile UI**:
+  - **Small Screen Optimizations (iPhone SE)**: 
+    - **Sidebar**: Fixed full-width display on small screens.
+    - **Auto-Close**: Sidebar automatically closes when a lane is selected.
+    - **Cleanup**: Hides bottom navigation and floating button when sidebar is open to prevent clutter.
+    - **Overlay**: Fixed persistent connection overlay issue on small viewports.
   - **Premium Branding**: Renamed "TaskBoard 3D" to "Tasks" and "Swimlanes" to "Lanes" in the header and sidebar for a cleaner, more focused terminology.
   - **Refined Typography**: Increased font sizes for the "Tasks" brand and User Name in the header for better hierarchy and readability.
   - **User Context**: Moved the logged-in User Name from the dropdown menu directly to the header bar for instant session identity and improved visibility.
