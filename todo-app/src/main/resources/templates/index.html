@@ -362,49 +362,6 @@ DRAG-AND-DROP CRITICAL NOTES:
         </div>
     </aside>
 
-    <!-- Tag Filter Bar (Collapsible on mobile) -->
-    <div class="tag-filter-bar glass-panel px-3 py-2" x-data="{expanded: false}">
-        <div class="d-flex align-items-center justify-content-between">
-            <button class="btn btn-sm btn-link text-light p-0 d-flex align-items-center gap-2"
-                @click="expanded = !expanded">
-                <i class="fa-solid fa-tags"></i>
-                <span class="d-none d-lg-inline">Filter by tag:</span>
-                <span class="d-lg-none"
-                    x-text="expanded ? 'Hide tags' : 'Tags (' + getAllUniqueTags().length + ')'"></span>
-                <i class="fa-solid d-lg-none" :class="expanded ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-            </button>
-            <div class="d-flex align-items-center gap-2">
-                <template x-if="selectedTags.length > 0">
-                    <span class="badge bg-info">
-                        <span x-text="selectedTags.length"></span> active
-                    </span>
-                </template>
-                <template x-if="selectedTags.length > 0">
-                    <button class="btn btn-link btn-sm text-secondary p-0" @click="clearSelectedTags()">
-                        <i class="fa-solid fa-times-circle"></i> Clear
-                    </button>
-                </template>
-            </div>
-        </div>
-        <!-- Desktop: Always show all tags -->
-        <div class="d-none d-lg-flex align-items-center gap-2 flex-wrap mt-2">
-            <template x-for="tag in getAllUniqueTags()" :key="tag">
-                <button class="tag-capsule" :class="{'active': isTagSelected(tag)}" @click="toggleTag(tag)"
-                    x-text="tag">
-                </button>
-            </template>
-        </div>
-        <!-- Mobile: Expandable tag list -->
-        <div class="d-lg-none mt-2" x-show="expanded" x-transition>
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                <template x-for="tag in getAllUniqueTags()" :key="tag">
-                    <button class="tag-capsule" :class="{'active': isTagSelected(tag)}" @click="toggleTag(tag)"
-                        x-text="tag">
-                    </button>
-                </template>
-            </div>
-        </div>
-    </div>
 
     <!-- Main Content Area (accessibility landmark) -->
     <main class="container-fluid px-4 pb-5" role="main">
@@ -850,7 +807,7 @@ DRAG-AND-DROP CRITICAL NOTES:
     <aside class="task-detail-pane glass-panel" x-show="taskDetail.open"
         x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="pane-hidden"
         x-transition:enter-end="pane-visible" x-transition:leave="transition ease-in duration-200 transform"
-        x-transition:leave-start="pane-visible" x-transition:leave-end="pane-hidden" @click.outside="closeTaskDetail()"
+        x-transition:leave-start="pane-visible" x-transition:leave-end="pane-hidden"
         @keydown.window="handleDetailKeydown($event)" x-cloak>
 
         <template x-if="taskDetail.task">

@@ -2979,7 +2979,10 @@ kbd {
 
     /* When sidebar is open, add a small gap between sidebar and task detail */
     body.sidebar-open.sidebar-pinned .task-detail-pane {
-        border-top-left-radius: 0 !important;
+        width: calc(100% - var(--sidebar-push, 0px) - 12px) !important;
+        margin-left: 12px;
+        border-top-left-radius: 24px !important;
+        border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
     }
 
     .detail-header {

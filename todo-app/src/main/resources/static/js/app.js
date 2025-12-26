@@ -59,7 +59,6 @@ Alpine.data('todoApp', () => ({
     // Task filters
     hideDone: false,
     showOnlyBlocked: false,
-    selectedTags: [], // Array of selected tags for multi-tag filtering
 
     // Loading state for skeleton loaders
     isLoading: true,  // Shows skeletons until tasks load
@@ -234,33 +233,10 @@ Alpine.data('todoApp', () => ({
             this.activeLaneId = this.lanes[0].id;
         }
 
-        // ---------------------------------------------------------------------
-        // STEP 6: Watchers
-        // ---------------------------------------------------------------------
-        this.$watch('selectedTags', (value) => {
-            const isFilterActive = value.length > 0;
-            const shouldDisableLanes = isFilterActive || this.isMobile;
-            console.log('[App] Tag filter state changed. isFilterActive:', isFilterActive, 'isMobile:', this.isMobile);
-
-            // Update all task Sortable instances
-            document.querySelectorAll('.lane-column').forEach(col => {
-                if (col.sortableInstance) {
-                    col.sortableInstance.option('disabled', isFilterActive);
-                }
-            });
-
-            // Update lane reorder Sortable instance
-            const boardContainer = document.querySelector('.board-container');
-            if (boardContainer && boardContainer.sortableInstance) {
-                boardContainer.sortableInstance.option('disabled', shouldDisableLanes);
-            }
-        });
-
         // Watch for mobile viewport changes to enable/disable lane reordering
         this.$watch('isMobile', (isMobile) => {
             console.log('[App] isMobile changed:', isMobile);
-            const isFilterActive = this.selectedTags.length > 0;
-            const shouldDisableLanes = isFilterActive || isMobile;
+            const shouldDisableLanes = isMobile;
 
             const boardContainer = document.querySelector('.board-container');
             if (boardContainer && boardContainer.sortableInstance) {
@@ -270,7 +246,6 @@ Alpine.data('todoApp', () => ({
         });
 
         // --- Auto-Expand Watchers ---
-        this.$watch('selectedTags', () => this.checkSingleLaneAutoExpand());
         this.$watch('viewMode', () => this.checkSingleLaneAutoExpand());
         this.$watch('hideDone', () => this.checkSingleLaneAutoExpand());
         this.$watch('showOnlyBlocked', () => this.checkSingleLaneAutoExpand());
@@ -379,9 +354,8 @@ Alpine.data('todoApp', () => ({
 
     /**
      * Check if a lane should be visible
-     * - On desktop: always check tag matching
-     * - On mobile with tag filters: show ALL lanes with matching tasks
-     * - On mobile without tags: show only active lane
+     * - On desktop: always show lanes matching view mode
+     * - On mobile: show only active lane
      */
     isLaneVisible(laneId) {
         const lane = this.lanes.find(l => l.id === laneId);
@@ -395,18 +369,13 @@ Alpine.data('todoApp', () => ({
 
         if (!matchesMode) return false;
 
-        // --- Tag & Device Filters ---
-        // On desktop, show all lanes (filtered by tags)
+        // --- Device Filters ---
+        // On desktop, show all lanes matching view mode
         if (!this.isMobile) {
-            return this.laneHasMatchingTasks(laneId);
+            return true;
         }
 
-        // On mobile WITH tag filters active: show ALL lanes that have matching tasks
-        if (this.selectedTags.length > 0) {
-            return this.laneHasMatchingTasks(laneId);
-        }
-
-        // On mobile WITHOUT tag filters: show only active lane
+        // On mobile: show only active lane
         return laneId === this.activeLaneId;
     },
 
@@ -659,8 +628,8 @@ Alpine.data('todoApp', () => ({
         // Apply filters
         // If hideDone is active, only hide DONE column if NO tags are selected.
         // If tags ARE selected, we want to see the matching DONE tasks.
-        if (this.hideDone && status === 'DONE' && (!this.selectedTags || this.selectedTags.length === 0)) {
-            return []; // Hide entire DONE column when filter active AND no tags selected
+        if (this.hideDone && status === 'DONE') {
+            return []; // Hide done tasks when filter active
         }
         if (this.showOnlyBlocked && status !== 'BLOCKED') {
             return []; // Show only BLOCKED column when filter active
@@ -669,17 +638,6 @@ Alpine.data('todoApp', () => ({
         let tasks = this.tasks.filter(t =>
             t.swimLane && t.swimLane.id === laneId && t.status === status
         );
-
-        // Apply multi-tag filter (show tasks with ALL of the selected tags)
-        if (this.selectedTags && this.selectedTags.length > 0) {
-            tasks = tasks.filter(t => {
-                const taskTags = this.getTags(t.tags).map(tag => tag.toLowerCase());
-                // Task must have ALL selected tags (AND logic)
-                return this.selectedTags.every(selectedTag =>
-                    taskTags.includes(selectedTag.toLowerCase())
-                );
-            });
-        }
 
         // Sort by position
         tasks.sort((a, b) => {
@@ -707,58 +665,28 @@ Alpine.data('todoApp', () => ({
     },
 
     /**
-     * Check if a lane has any tasks matching the current tag filter
-     * Used to hide/show lanes when tag filter is active
+     * Check if a lane has any tasks
+     * Used to hide/show lanes
      * 
      * @param {number} laneId - The swimlane ID
-     * @returns {boolean} True if lane has matching tasks or no filter active
+     * @returns {boolean} True if lane has tasks
      */
     laneHasMatchingTasks(laneId) {
-        // If no tags selected, always show the lane
-        if (!this.selectedTags || this.selectedTags.length === 0) {
-            return true;
-        }
-
-        // Get all tasks in this lane
-        const laneTasks = this.tasks.filter(t => t.swimLane && t.swimLane.id === laneId);
-
-        // Check if any task has ALL the selected tags
-        return laneTasks.some(task => {
-            const taskTags = this.getTags(task.tags).map(tag => tag.toLowerCase());
-            return this.selectedTags.every(selectedTag =>
-                taskTags.includes(selectedTag.toLowerCase())
-            );
-        });
+        return true;
     },
 
     /**
-     * Check if a specific status column in a lane has any tasks matching the current tag filter
+     * Check if a specific status column in a lane has any tasks
      */
     columnHasMatchingTasks(laneId, status) {
-        if (!this.selectedTags || this.selectedTags.length === 0) {
-            return true;
-        }
         return this.getTasks(laneId, status).length > 0;
     },
 
     /**
      * Complete visibility logic for a status column
-     * Used in index.html to hide empty columns in mobile filter view
      */
     isColumnVisible(laneId, status) {
-        // Always show on desktop
-        if (!this.isMobile) return true;
-
-        // On mobile, if no tags selected, show all (active) columns
-        if (!this.selectedTags || this.selectedTags.length === 0) return true;
-
-        // On mobile WITH filters, check if column has matching tasks
-        const visible = this.columnHasMatchingTasks(laneId, status);
-
-        if (!visible) {
-            console.log(`[App] Hiding empty column ${status} for lane ${laneId} in mobile filter view`);
-        }
-        return visible;
+        return true;
     },
 
     /**
@@ -793,75 +721,6 @@ Alpine.data('todoApp', () => ({
                 }
             }
         }
-    },
-
-    /**
-     * Get all unique tags from all tasks
-     * Used to render clickable tag capsules
-     * 
-     * @returns {Array} Sorted array of unique tag strings
-     */
-    getAllUniqueTags() {
-        const tagSet = new Set();
-        const hasFilters = this.selectedTags && this.selectedTags.length > 0;
-
-        this.tasks.forEach(task => {
-            const taskTags = this.getTags(task.tags);
-            const taskTagsLower = taskTags.map(t => t.toLowerCase());
-
-            // Narrowing logic:
-            // 1. If no filters, add all tags.
-            // 2. If filters, task must have ALL selected tags (AND logic) to contribute its other tags to the discovery bar.
-            const matchesFilters = !hasFilters || this.selectedTags.every(selectedTag =>
-                taskTagsLower.includes(selectedTag.toLowerCase())
-            );
-
-            if (matchesFilters) {
-                taskTags.forEach(tag => tagSet.add(tag));
-            }
-        });
-
-        // ALWAYS include selected tags so they can be unselected even if no tasks match anymore
-        if (hasFilters) {
-            this.selectedTags.forEach(tag => tagSet.add(tag));
-        }
-
-        return Array.from(tagSet).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-    },
-
-    /**
-     * Toggle a tag in the selectedTags array
-     * If tag is selected, remove it; otherwise add it
-     * 
-     * @param {string} tag - Tag to toggle
-     */
-    toggleTag(tag) {
-        const index = this.selectedTags.indexOf(tag);
-        if (index > -1) {
-            // Remove tag using filter (immutable, more reliably reactive)
-            this.selectedTags = this.selectedTags.filter(t => t !== tag);
-        } else {
-            // Add tag using spread (immutable)
-            this.selectedTags = [...this.selectedTags, tag];
-        }
-        console.log('[App] selectedTags:', this.selectedTags);
-    },
-
-    /**
-     * Check if a tag is currently selected
-     * 
-     * @param {string} tag - Tag to check
-     * @returns {boolean} True if tag is in selectedTags
-     */
-    isTagSelected(tag) {
-        return this.selectedTags.includes(tag);
-    },
-
-    /**
-     * Clear all selected tags
-     */
-    clearSelectedTags() {
-        this.selectedTags = [];
     },
 
     // =========================================================================
