@@ -52,6 +52,14 @@ if (typeof axios !== 'undefined') {
                 message: error.message,
                 data: error.response?.data
             });
+
+            // Auto-redirect to login on 401 Unauthorized or 403 Forbidden
+            if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+                console.warn('[API] Session expired or unauthorized. Redirecting to login...');
+                window.location.href = '/login';
+                return Promise.reject(error); // Reject to stop further processing
+            }
+
             return Promise.reject(error);
         }
     );
