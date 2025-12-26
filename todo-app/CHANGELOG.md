@@ -33,6 +33,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Improved Factory Defaults**: Added `@ConditionalOnMissingBean` to `asyncWriteExecutor` for easier testing overrides.
 - **Fixed Unit Tests**: Resolved NPE in `UserServiceTest` by properly mocking `PasswordEncoder`.
 - **Cleaned Up Deprecated Tests**: Removed legacy `getAllTasks` test from `TaskControllerTest`.
+- **Session Security & Stability**:
+  - **Auto-Redirect on Expiry**: Implemented robust session verification on SSE reconnection. If the server restarts or session expires, the app immediately redirects to the login page instead of failing silently or showing errors.
+  - **HTML Response Handling**: Updated API interceptors to detect and handle HTML login page responses (200 OK) as session expiry, preventing "e.map is not a function" crashes in the Store.
+  - **Clean Console**: Sanitized API error logging to prevent dumping large HTML login pages into the browser console.
+- **Improved UI Elements**:
+  - **Mobile Buttons**: Increased the size and tap area of "Complete" and "Reactivate" buttons on mobile/small screens by removing `btn-sm` and small padding.
 - **Faceted Tag Filtering**:
   - Implemented narrowing/faceted search logic for the tag filter bar. The bar now only displays tags that coexist on tasks matching the current selection, making multi-tag discovery intuitive and efficient.
 - **Improved Mobile Navigation**:
@@ -110,7 +116,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - HikariCP connection pool tuning for high-concurrency database access.
   - Database-level indexes on frequently queried columns (`user_id`, `status`, `position_order`).
 
+### Removed
+- **Legacy Tag Filter**: Completely removed the old tag filtering implementation (HTML/JS/CSS) to resolve `ReferenceError: selectedTags is not defined` and prepare for a clean reimplementation.
+- **Unused CSS**: Removed `selectedTags` related styles and logic that were causing frontend console errors.
+
 ### Fixed
+- **Connection Overlay**: Resolved issue where "Connection Lost" overlay would not disappear after server restart (fixed timestamp sync in `api.js`).
+- **Store Crashes**: Fixed `TypeError: e.map is not a function` caused by processing HTML error responses as JSON data.
 - **Branch Coverage** (`ed47726`, `6a0bcd4`) - Increased branch coverage from **34% → 90%** through rigorous testing of services and models.
 - **Session Management** (`6a2826d`) - Added EOD auto-logout and back-button prevention after logout for enhanced security.
 - **Login UI Bugs** (`d8a7120`, `52131dc`)

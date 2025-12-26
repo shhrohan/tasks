@@ -296,6 +296,11 @@ The application employs viewport-aware loading strategies to maintain responsive
 - **Component**: `GlobalExceptionHandler`  
 - **Purpose**: Centralized handling of business and runtime exceptions (e.g., `DuplicateOperationException`, `IllegalArgumentException`) to return consistent JSON error responses.
 
+### Session Management & Security
+- **SSE Session Verification**: On reconnection, `api.js` calls `getUser()` (GET `/api/user`) to verify session validity. If 401 is returned (e.g., after server restart), user is auto-redirected to login.
+- **HTML Response Handling**: Frontend API interceptors detect if 200 OK responses return HTML content (indicative of a masked auth redirect) and force a login redirect to prevent state corruption.
+- **Anonymous SSE**: `/api/sse/**` permits anonymous access to allow the "Connection Lost" overlay behavior, while data endpoints remain secured.
+
 ---
 
 ## Building and Running
