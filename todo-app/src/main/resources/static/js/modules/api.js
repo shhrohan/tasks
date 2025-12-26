@@ -345,6 +345,12 @@ export const Api = {
      * Show connection lost overlay
      */
     showConnectionLostOverlay() {
+        // Mobile check: Don't show overlay on small screens to prevent UX blocking
+        if (window.innerWidth < 480) {
+            console.log('[SSE] Suppressing connection overlay on mobile');
+            return;
+        }
+
         let overlay = document.getElementById('connection-lost-overlay');
         if (!overlay) {
             overlay = document.createElement('div');

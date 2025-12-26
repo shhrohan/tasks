@@ -298,6 +298,12 @@ Alpine.data('todoApp', () => ({
         console.log('[App] selectLane:', laneId);
         this.activeLaneId = laneId;
 
+        // Auto-close sidebar on very small screens (iPhone SE etc)
+        // since the sidebar covers the entire view
+        if (window.innerWidth <= 480) {
+            this.mobileSidebarOpen = false;
+        }
+
         // Find the lane and trigger lazy load if tasks not loaded
         const lane = this.lanes.find(l => l.id === laneId);
         if (lane && !lane.tasksLoaded) {
