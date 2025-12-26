@@ -2440,8 +2440,7 @@ body.sidebar-pinned .mobile-sidebar-backdrop {
     .navbar,
     .mobile-header,
     main.container-fluid,
-    .tag-filter-bar,
-    .task-detail-pane {
+    .tag-filter-bar {
         margin-left: var(--sidebar-push);
         width: calc(100% - var(--sidebar-push));
         transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
@@ -2959,20 +2958,21 @@ kbd {
    ============================================== */
 @media (max-width: 991.98px) {
     .task-detail-pane {
-        width: 94% !important;
+        width: 100% !important;
         height: 85vh !important;
         top: auto !important;
         bottom: 0 !important;
-        right: auto !important;
-        left: 50% !important;
-        transform: translateX(-50%);
+        right: 0 !important;
+        left: auto !important;
+        /* Remove sidebar push for mobile task detail (to prevent right-side cropping) */
+        margin-left: 0 !important;
+        /* Preserve transform for slide-up animation, not centering */
+        transform: translateY(0);
         border-left: none !important;
         border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
         border-radius: 24px 24px 0 0 !important;
         box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6) !important;
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-            margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-            width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
     .detail-header {
@@ -2990,11 +2990,11 @@ kbd {
 
     /* Transition states for mobile */
     .pane-hidden {
-        transform: translate(-50%, 100%) !important;
+        transform: translateY(100%) !important;
     }
 
     .pane-visible {
-        transform: translate(-50%, 0) !important;
+        transform: translateY(0) !important;
     }
 }
 

@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - **Refined Typography**: Increased font sizes for the "Tasks" brand and User Name in the header for better hierarchy and readability.
   - **User Context**: Moved the logged-in User Name from the dropdown menu directly to the header bar for instant session identity and improved visibility.
   - **Centered Task Detail**: The mobile Task Detail pane is now horizontally centered (94% width) with smooth slide-up transitions that respect sidebar positioning.
+  - **Fixed Mobile Task Detail Cropping**: Resolved an issue where the task detail pane was cropped on the right side when the sidebar was open. The pane now uses a full-width bottom-up overlay that is independent of sidebar state.
   - **Dynamic Task Detail Width**: Refined the desktop/mobile detail pane to respect sidebar-push layouts, ensuring it never overlaps the sidebar but instead shrinks/shifts appropriately.
   - **Fluid Transitions**: Refined the "liquid" bottom nav to use `space-around` distribution and a width-based spacer.
   - **Icon Centering**: Zeroed out gaps and residual label heights on ultra-small screens to ensure icons are perfectly centered within their active highlights and touch targets.
