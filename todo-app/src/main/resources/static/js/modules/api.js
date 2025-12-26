@@ -445,6 +445,8 @@ export const Api = {
             console.log('[SSE] Connection established');
             this.isConnected = true;
             this.reconnectAttempts = 0;
+            // Reset lastHeartbeat to prevent monitor from seeing stale timestamp
+            this.lastHeartbeat = Date.now();
             this.hideConnectionLostOverlay();
         };
 
