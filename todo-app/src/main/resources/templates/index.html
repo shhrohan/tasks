@@ -277,6 +277,31 @@ DRAG-AND-DROP CRITICAL NOTES:
         </div>
     </header>
 
+    <!-- Faceted Tag Filter Bar: Only visible on Desktop (lg+) -->
+    <div class="tag-filter-bar d-none d-lg-flex align-items-center gap-2 px-4 overflow-auto no-scrollbar"
+        x-show="getAllUniqueTags().length > 0" x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
+
+        <div class="d-flex align-items-center gap-2 flex-nowrap py-1">
+            <span class="text-secondary small fw-bold me-1"><i class="fa-solid fa-filter me-1"></i>Tags:</span>
+
+            <template x-for="tag in getAllUniqueTags()" :key="tag">
+                <button class="tag-capsule" :class="{
+                        'active': isTagSelected(tag),
+                        'faded': !isTagSelected(tag) && selectedTags.length > 0 && !activeUniqueTags().includes(tag) 
+                    }" @click="toggleTag(tag)">
+                    <span x-text="tag"></span>
+                    <i class="fa-solid fa-check ms-1" x-show="isTagSelected(tag)"></i>
+                </button>
+            </template>
+
+            <button class="btn btn-link btn-sm text-decoration-none text-muted ms-2" x-show="selectedTags.length > 0"
+                @click="clearSelectedTags()">
+                Clear All
+            </button>
+        </div>
+    </div>
+
     <!-- Mobile Bottom Navigation Bar (visible on screens < 992px) -->
     <nav class="mobile-bottom-nav d-lg-none" x-cloak>
         <!-- Spacer for smooth sliding during sidebar transitions -->
@@ -384,7 +409,7 @@ DRAG-AND-DROP CRITICAL NOTES:
                 <!-- Swimlanes Container -->
                 <div class="board-container">
                     <!-- Loop Swimlanes -->
-                    <template x-for="lane in lanes" :key="lane.id">
+                    <template x-for="lane in getSortedLanes()" :key="lane.id">
                         <div class="row mb-3 mb-lg-4 swimlane-row" :data-lane-id="lane.id"
                             x-show="isLaneVisible(lane.id)" x-transition:leave="transition ease-in duration-200"
                             x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
@@ -535,12 +560,10 @@ DRAG-AND-DROP CRITICAL NOTES:
                                                         </template>
 
                                                         <!-- Tags: ms-auto to push tags to the right -->
-                                                        <div class="d-flex flex-wrap gap-1 ms-auto justify-content-end">
-                                                            <template x-for="tag in getTags(task.tags)" :key="tag">
-                                                                <span
-                                                                    class="badge border border-secondary text-white fw-normal"
-                                                                    style="font-size: 0.9rem; letter-spacing: 0.03em;"
-                                                                    x-text="tag"></span>
+                                                        <div class="d-flex flex-wrap gap-1 ms-auto justify-content-end"
+                                                            x-show="parseTags(task.tags).length > 0">
+                                                            <template x-for="tag in parseTags(task.tags)" :key="tag">
+                                                                <span class="task-tag-pill" x-text="tag"></span>
                                                             </template>
                                                         </div>
                                                     </div>
@@ -835,7 +858,7 @@ DRAG-AND-DROP CRITICAL NOTES:
 
                         <!-- Tag List -->
                         <div class="d-flex flex-wrap gap-2 mb-2">
-                            <template x-for="tag in getTags(taskDetail.task?.tags)" :key="tag">
+                            <template x-for="tag in parseTags(taskDetail.task?.tags)" :key="tag">
                                 <span class="badge bg-primary d-flex align-items-center gap-1 py-2 px-3"
                                     style="font-size: 0.85rem;">
                                     <span x-text="tag"></span>

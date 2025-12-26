@@ -39,8 +39,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - **Clean Console**: Sanitized API error logging to prevent dumping large HTML login pages into the browser console.
 - **Improved UI Elements**:
   - **Mobile Buttons**: Increased the size and tap area of "Complete" and "Reactivate" buttons on mobile/small screens by removing `btn-sm` and small padding.
-- **Faceted Tag Filtering**:
-  - Implemented narrowing/faceted search logic for the tag filter bar. The bar now only displays tags that coexist on tasks matching the current selection, making multi-tag discovery intuitive and efficient.
+- **Faceted Tag Filtering & Refinements**:
+  - **Dynamic Sorting (Desktop)**: Lanes with the most matching tasks now proactively sort to the top/left when tag filtering is active.
+  - **Smart Collapse (Desktop)**: Empty lanes (0 matches) automatically collapse during filtering to reduce clutter, while matching lanes expand.
+  - **Mobile Cleanup**: Completely hides the tag filter bar on mobile devices to preserve screen real estate.
+  - **Faceted Discovery**: Filter bar only displays tags relevant to the current view (co-occurring with selected tags).
+  - **Fixed Alignment**: Corrected vertical centering of tag chips and filter bar elements.
+  - **Fixed ReferenceError**: Resolved `getTags` vs `parseTags` issue in Task Detail modal.
 - **Improved Mobile Navigation**:
   - **Auto-Close Sidebar**: Selecting a swimlane in the mobile sidebar now automatically closes the sidebar and navigates to the selected lane's tasks.
   - **Synchronized Transitions**: Standardized all UI transitions (sidebar, content push, bottom nav) to 300ms with a consistent `cubic-bezier(0.4, 0, 0.2, 1)` easing for a perfectly unified feel.

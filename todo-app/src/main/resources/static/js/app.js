@@ -59,6 +59,7 @@ Alpine.data('todoApp', () => ({
     // Task filters
     hideDone: false,
     showOnlyBlocked: false,
+    selectedTags: [], // Faceted filter state
 
     // Loading state for skeleton loaders
     isLoading: true,  // Shows skeletons until tasks load
@@ -625,54 +626,79 @@ Alpine.data('todoApp', () => ({
      * @returns {Array} Filtered and sorted tasks
      */
     getTasks(laneId, status) {
-        // Apply filters
-        // If hideDone is active, only hide DONE column if NO tags are selected.
-        // If tags ARE selected, we want to see the matching DONE tasks.
-        if (this.hideDone && status === 'DONE') {
-            return []; // Hide done tasks when filter active
-        }
-        if (this.showOnlyBlocked && status !== 'BLOCKED') {
-            return []; // Show only BLOCKED column when filter active
-        }
-
+        // 1. Initial Candidate Set (Lane + Status matched)
         let tasks = this.tasks.filter(t =>
             t.swimLane && t.swimLane.id === laneId && t.status === status
         );
 
-        // Sort by position
-        tasks.sort((a, b) => {
-            const posA = a.position !== null ? a.position : 999999;
-            const posB = b.position !== null ? b.position : 999999;
-            return posA - posB;
-        });
-
-        return tasks;
-    },
-
-    /**
-     * Parse tags from JSON string or return existing array
-     * 
-     * @param {string|Array} tagsRaw - Tags as JSON string or array
-     * @returns {Array} Parsed tags array
-     */
-    getTags(tagsRaw) {
-        if (Array.isArray(tagsRaw)) return tagsRaw;
-        try {
-            return JSON.parse(tagsRaw || '[]');
-        } catch {
+        // 2. Global Status Filters
+        if (this.hideDone && status === 'DONE') {
             return [];
         }
+        if (this.showOnlyBlocked && status !== 'BLOCKED') {
+            return [];
+        }
+
+        // 3. Faceted Tag Filtering (AND Logic)
+        if (this.selectedTags.length > 0) {
+            tasks = tasks.filter(task => {
+                const taskTags = this.parseTags(task.tags);
+                // Task must have ALL selected tags
+                return this.selectedTags.every(tag => taskTags.includes(tag));
+            });
+        }
+
+        // 4. Sort by Position
+        return tasks.sort((a, b) => (a.position || 0) - (b.position || 0));
     },
 
     /**
-     * Check if a lane has any tasks
-     * Used to hide/show lanes
-     * 
-     * @param {number} laneId - The swimlane ID
-     * @returns {boolean} True if lane has tasks
+     * Get lanes sorted by relevance (match count) if filtering is active
+     */
+    getSortedLanes() {
+        // If not filtering or on mobile (users requested simple view), return default order
+        // Check window width for mobile breakpoint (lg = 992px)
+        const isMobile = window.innerWidth < 992;
+
+        if (this.selectedTags.length === 0 || isMobile) {
+            return this.lanes;
+        }
+
+        // Create a shallow copy to sort
+        return [...this.lanes].sort((a, b) => {
+            const countA = this.countMatchingTasks(a.id);
+            const countB = this.countMatchingTasks(b.id);
+
+            // Primary Sort: Match Count (Descending)
+            if (countB !== countA) {
+                return countB - countA;
+            }
+
+            // Secondary Sort: Original Position (Ascending)
+            return (a.position || 0) - (b.position || 0);
+        });
+    },
+
+    /**
+     * Count total matching tasks in a lane (across all columns)
+     * Helper for sorting
+     */
+    countMatchingTasks(laneId) {
+        return this.columns.reduce((total, status) => {
+            return total + this.getTasks(laneId, status).length;
+        }, 0);
+    },
+
+    /**
+     * Check if a lane has any visible tasks across relevant columns
+     * Used to hide empty lanes when filtering
      */
     laneHasMatchingTasks(laneId) {
-        return true;
+        // If no filters are active, show all lanes (or keep standard behavior)
+        if (this.selectedTags.length === 0 && !this.hideDone && !this.showOnlyBlocked) return true;
+
+        // Check if ANY column has tasks for this lane
+        return this.columns.some(status => this.getTasks(laneId, status).length > 0);
     },
 
     /**
@@ -684,9 +710,112 @@ Alpine.data('todoApp', () => ({
 
     /**
      * Complete visibility logic for a status column
+     * Only hide empty columns if we are aggressively filtering by tags
      */
     isColumnVisible(laneId, status) {
+        // Always show columns in normal view
+        if (this.selectedTags.length === 0) return true;
+
+        // In filtered view, hide empty columns to reduce clutter? 
+        // Or keep them valid drop targets? 
+        // Let's keep them visible for now to avoid layout shift, 
+        // OR return true.
+        // The error was "isColumnVisible is not defined", so we MUST define it.
         return true;
+    },
+
+    // --- Tag Logic ---
+
+    parseTags(tagStringOrArray) {
+        if (!tagStringOrArray) return [];
+        if (Array.isArray(tagStringOrArray)) return tagStringOrArray;
+        try {
+            const parsed = JSON.parse(tagStringOrArray);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            return [];
+        }
+    },
+
+    getAllUniqueTags() {
+        // Collect all distinct tags from ALL loaded tasks to allow discovery
+        const allTags = new Set();
+        this.tasks.forEach(task => {
+            if (this.hideDone && task.status === 'DONE') return; // Optional: Hide tags only found in Done?
+            const tags = this.parseTags(task.tags);
+            tags.forEach(t => allTags.add(t));
+        });
+        return Array.from(allTags).sort();
+    },
+
+    /**
+     * Get tags that are present in the currently filtered task set.
+     * Used to fade/disable tags that would lead to 0 results if added.
+     */
+    activeUniqueTags() {
+        // 1. Start with all tasks matching Global Filters
+        let candidateTasks = this.tasks.filter(t => {
+            if (this.hideDone && t.status === 'DONE') return false;
+            // if (this.showOnlyBlocked && t.status !== 'BLOCKED') return false; // Maybe don't filter tags by Blocked-only view? Let's be consistent.
+            return true;
+        });
+
+        // 2. Filter by CURRENTLY selected tags
+        if (this.selectedTags.length > 0) {
+            candidateTasks = candidateTasks.filter(task => {
+                const taskTags = this.parseTags(task.tags);
+                return this.selectedTags.every(tag => taskTags.includes(tag));
+            });
+        }
+
+        // 3. Collect unique tags from these tasks
+        const validTags = new Set();
+        candidateTasks.forEach(task => {
+            const tags = this.parseTags(task.tags);
+            tags.forEach(t => validTags.add(t));
+        });
+
+        return Array.from(validTags);
+    },
+
+    toggleTag(tag) {
+        if (this.selectedTags.includes(tag)) {
+            this.selectedTags = this.selectedTags.filter(t => t !== tag);
+        } else {
+            this.selectedTags.push(tag);
+        }
+        this.applySmartCollapse();
+    },
+
+    isTagSelected(tag) {
+        return this.selectedTags.includes(tag);
+    },
+
+    clearSelectedTags() {
+        this.selectedTags = [];
+        this.applySmartCollapse();
+    },
+
+    /**
+     * Smart Collapse Logic:
+     * When filtering by tags (Desktop), automatically expand lanes with matches
+     * and collapse lanes with 0 matches.
+     */
+    applySmartCollapse() {
+        // Only apply on Desktop (matches sorting logic)
+        if (window.innerWidth < 992) return;
+
+        if (this.selectedTags.length > 0) {
+            this.lanes.forEach(lane => {
+                const matchCount = this.countMatchingTasks(lane.id);
+                // Expand if matches > 0, Collapse if 0
+                lane.collapsed = (matchCount === 0);
+            });
+        } else {
+            // If filters cleared, maybe expand all? Or leave as is?
+            // Let's expand all to restore visibility
+            this.lanes.forEach(lane => lane.collapsed = false);
+        }
     },
 
     /**
@@ -1504,7 +1633,7 @@ Alpine.data('todoApp', () => ({
         const task = this.taskDetail.task;
 
         // Parse existing tags
-        let currentTags = this.getTags(task.tags); // Helper in app.js
+        let currentTags = this.parseTags(task.tags); // Helper in app.js
 
         // Deduplicate (case-insensitive check)
         if (currentTags.some(t => t.toLowerCase() === tag.toLowerCase())) {
@@ -1553,7 +1682,7 @@ Alpine.data('todoApp', () => ({
         const task = this.taskDetail.task;
 
         // Filter out tag
-        let currentTags = this.getTags(task.tags);
+        let currentTags = this.parseTags(task.tags);
         const newTags = currentTags.filter(t => t !== tagToRemove);
 
         if (newTags.length === currentTags.length) return; // No change

@@ -163,7 +163,11 @@ This is a full-stack, single-page web application for managing tasks and to-do i
 - **Mobile Optimized**: Responsive layout with persistent push-sidebar navigation and bottom-anchored task details.  
 - **Glassmorphism UI**: Modern, translucent design aesthetic with dynamic CSS transitions.  
 - **Task Filters**: Hide Done and Blocked Only filter buttons in navbar.  
-- **Tag Filter Bar**: Sticky, permanently visible tag bar with narrowing "faceted" logic (only shows tags present on tasks matching current selection). Includes discovery mode for mobile.
+- **Tag Filter Bar**: Sticky, horizontally scrollable filter bar below the navbar.
+  - **Faceted Logic**: Displays only tags present on tasks matching the current selection (co-occurrence), enabling "drill-down" discovery.
+  - **Dynamic Sorting (Desktop)**: Automatically sorts lanes by relevance (highest match count first) when filtering.
+  - **Smart Collapse (Desktop)**: Automatically collapses lanes with zero matches during filtering to reduce clutter.
+  - **Mobile Behavior**: The bar is hidden on mobile devices to optimize screen space.
 - **Mobile Liquid UI**: Responsive push-based layout where the bottom navigation bar compressively "squeezes" its buttons to the right when the sidebar is open, ensuring all controls remain visible and functional. Uses a `space-around` distribution with a transitioned `.nav-spacer` for high-performance sliding.
 - **Premium Sidebar Layering**: The mobile sidebar uses a higher z-index (`1300`) than the bottom nav to provide a more immersive overlay feel.
 - **Centered Task Detail**: The mobile Task Detail pane is horizontally centered with margins and transition classes that preserve centering during slide-up.

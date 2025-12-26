@@ -514,6 +514,7 @@ export const Api = {
                 this.isConnected = true;
                 this.reconnectAttempts = 0;
                 this.hideConnectionLostOverlay();
+                this.verifySession(); // Check if session is still valid after reconnect
             }
         });
 
