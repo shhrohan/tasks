@@ -287,6 +287,16 @@ export const Api = {
     // =========================================================================
 
     /**
+     * Get current user details
+     * Used for session verification
+     */
+    async getUser() {
+        // console.log('[API] getUser() - Fetching current user');
+        const response = await axios.get(USER_URL);
+        return response.data;
+    },
+
+    /**
      * Update user details (e.g. name)
      * @param {string} name - New name
      */
@@ -456,6 +466,9 @@ export const Api = {
             // Reset lastHeartbeat to prevent monitor from seeing stale timestamp
             this.lastHeartbeat = Date.now();
             this.hideConnectionLostOverlay();
+
+            // Verify session is still valid (in case of server restart where SSE reconnects anonymously but session is gone)
+            this.verifySession();
         };
 
         eventSource.addEventListener('task-updated', (e) => {
@@ -516,5 +529,18 @@ export const Api = {
         };
 
         return eventSource;
+    },
+
+    /**
+     * Verify session validity by making a lightweight API call
+     */
+    async verifySession() {
+        try {
+            await this.getUser();
+            console.log('[SSE] Session verification successful');
+        } catch (error) {
+            console.warn('[SSE] Session verification failed', error);
+            // 401/403 are handled by Axios interceptor (redirect to login)
+        }
     }
 };
