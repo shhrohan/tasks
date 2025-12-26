@@ -406,19 +406,17 @@ DRAG-AND-DROP CRITICAL NOTES:
                                     </div>
 
                                     <!-- Mobile: Mark As Done button (Right Aligned) -->
-                                    <button class="btn btn-sm btn-success d-lg-none px-2 py-1"
-                                        x-show="viewMode === 'ACTIVE'"
+                                    <button class="btn btn-success d-lg-none" x-show="viewMode === 'ACTIVE'"
                                         @click.stop="confirmAction('completeLane', lane.id)" title="Mark As Complete">
                                         <i class="fa-solid fa-circle-check me-1"></i>
-                                        <span class="small">Complete</span>
+                                        <span>Complete</span>
                                     </button>
 
                                     <!-- Mobile: Reactivate Button -->
-                                    <button class="btn btn-sm btn-primary d-lg-none px-2 py-1"
-                                        x-show="viewMode === 'COMPLETED'"
+                                    <button class="btn btn-primary d-lg-none" x-show="viewMode === 'COMPLETED'"
                                         @click.stop="confirmAction('uncompleteLane', lane.id)" title="Reactivate Board">
                                         <i class="fa-solid fa-rotate-left me-1"></i>
-                                        <span class="small">Reactivate</span>
+                                        <span>Reactivate</span>
                                     </button>
 
                                     <!-- Center: Progress Bar (Inline in Header) - Desktop only -->
