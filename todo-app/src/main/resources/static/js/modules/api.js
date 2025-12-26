@@ -469,7 +469,7 @@ export const Api = {
         });
 
         eventSource.addEventListener('heartbeat', (e) => {
-            // console.log('[SSE] Event: heartbeat (pong)');
+            console.log('[SSE] Heartbeat received from server');
             this.lastHeartbeat = Date.now();
 
             // If we were marked as disconnected, restore state

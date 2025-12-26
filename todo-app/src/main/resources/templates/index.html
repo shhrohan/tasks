@@ -333,8 +333,7 @@ DRAG-AND-DROP CRITICAL NOTES:
         <div class="mobile-sidebar-body">
             <template x-for="lane in lanes" :key="lane.id">
                 <button class="sidebar-lane-item" :class="{
-                        'active': activeLaneId === lane.id,
-                        'disabled': selectedTags.length > 0 && !laneHasMatchingTasks(lane.id)
+                        'active': activeLaneId === lane.id
                     }" x-show="isSidebarLaneVisible(lane.id)" @click="selectLane(lane.id)">
                     <span class="lane-name" x-text="lane.name"></span>
                     <div class="lane-progress-ring">
@@ -397,8 +396,8 @@ DRAG-AND-DROP CRITICAL NOTES:
                                     <!-- Left: Title & Stats + Action Button on mobile -->
                                     <div class="d-flex align-items-center gap-2 gap-lg-3 flex-grow-1">
                                         <!-- Collapse chevron: Show on mobile when tag filters active -->
-                                        <i class="fa-solid" :class="[lane.collapsed ? 'fa-chevron-right' : 'fa-chevron-down', 
-                                                     selectedTags.length > 0 ? '' : 'd-none d-lg-inline']"></i>
+                                        <i class="fa-solid"
+                                            :class="[lane.collapsed ? 'fa-chevron-right' : 'fa-chevron-down']"></i>
                                         <!-- Lane name on both mobile and desktop -->
                                         <span class="h5 mb-0 fw-bold d-lg-none" x-text="lane.name"></span>
                                         <span class="h4 mb-0 fw-bold d-none d-lg-inline" x-text="lane.name"></span>
@@ -488,9 +487,9 @@ DRAG-AND-DROP CRITICAL NOTES:
                             <div class="swimlane-content row g-3 px-3 pb-3 pt-0" x-show="!lane.collapsed" x-transition>
                                 <!-- Add Task Button Col (Always present on desktop for alignment, button hidden when filtering or completed) -->
                                 <div class="col-12 col-lg-2 align-items-center justify-content-center border-end border-secondary"
-                                    :class="{'d-flex': selectedTags.length === 0 && viewMode === 'ACTIVE', 'd-none d-lg-flex': selectedTags.length > 0 || viewMode === 'COMPLETED'}">
-                                    <button x-show="selectedTags.length === 0 && viewMode === 'ACTIVE'"
-                                        class="btn btn-outline-primary btn-sm" @click.stop="openTaskModal(lane.id)">
+                                    :class="{'d-flex': viewMode === 'ACTIVE', 'd-none d-lg-flex': viewMode === 'COMPLETED'}">
+                                    <button x-show="viewMode === 'ACTIVE'" class="btn btn-outline-primary btn-sm"
+                                        @click.stop="openTaskModal(lane.id)">
                                         <i class="fa-solid fa-plus"></i> Add Task
                                     </button>
                                 </div>
@@ -516,10 +515,9 @@ DRAG-AND-DROP CRITICAL NOTES:
                                             - DO NOT add 3D transforms (translateZ, rotateX) - breaks drag!
                                         -->
 
-                                        <!-- TASK CARDS (Draggable Items) -->
                                         <template x-for="task in getTasks(lane.id, status)" :key="task.id">
                                             <div class="card task-card mb-2" :data-task-id="task.id"
-                                                :data-status="task.status" :draggable="!selectedTags.length"
+                                                :data-status="task.status" draggable="true"
                                                 :style="getTaskStyle(task.id)" @dblclick="resetTaskSize(task.id)"
                                                 @click="openTaskDetail(task.id)"
                                                 @mousedown.passive="prepareDrag(task.id)"
