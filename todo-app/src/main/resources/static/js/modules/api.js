@@ -54,12 +54,18 @@ if (typeof axios !== 'undefined') {
             return response;
         },
         error => {
+            // Sanitize data logging to avoid dumping HTML
+            let errorData = error.response?.data;
+            if (typeof errorData === 'string' && (errorData.includes('<!DOCTYPE html>') || errorData.includes('<html'))) {
+                errorData = '[HTML Response Omitted]';
+            }
+
             console.error('[API] <<< ERROR:', {
                 url: error.config?.url,
                 method: error.config?.method,
                 status: error.response?.status,
                 message: error.message,
-                data: error.response?.data
+                data: errorData
             });
 
             // Auto-redirect to login on 401 Unauthorized or 403 Forbidden
