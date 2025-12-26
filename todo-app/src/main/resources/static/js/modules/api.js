@@ -41,7 +41,16 @@ if (typeof axios !== 'undefined') {
     axios.interceptors.response.use(
         response => {
             console.log(`[API] <<< RESPONSE: ${response.config.method.toUpperCase()} ${response.config.url} - Status: ${response.status}`);
-            console.log('[API] <<< Data:', response.data);
+            // console.log('[API] <<< Data:', response.data);
+
+            // Check if we received HTML instead of JSON (indicates session expiry/redirect to login page)
+            const contentType = response.headers['content-type'];
+            if (contentType && contentType.includes('text/html') && response.config.url.includes('/api/')) {
+                console.warn('[API] Received HTML response for API request (Session Expired). Redirecting to login...');
+                window.location.href = '/login';
+                return Promise.reject(new Error('Session expired (HTML response)'));
+            }
+
             return response;
         },
         error => {
