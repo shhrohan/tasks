@@ -8,12 +8,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [Unreleased] - 2025-12-24
+## [Unreleased] - 2025-12-26
 
 ### Added
-- **Liquid Mobile UI (Shrink/Expand)**:
-  - **Dynamic Bottom Nav**: Refined the "liquid" behavior where the bottom navigation bar squeezes its buttons to the right when the sidebar is open, ensuring all controls remain accessible on small screens.
+- **Balanced Liquid Mobile UI**:
+  - **Balanced Liquid Mobile UI**:
+  - **Premium Branding**: Renamed "TaskBoard 3D" to "Tasks" and "Swimlanes" to "Lanes" in the header and sidebar for a cleaner, more focused terminology.
+  - **Refined Typography**: Increased font sizes for the "Tasks" brand and User Name in the header for better hierarchy and readability.
+  - **User Context**: Moved the logged-in User Name from the dropdown menu directly to the header bar for instant session identity and improved visibility.
+  - **Centered Task Detail**: The mobile Task Detail pane is now horizontally centered (94% width) with smooth slide-up transitions that respect sidebar positioning.
+  - **Dynamic Task Detail Width**: Refined the desktop/mobile detail pane to respect sidebar-push layouts, ensuring it never overlaps the sidebar but instead shrinks/shifts appropriately.
+  - **Fluid Transitions**: Refined the "liquid" bottom nav to use `space-around` distribution and a width-based spacer.
+  - **Icon Centering**: Zeroed out gaps and residual label heights on ultra-small screens to ensure icons are perfectly centered within their active highlights and touch targets.
+  - **Premium Sidebar Layering**: The mobile sidebar now sits on top of the bottom navigation bar (`z-index: 1300`) for a more integrated and complete feel.
+  - **Persistent Selection**: Switching swimlanes in the mobile sidebar no longer auto-closes it, enabling rapid multi-lane navigation.
+  - **Initial Auto-Expand**: Fixed the logic to ensure the single visible lane expands automatically even on the initial page load or hard reload.
+  - **Auto-Expand Single Lane**: The application now automatically expands a swimlane if it is the only one visible (due to tag filtering or switching between ACTIVE/COMPLETED modes), providing immediate access to relevant tasks.
   - **Responsive Labels**: Navigation buttons preserve their labels on larger viewports (>450px) while automatically switching to icon-only mode on ultra-small devices to prevent crowding.
+- **Connection Monitoring**:
+  - **Proactive Heartbeat**: Implemented a background monitor that detects silent connection failures (e.g., server restarts) within 25 seconds.
+  - **Connection Lost Overlay**: Added a premium, glassmorphism-styled overlay with an animated pulse and progress bar to inform users when the connection is lost and attempting to reconnect.
 - **Test Stabilization**: Made async writes synchronous during integration tests to prevent `JpaObjectRetrievalFailureException` caused by transaction visibility issues.
 - **Improved Factory Defaults**: Added `@ConditionalOnMissingBean` to `asyncWriteExecutor` for easier testing overrides.
 - **Fixed Unit Tests**: Resolved NPE in `UserServiceTest` by properly mocking `PasswordEncoder`.

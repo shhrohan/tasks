@@ -164,7 +164,12 @@ This is a full-stack, single-page web application for managing tasks and to-do i
 - **Glassmorphism UI**: Modern, translucent design aesthetic with dynamic CSS transitions.  
 - **Task Filters**: Hide Done and Blocked Only filter buttons in navbar.  
 - **Tag Filter Bar**: Sticky, permanently visible tag bar with narrowing "faceted" logic (only shows tags present on tasks matching current selection). Includes discovery mode for mobile.
-- **Mobile Liquid UI**: Responsive push-based layout where the bottom navigation bar compressively "squeezes" its buttons to the right when the sidebar is open, ensuring all controls remain visible and functional.
+- **Mobile Liquid UI**: Responsive push-based layout where the bottom navigation bar compressively "squeezes" its buttons to the right when the sidebar is open, ensuring all controls remain visible and functional. Uses a `space-around` distribution with a transitioned `.nav-spacer` for high-performance sliding.
+- **Premium Sidebar Layering**: The mobile sidebar uses a higher z-index (`1300`) than the bottom nav to provide a more immersive overlay feel.
+- **Centered Task Detail**: The mobile Task Detail pane is horizontally centered with margins and transition classes that preserve centering during slide-up.
+- **Sidebar-Aware Layout**: The Task Detail pane and main content respect the sidebar's push layout, ensuring zero overlap when the sidebar is pinned/open.
+- **Auto-Expand Single Lane**: If only one swimlane is visible (due to tag filtering, selection, or view mode shifts), the application automatically expands it. This logic is triggered both by user interaction and during initial application load.
+- **Persistent Mobile Navigation**: The mobile sidebar remains open after lane selection to facilitate quick switching across multiple boards.
 - **Synchronized Transitions**: Unified 300ms easing across all mobile navigation components for a smooth, synchronized "liquid" user experience.
 - **User Profile Management**: View user details and update display name via a dedicated profile modal. (Email and Date fields removed for simplicity).
 - **Comment Metadata**: Display of full author name and comprehensive relative timestamps for all task comments.

@@ -218,6 +218,9 @@ Alpine.data('todoApp', () => ({
             (l) => console.log('[App] SSE Lane update received:', l)
         );
 
+        // Start proactive connection monitoring
+        Api.startConnectionMonitor();
+
         console.log('[App] ====== Initialization Complete ======');
 
         // ---------------------------------------------------------------------
@@ -266,10 +269,22 @@ Alpine.data('todoApp', () => ({
             }
         });
 
+        // --- Auto-Expand Watchers ---
+        this.$watch('selectedTags', () => this.checkSingleLaneAutoExpand());
+        this.$watch('viewMode', () => this.checkSingleLaneAutoExpand());
+        this.$watch('hideDone', () => this.checkSingleLaneAutoExpand());
+        this.$watch('showOnlyBlocked', () => this.checkSingleLaneAutoExpand());
+
         // ---------------------------------------------------------------------
         // STEP 7: Global Keyboard Navigation
         // ---------------------------------------------------------------------
         document.addEventListener('keydown', (e) => this.handleGlobalKeydown(e));
+
+        // ---------------------------------------------------------------------
+        // STEP 8: Initial Auto-Expand Check
+        // Ensure single-visible lane expands on initial load/reload
+        // ---------------------------------------------------------------------
+        this.checkSingleLaneAutoExpand();
     },
 
     /**
@@ -329,13 +344,8 @@ Alpine.data('todoApp', () => ({
             lane.collapsed = false; // Just expand if already loaded
         }
 
-        // ALWAYS close mobile sidebar after selection on mobile, regardless of pinning
-        if (this.isMobile && this.mobileSidebarOpen) {
-            this.mobileSidebarOpen = false;
-            this.sidebarPinned = false; // Unpin to restore layout
-            this.updateSidebarBodyClasses();
-            console.log('[App] selectLane: Auto-closed sidebar on mobile');
-        }
+        // Sidebar persistence: removed auto-close logic here.
+        // User now explicitly closes sidebar via Lanes button or backdrop.
 
         // Scroll to top of content
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -748,8 +758,41 @@ Alpine.data('todoApp', () => ({
         if (!visible) {
             console.log(`[App] Hiding empty column ${status} for lane ${laneId} in mobile filter view`);
         }
-
         return visible;
+    },
+
+    /**
+     * Auto-expand logic: if only one lane is visible, expand it.
+     */
+    async checkSingleLaneAutoExpand() {
+        // Wait for any concurrent state updates to settle
+        await this.$nextTick();
+
+        const visibleLanes = this.lanes.filter(lane => this.isLaneVisible(lane.id));
+
+        if (visibleLanes.length === 1) {
+            const lane = visibleLanes[0];
+            if (lane.collapsed) {
+                console.log(`[App] Auto-expanding single visible lane: ${lane.name} (${lane.id})`);
+                lane.collapsed = false;
+
+                // Load tasks if not already loaded
+                if (!lane.tasksLoaded) {
+                    lane.loading = true;
+                    try {
+                        await this.fetchLaneTasks(lane.id);
+                        lane.tasksLoaded = true;
+                        this.$nextTick(() => {
+                            this.reinitSortableForLane(lane.id);
+                        });
+                    } catch (e) {
+                        console.error(`[App] Failed to auto-load single lane ${lane.id}:`, e);
+                    } finally {
+                        lane.loading = false;
+                    }
+                }
+            }
+        }
     },
 
     /**

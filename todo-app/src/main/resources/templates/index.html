@@ -35,7 +35,7 @@ DRAG-AND-DROP CRITICAL NOTES:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Task Board</title>
+    <title>Tasks</title>
 
     <!-- Critical CSS (inlined for fastest first paint) -->
     <style>
@@ -126,8 +126,7 @@ DRAG-AND-DROP CRITICAL NOTES:
             </button>
 
             <a class="navbar-brand fw-bold" href="#">
-                <i class="fa-solid fa-cubes me-2"></i><span class="d-none d-md-inline">TaskBoard 3D</span><span
-                    class="d-md-none">Tasks</span>
+                <i class="fa-solid fa-cubes me-2"></i><span>Tasks</span>
             </a>
 
             <!-- Desktop: Full button bar -->
@@ -176,9 +175,9 @@ DRAG-AND-DROP CRITICAL NOTES:
                 <div class="dropdown">
                     <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
-                        <i class="fa-solid fa-user"></i>
-                        <span class="d-none d-lg-inline ms-1"
-                            x-text="window.initialData?.user?.firstName || 'User'">User</span>
+                        <i class="fa-solid fa-user me-1"></i>
+                        <span class="d-none d-md-inline ms-1 user-name-display"
+                            x-text="window.initialData?.user?.name || 'User'">User</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark p-2 border border-secondary shadow-lg"
                         style="background-color: #1e293b;">
@@ -208,9 +207,11 @@ DRAG-AND-DROP CRITICAL NOTES:
             <!-- Mobile: Compact user button only (rest goes to bottom nav) -->
             <div class="d-md-none">
                 <div class="dropdown">
-                    <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                        aria-expanded="false">
+                    <button class="btn btn-outline-light btn-sm dropdown-toggle d-flex align-items-center gap-2"
+                        type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fa-solid fa-user"></i>
+                        <span class="small user-name-display"
+                            x-text="window.initialData?.user?.name || 'User'">User</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark p-2 border border-secondary shadow-lg"
                         style="background-color: #1e293b;">
@@ -243,9 +244,10 @@ DRAG-AND-DROP CRITICAL NOTES:
     <header class="mobile-header d-lg-none">
         <a class="mobile-header-brand" href="#">
             <i class="fa-solid fa-cubes"></i>
-            <span>TaskBoard 3D</span>
+            <span>Tasks</span>
         </a>
-        <div class="dropdown">
+        <div class="dropdown d-flex align-items-center gap-2">
+            <span class="user-name-display small d-none d-sm-inline" x-text="window.initialData?.user?.name"></span>
             <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown"
                 aria-expanded="false">
                 <i class="fa-solid fa-user"></i>
@@ -277,6 +279,8 @@ DRAG-AND-DROP CRITICAL NOTES:
 
     <!-- Mobile Bottom Navigation Bar (visible on screens < 992px) -->
     <nav class="mobile-bottom-nav d-lg-none" x-cloak>
+        <!-- Spacer for smooth sliding during sidebar transitions -->
+        <div class="nav-spacer"></div>
         <!-- Lanes button - toggles sidebar -->
         <button class="bottom-nav-item" :class="{'active': mobileSidebarOpen}" @click="toggleMobileSidebar()">
             <i class="fa-solid fa-layer-group"></i>
@@ -322,7 +326,7 @@ DRAG-AND-DROP CRITICAL NOTES:
 
         <!-- Sidebar Header (title only) -->
         <div class="mobile-sidebar-header">
-            <span>SWIMLANES</span>
+            <span>LANES</span>
         </div>
 
         <!-- Swimlane List -->

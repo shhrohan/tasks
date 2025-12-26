@@ -305,6 +305,8 @@ export const Api = {
     isConnected: true,
     reconnectAttempts: 0,
     maxReconnectAttempts: 10,
+    lastHeartbeat: Date.now(),
+    monitorInterval: null,
 
     /**
      * Show connection lost overlay
@@ -314,30 +316,23 @@ export const Api = {
         if (!overlay) {
             overlay = document.createElement('div');
             overlay.id = 'connection-lost-overlay';
+            overlay.classList.add('connection-navigation-overlay'); // Using class for CSS targeting
             overlay.innerHTML = `
-                <div class="connection-lost-content">
-                    <i class="fa-solid fa-wifi-slash fa-3x mb-3"></i>
-                    <h4>Connection Lost</h4>
-                    <p class="text-secondary mb-2">Attempting to reconnect...</p>
-                    <div class="spinner-border spinner-border-sm text-primary" role="status">
-                        <span class="visually-hidden">Reconnecting...</span>
+                <div class="connection-lost-content animate__animated animate__fadeInDown">
+                    <div class="connection-icon-wrapper mb-3">
+                        <i class="fa-solid fa-wifi-slash fa-3x"></i>
+                        <div class="connection-pulse"></div>
                     </div>
-                    <p class="text-muted small mt-2" id="reconnect-status"></p>
+                    <h4>Connection Lost</h4>
+                    <p class="text-secondary mb-3">The server is restarting or your connection was interrupted. Attempting to reconnect...</p>
+                    <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        <span class="small" id="reconnect-status">Initializing...</span>
+                    </div>
+                    <div class="reconnect-progress-container mt-3">
+                        <div class="reconnect-progress-bar" id="reconnect-progress"></div>
+                    </div>
                 </div>
-            `;
-            overlay.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.85);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 99999;
-                color: white;
-                text-align: center;
             `;
             document.body.appendChild(overlay);
         }
@@ -364,6 +359,54 @@ export const Api = {
         if (statusEl) {
             statusEl.textContent = message;
         }
+
+        // Also update progress bar if we have attempt count
+        if (message.includes('Attempt')) {
+            const match = message.match(/Attempt (\d+)\/(\d+)/);
+            if (match) {
+                const current = parseInt(match[1]);
+                const total = parseInt(match[2]);
+                const progressEl = document.getElementById('reconnect-progress');
+                if (progressEl) {
+                    progressEl.style.width = `${(current / total) * 100}%`;
+                }
+            }
+        }
+    },
+
+    /**
+     * Proactive connection monitoring
+     * Starts a loop to check if heartbeat is stale
+     */
+    startConnectionMonitor() {
+        if (this.monitorInterval) {
+            clearInterval(this.monitorInterval);
+        }
+
+        console.log('[SSE] Starting connection monitor (checking every 5s)...');
+        this.monitorInterval = setInterval(() => {
+            const timeSinceHeartbeat = Date.now() - this.lastHeartbeat;
+
+            // If offline or no heartbeat for 25s (server sends every 10s)
+            const isStale = timeSinceHeartbeat > 25000;
+            const isOffline = !navigator.onLine;
+
+            if (this.isConnected && (isStale || isOffline)) {
+                console.warn(`[SSE] Connection monitor detected failure! Stale: ${isStale} (${Math.round(timeSinceHeartbeat / 1000)}s), Offline: ${isOffline}`);
+                this.isConnected = false;
+                this.showConnectionLostOverlay();
+                this.updateReconnectStatus(isOffline ? 'You are offline' : 'Waiting for server heartbeat...');
+
+                // If stale, try to re-init SSE immediately to trigger native reconnect logic
+                if (isStale && this.currentEventSource) {
+                    this.currentEventSource.close();
+                    this.currentEventSource = null;
+                }
+            } else if (!isStale && isOffline && !this.isConnected) {
+                // If back online but still disconnected, keep overlay but update text
+                this.updateReconnectStatus('Re-establishing connection...');
+            }
+        }, 5000);
     },
 
     /**
@@ -423,17 +466,36 @@ export const Api = {
             onLaneUpdate(lane);
         });
 
+        eventSource.addEventListener('heartbeat', (e) => {
+            // console.log('[SSE] Event: heartbeat (pong)');
+            this.lastHeartbeat = Date.now();
+
+            // If we were marked as disconnected, restore state
+            if (!this.isConnected) {
+                console.log('[SSE] Connection restored via heartbeat');
+                this.isConnected = true;
+                this.reconnectAttempts = 0;
+                this.hideConnectionLostOverlay();
+            }
+        });
+
         eventSource.onerror = (e) => {
-            console.error('[SSE] Connection error', e);
+            console.error('[SSE] Connection error event fired', e);
             this.isConnected = false;
             this.reconnectAttempts++;
-            eventSource.close();
+
+            // Close old source - native EventSource usually tries to reconnect itself,
+            // but we use our own timeout-based initSSE for more control over intervals.
+            if (this.currentEventSource) {
+                this.currentEventSource.close();
+                this.currentEventSource = null;
+            }
 
             // Show overlay on first disconnect
             this.showConnectionLostOverlay();
 
             if (this.reconnectAttempts <= this.maxReconnectAttempts) {
-                const delay = Math.min(5000 * this.reconnectAttempts, 30000); // Max 30s
+                const delay = Math.min(2000 * this.reconnectAttempts, 10000); // 2s, 4s, 6s... Max 10s for faster recovery
                 this.updateReconnectStatus(`Attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}... (${delay / 1000}s)`);
                 console.log(`[SSE] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
                 setTimeout(() => this.initSSE(onTaskUpdate, onTaskDelete, onLaneUpdate), delay);
