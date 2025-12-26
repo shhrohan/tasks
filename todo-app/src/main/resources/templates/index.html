@@ -283,7 +283,7 @@ DRAG-AND-DROP CRITICAL NOTES:
         x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
 
         <div class="d-flex align-items-center gap-2 flex-nowrap py-1">
-            <span class="text-secondary small fw-bold me-1"><i class="fa-solid fa-filter me-1"></i>Tags:</span>
+            <span class="text-light opacity-75 small fw-bold me-1"><i class="fa-solid fa-filter me-1"></i>Tags:</span>
 
             <template x-for="tag in getAllUniqueTags()" :key="tag">
                 <button class="tag-capsule" :class="{

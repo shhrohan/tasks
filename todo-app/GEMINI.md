@@ -178,6 +178,10 @@ This is a full-stack, single-page web application for managing tasks and to-do i
 - **User Profile Management**: View user details and update display name via a dedicated profile modal. (Email and Date fields removed for simplicity).
 - **Comment Metadata**: Display of full author name and comprehensive relative timestamps for all task comments.
 - **Task Detail Tag Management**: Add and remove tags directly from the task details pane with immediate persistence and UI consistency with the creation dialog.
+- **Mobile Layout Protocols**:
+  - **Sidebar Width**: ALWAYS target `.mobile-sidebar` (not generic `.sidebar`) for mobile width constraints.
+  - **Overlay Management**: Use aggressive CSS (`display: none !important`) to prevent connection overlays from blocking the view on small screens.
+  - **Element Hiding**: Floating elements (FABs) and bottom navs MUST include CSS rules to hide them when the sidebar is open on mobile.
 - **AOP Idempotency**: Transparent protection against duplicate/concurrent operations using Spring AOP and custom annotations.
 - **Test Async Synchronization**: Integration tests automatically override the `asyncWriteExecutor` with a `SyncTaskExecutor` via `TestAsyncConfig`. This ensures all "async" writes happen within the same thread and transaction during tests, preventing `JpaObjectRetrievalFailureException` caused by transaction visibility issues.
 

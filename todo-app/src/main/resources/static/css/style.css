@@ -234,16 +234,19 @@ body {
     padding: 0.35rem 0.75rem;
     font-size: 0.8rem;
     font-weight: 500;
-    color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #cbd5e1;
+    /* Lighter text for contrast (Slate-300) */
+    background: rgba(255, 255, 255, 0.1);
+    /* Slightly more visible bg */
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 20px;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .tag-capsule:hover {
-    color: var(--text-primary);
+    color: #fff;
+    /* White on hover */
     background: rgba(59, 130, 246, 0.2);
     border-color: rgba(59, 130, 246, 0.4);
     transform: translateY(-1px);
@@ -257,10 +260,11 @@ body {
 }
 
 .tag-capsule.faded {
-    opacity: 0.4;
+    opacity: 0.6;
+    /* Increased opacity for better visibility (was 0.4) */
     cursor: not-allowed;
     background: transparent;
-    border-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Task Card Tags */
@@ -2460,10 +2464,9 @@ body.sidebar-pinned .mobile-sidebar-backdrop {
 @media (max-width: 991.98px) {
 
     body.sidebar-open.sidebar-pinned .navbar,
-    .navbar,
-    .mobile-header,
-    main.container-fluid,
-    .tag-filter-bar {
+    body.sidebar-open.sidebar-pinned .mobile-header,
+    body.sidebar-open.sidebar-pinned main.container-fluid,
+    body.sidebar-open.sidebar-pinned .tag-filter-bar {
         margin-left: var(--sidebar-push);
         width: calc(100% - var(--sidebar-push));
         transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
@@ -3066,39 +3069,6 @@ kbd {
 }
 
 /* ============================================================================
-   SMALL SCREEN OPTIMIZATIONS (iPhone SE, etc.) - Max Width 480px
-   ============================================================================ */
-@media (max-width: 480px) {
-
-    /* 1. FORCE HIDE CONNECTION OVERLAY BY DEFAULT (Wait for Flex) */
-    /* This ensures it doesn't block view if stuck in loading state */
-    #connection-lost-overlay {
-        display: none !important;
-    }
-
-    /* 2. FULL WIDTH SIDEBAR */
-    .sidebar {
-        width: 100vw !important;
-        max-width: 100vw !important;
-        border-right: none !important;
-    }
-
-    .mobile-sidebar-footer {
-        padding-right: 1.5rem !important;
-    }
-
-    /* 3. HIDE BOTTOM NAV WHEN SIDEBAR OPEN */
-    body.sidebar-open .bottom-nav {
-        transform: translateY(110%) !important;
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        pointer-events: none;
-    }
-
-    body.sidebar-open .nav-spacer {
-        display: none !important;
-    }
-}
-/* ============================================================================
    ROBUST SMALL SCREEN FIXES (Corrected Classes)
    ============================================================================ */
 @media (max-width: 480px) {
@@ -3111,6 +3081,28 @@ kbd {
         left: 0 !important;
     }
 
+    /* CRITICAL: Hide backdrop on very small screens - DO NOT REMOVE
+     * ============================================================
+     * CONTEXT: On iPhone SE (< 480px), the sidebar operates in pure overlay mode.
+     * The JavaScript (app.js → updateSidebarBodyClasses) prevents 'sidebar-pinned'
+     * class from being applied to avoid the --sidebar-push margin issue.
+     * 
+     * WHY BACKDROP MUST BE HIDDEN:
+     * - The CSS rule at line 2428 only hides backdrop when body.sidebar-pinned exists
+     * - Since we prevent sidebar-pinned on iPhone SE, that rule never applies
+     * - Without this override, the backdrop shows and blocks ALL user interaction
+     * - User cannot click anything - entire app becomes unusable
+     * 
+     * RELATED JAVASCRIPT:
+     * See app.js → updateSidebarBodyClasses() for the isVerySmallScreen check
+     * that prevents sidebar-pinned class.
+     * 
+     * TESTED ON: iPhone SE (375x667px), must work there!
+     */
+    .mobile-sidebar-backdrop {
+        display: none !important;
+    }
+
     /* Force hide bottom nav and FAB when sidebar is open */
     /* Targeting both potential class names to be safe */
     body.sidebar-open .bottom-nav,
@@ -3121,5 +3113,18 @@ kbd {
         pointer-events: none !important;
         opacity: 0 !important;
         visibility: hidden !important;
+    }
+}
+
+/* iPhone SE Layout Fix - Force full width */
+@media (max-width: 480px) {
+
+    .navbar,
+    .mobile-header,
+    main.container-fluid,
+    .tag-filter-bar,
+    .board-container {
+        margin-left: 0 !important;
+        width: 100% !important;
     }
 }

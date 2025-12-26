@@ -377,31 +377,6 @@ Alpine.data('todoApp', () => ({
     },
 
     /**
-     * Update body classes for sidebar state (used by CSS for push layout)
-     * 
-     * CRITICAL MOBILE LAYOUT RULE - DO NOT MODIFY:
-     * On screens < 480px (iPhone SE, etc.), the sidebar MUST always overlay,
-     * never push content. This is enforced by preventing 'sidebar-pinned' class.
-     */
-    updateSidebarBodyClasses() {
-        const body = document.body;
-        if (this.mobileSidebarOpen) {
-            body.classList.add('sidebar-open');
-        } else {
-            body.classList.remove('sidebar-open');
-        }
-        
-        // CRITICAL: Never pin sidebar on very small screens (iPhone SE, etc.)
-        const isVerySmallScreen = window.innerWidth < 480;
-        
-        if (this.sidebarPinned && !isVerySmallScreen) {
-            body.classList.add('sidebar-pinned');
-        } else {
-            body.classList.remove('sidebar-pinned');
-        }
-    },
-
-    /**
      * Check if a lane should be visible
      * - On desktop: always show lanes matching view mode
      * - On mobile: show only active lane

@@ -37,10 +37,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                         @org.springframework.data.repository.query.Param("targetPosition") Integer targetPosition,
                         @org.springframework.data.repository.query.Param("excludeTaskId") Long excludeTaskId);
 
-        /**
-         * Fetch tasks for a lane, ordered by position (nulls last)
-         */
-        @org.springframework.data.jpa.repository.Query("SELECT t FROM Task t WHERE t.swimLane.id = :swimLaneId ORDER BY t.position ASC NULLS LAST")
-        java.util.List<Task> findBySwimLaneId(
-                        @org.springframework.data.repository.query.Param("swimLaneId") Long swimLaneId);
+    /**
+     * Fetch tasks for a lane, ordered by position (nulls last).
+     */
+    @org.springframework.data.jpa.repository.Query("SELECT t FROM Task t WHERE t.swimLane.id = :swimLaneId ORDER BY t.position ASC NULLS LAST")
+    java.util.List<Task> findBySwimLaneId(
+            @org.springframework.data.repository.query.Param("swimLaneId") Long swimLaneId);
+
 }

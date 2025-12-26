@@ -340,17 +340,10 @@ export const Api = {
     maxReconnectAttempts: 10,
     lastHeartbeat: Date.now(),
     monitorInterval: null,
-
     /**
-     * Show connection lost overlay
+     * Show connection lost overlay (on all devices)
      */
     showConnectionLostOverlay() {
-        // Mobile check: Don't show overlay on small screens to prevent UX blocking
-        if (window.innerWidth < 480) {
-            console.log('[SSE] Suppressing connection overlay on mobile');
-            return;
-        }
-
         let overlay = document.getElementById('connection-lost-overlay');
         if (!overlay) {
             overlay = document.createElement('div');
@@ -426,8 +419,9 @@ export const Api = {
         this.monitorInterval = setInterval(() => {
             const timeSinceHeartbeat = Date.now() - this.lastHeartbeat;
 
-            // If offline or no heartbeat for 25s (server sends every 10s)
-            const isStale = timeSinceHeartbeat > 25000;
+            // If offline or no heartbeat for 45s (server sends every 10s)
+            // Increased to 45s to allow for 3 missed beats + network jitter
+            const isStale = timeSinceHeartbeat > 45000;
             const isOffline = !navigator.onLine;
 
             if (this.isConnected && (isStale || isOffline)) {
@@ -436,10 +430,17 @@ export const Api = {
                 this.showConnectionLostOverlay();
                 this.updateReconnectStatus(isOffline ? 'You are offline' : 'Waiting for server heartbeat...');
 
-                // If stale, try to re-init SSE immediately to trigger native reconnect logic
-                if (isStale && this.currentEventSource) {
-                    this.currentEventSource.close();
-                    this.currentEventSource = null;
+                // If stale, restart connection explicitly (but only if not already reconnecting)
+                if (isStale && !this.isReconnecting) {
+                    console.log('[SSE] Stale connection detected. Restarting...');
+                    this.isReconnecting = true;
+                    if (this.callbacks) {
+                        this.initSSE(
+                            this.callbacks.onTaskUpdate,
+                            this.callbacks.onTaskDelete,
+                            this.callbacks.onLaneUpdate
+                        );
+                    }
                 }
             } else if (!isStale && isOffline && !this.isConnected) {
                 // If back online but still disconnected, keep overlay but update text
@@ -456,6 +457,9 @@ export const Api = {
      */
     initSSE(onTaskUpdate, onTaskDelete, onLaneUpdate) {
         console.log('[SSE] Initializing connection to', SSE_URL);
+
+        // Store callbacks for reconnection logic in connectionMonitor
+        this.callbacks = { onTaskUpdate, onTaskDelete, onLaneUpdate };
 
         // Close any existing connection before creating a new one
         if (this.currentEventSource) {
@@ -483,6 +487,7 @@ export const Api = {
         eventSource.onopen = () => {
             console.log('[SSE] Connection established');
             this.isConnected = true;
+            this.isReconnecting = false; // Reset flag
             this.reconnectAttempts = 0;
             // Reset lastHeartbeat to prevent monitor from seeing stale timestamp
             this.lastHeartbeat = Date.now();
