@@ -180,9 +180,20 @@ export const Drag = {
                         sameContainer: to === from
                     });
 
-                    // Skip if no actual change
+                    const fromStatus = from.getAttribute('data-status');
+                    const toStatus = to.getAttribute('data-status');
+                    const fromLane = from.getAttribute('data-lane-id');
+                    const toLane = to.getAttribute('data-lane-id');
+
+                    // Skip if no actual change (same position)
                     if (to === from && newIndex === oldIndex) {
                         console.log('[Drag] No position change, skipping API call');
+                        return;
+                    }
+
+                    // OPTIMIZATION: Skip if status unchanged (just reordering within same status column)
+                    if (toStatus === fromStatus && toLane === fromLane && to === from) {
+                        console.log('[Drag] Same status and lane - only position changed, skipping API call');
                         return;
                     }
 
