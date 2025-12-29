@@ -149,63 +149,132 @@ When the user says they are **confident of the changes** (or uses similar wordin
 
 ---
 
-
-
 # PROJECT: To-Do and Reminders Application
 
 ## Project Overview
 This is a full-stack, single-page web application for managing tasks and to-do items. It presents a "Task Board 3D" interface with swimlanes for organizing tasks. The application is built with a Java/Spring Boot backend and a dynamic frontend that uses Thymeleaf for initial rendering and Alpine.js for interactivity.
 
 ### Key Features
-- **3D Kanban Board**: Visually distinct swimlanes with 3D depth effects.  
-- **Interactive Statistics**: Collapsible accordion dashboard with 3D pie and bar charts.  
-- **Drag-and-Drop**: Intuitive task management powered by Sortable.js.  
-- **Mobile Optimized**: Responsive layout with persistent push-sidebar navigation and bottom-anchored task details.  
-- **Glassmorphism UI**: Modern, translucent design aesthetic with dynamic CSS transitions.  
-- **Task Filters**: Hide Done and Blocked Only filter buttons in navbar.  
+- **3D Kanban Board**: Visually distinct swimlanes with 3D depth effects and collapsible headers.
+- **Interactive Statistics**: Collapsible accordion dashboard with 3D pie and bar charts.
+- **Status Pills**: Proportional progress visualization in swimlane headers showing task distribution (percentage + count).
+- **Drag-and-Drop**: Intuitive task management powered by Sortable.js with cross-column support.
+- **Mobile Optimized**: Responsive layout with persistent push-sidebar navigation and bottom-anchored task details.
+- **Mobile Liquid UI**: Responsive push-based layout where the bottom navigation bar compressively "squeezes" its buttons to the right when the sidebar is open.
+- **Glassmorphism UI**: Modern, translucent dark theme design aesthetic with dynamic CSS transitions.
+- **Task Filters**: "Hide Done" and "Blocked Only" filter buttons in navbar.
 - **Tag Filter Bar**: Sticky, horizontally scrollable filter bar below the navbar.
-  - **Faceted Logic**: Displays only tags present on tasks matching the current selection (co-occurrence), enabling "drill-down" discovery.
-  - **Dynamic Sorting (Desktop)**: Automatically sorts lanes by relevance (highest match count first) when filtering.
-  - **Smart Collapse (Desktop)**: Automatically collapses lanes with zero matches during filtering to reduce clutter.
-  - **Mobile Behavior**: The bar is hidden on mobile devices to optimize screen space.
-- **Mobile Liquid UI**: Responsive push-based layout where the bottom navigation bar compressively "squeezes" its buttons to the right when the sidebar is open, ensuring all controls remain visible and functional. Uses a `space-around` distribution with a transitioned `.nav-spacer` for high-performance sliding.
-- **Premium Sidebar Layering**: The mobile sidebar uses a higher z-index (`1300`) than the bottom nav to provide a more immersive overlay feel.
-- **Centered Task Detail**: The mobile Task Detail pane is horizontally centered with margins and transition classes that preserve centering during slide-up.
-- **Sidebar-Aware Layout**: The Task Detail pane and main content respect the sidebar's push layout, ensuring zero overlap when the sidebar is pinned/open.
-- **Auto-Expand Single Lane**: If only one swimlane is visible (due to tag filtering, selection, or view mode shifts), the application automatically expands it. This logic is triggered both by user interaction and during initial application load.
-- **Persistent Mobile Navigation**: The mobile sidebar remains open after lane selection to facilitate quick switching across multiple boards.
-- **Synchronized Transitions**: Unified 300ms easing across all mobile navigation components for a smooth, synchronized "liquid" user experience.
-- **User Profile Management**: View user details and update display name via a dedicated profile modal. (Email and Date fields removed for simplicity).
-- **Comment Metadata**: Display of full author name and comprehensive relative timestamps for all task comments.
-- **Task Detail Tag Management**: Add and remove tags directly from the task details pane with immediate persistence and UI consistency with the creation dialog.
-- **Mobile Layout Protocols**:
-  - **Sidebar Width**: ALWAYS target `.mobile-sidebar` (not generic `.sidebar`) for mobile width constraints.
-  - **Overlay Management**: Use aggressive CSS (`display: none !important`) to prevent connection overlays from blocking the view on small screens.
-  - **Element Hiding**: Floating elements (FABs) and bottom navs MUST include CSS rules to hide them when the sidebar is open on mobile.
-- **AOP Idempotency**: Transparent protection against duplicate/concurrent operations using Spring AOP and custom annotations.
-- **Test Async Synchronization**: Integration tests automatically override the `asyncWriteExecutor` with a `SyncTaskExecutor` via `TestAsyncConfig`. This ensures all "async" writes happen within the same thread and transaction during tests, preventing `JpaObjectRetrievalFailureException` caused by transaction visibility issues.
+  - **Faceted Logic**: Displays only tags present on tasks matching the current selection.
+  - **Smart Selection**: Dynamic sorting and auto-collapse of lanes during filtering on desktop.
+- **Task Card Resize**: Drag resize handle on task cards to adjust height; double-click to reset.
+  - **Horizontal Resize**: Dragging significantly to the right/left expands/shrinks the entire column width.
+- **Toast Notifications**: Slide-down Success (green) and Error (red) notifications.
+- **Real-Time Sync**: Server-Sent Events (SSE) for multi-client synchronization.
+- **Async Write-Behind**: Optimistic UI updates with queued background database writes.
+- **AOP Idempotency**: Transparent protection against duplicate operations using Spring AOP.
 
----
+## Architecture
+
+The application follows a standard layered Spring Boot architecture:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Controller Layer                                           │
+│  └── TaskController, SwimLaneController, SseController      │
+├─────────────────────────────────────────────────────────────┤
+│  Service Layer                                              │
+│  └── TaskService, SwimLaneService, AsyncWriteService        │
+├─────────────────────────────────────────────────────────────┤
+│  DAO Layer                                                  │
+│  └── TaskDAO, SwimLaneDAO                                   │
+├─────────────────────────────────────────────────────────────┤
+│  Repository Layer (Spring Data JPA)                         │
+│  └── TaskRepository, SwimLaneRepository                     │
+├─────────────────────────────────────────────────────────────┤
+│  Database: PostgreSQL                                       │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## Technology Stack
 
 ### Backend
-- **Java 21**  
-- **Spring Boot 3.3.0** (Web, Data JPA)  
-- **PostgreSQL**: Primary database (configured in `application.properties`).  
-- **Maven**: Build tool.  
+- **Java 21**
+- **Spring Boot 3.3.0** (Web, Data JPA)
+- **PostgreSQL**: Primary database (Azure-hosted in prod, local in dev).
+- **Maven**: Build tool.
 - **Log4j2**: Logging framework.
 
 ### Frontend
-- **Alpine.js (v3.x)**: Lightweight reactive framework for declarative UI.  
-- **Bootstrap 5**: UI components, grid, and modals.  
-- **Axios**: HTTP client for API communication.  
-- **GSAP (v3.12.2)**: Animation library.  
-- **Sortable.js**: Drag-and-drop list management.  
-- **Highcharts 3D**: Interactive charts.  
-- **Thymeleaf**: Server-side template engine (initial load).
+- **Alpine.js (v3.x)**: Lightweight reactive framework loaded via ESM.
+- **Bootstrap 5.3.0**: UI Components, Grid system.
+- **Axios**: HTTP client for API communication.
+- **Sortable.js (v1.15.0)**: Drag-and-drop list management.
+- **GSAP (v3.12.2)**: Animation library for advanced transitions.
+- **Highcharts 3D**: Interactive 3D charts for statistics.
+- **Font Awesome 6.4.0**: Icons.
+- **Thymeleaf**: Server-side template engine (initial load only).
 
----
+## Data Model
+
+### SwimLane
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | Long | Primary Key |
+| `name` | String | Name of the swimlane |
+| `isCompleted` | Boolean | Status of the swimlane |
+| `isDeleted` | Boolean | Soft delete flag |
+| `position` | Integer | Display order for lane reordering |
+
+### Task
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | Long | Primary Key |
+| `name` | String | Task description |
+| `status` | Enum | `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`, `DEFERRED` |
+| `comments` | String (JSON) | JSON array of comment objects |
+| `tags` | String (JSON) | JSON array of tag strings |
+| `swimLane` | SwimLane | Many-to-One relationship |
+| `position` | Integer | Order within the status column |
+
+## API Reference
+
+### SwimLanes (`/api/swimlanes`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | Get all swimlanes |
+| GET | `/active` | Get active (non-completed) swimlanes |
+| GET | `/completed` | Get completed swimlanes |
+| POST | `/` | Create a new swimlane (`{name}`) |
+| PATCH | `/{id}/complete` | Mark swimlane as complete |
+| PATCH | `/{id}/uncomplete` | Reactivate swimlane |
+| PATCH | `/reorder` | Reorder swimlanes (body: `Long[]` of IDs) |
+| DELETE | `/{id}` | Soft delete swimlane |
+
+### Tasks (`/api/tasks`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | Get all tasks |
+| GET | `/swimlane/{swimLaneId}` | Get tasks by lane (incremental loading) |
+| GET | `/{id}` | Get specific task |
+| POST | `/` | Create a new task |
+| PUT | `/{id}` | Update task details |
+| DELETE | `/{id}` | Delete task |
+| PATCH | `/{id}/move` | Move task (params: `status`, `swimLaneId`, `position`) |
+| POST | `/{id}/comments` | Add comment |
+| PUT | `/{id}/comments/{commentId}` | Update comment |
+| DELETE | `/{id}/comments/{commentId}` | Delete comment |
+
+### Server-Sent Events (`/api/sse`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/stream` | Subscribe to real-time updates |
+
+**SSE Event Types:**
+- `init` - Initial connection established
+- `task-updated` - Task was created/modified
+- `task-deleted` - Task was deleted
+- `lane-updated` - Lane was modified
+- `heartbeat` - Keep-alive (every 10s)
 
 ## Backend Performance Optimizations
 
@@ -252,7 +321,7 @@ spring.datasource.hikari.connection-timeout=20000
 
 ### Bulk UPDATE Queries
 Position shifts use a single bulk UPDATE instead of N individual saves:
-```
+```sql
 @Query("UPDATE Task t SET t.position = t.position + 1 WHERE ...")
 int shiftPositionsDown(...);
 ```
@@ -263,12 +332,86 @@ spring.http.compression.enabled=true
 spring.http.compression.min-response-size=1024
 ```
 
+## Frontend Architecture
 
-### Other Optimizations
-- `spring.jpa.open-in-view=false` – prevents N+1 lazy loading issues.  
-- Optimistic UI updates with SSE-based eventual consistency.
+### Module Structure
+```
+static/js/
+├── app.js           # Alpine.js component entry point
+└── modules/
+    ├── store.js     # State management, modals, API wrappers
+    ├── api.js       # Axios HTTP client, SSE initialization
+    └── drag.js      # SortableJS integration
+```
 
----
+### Alpine.js Component (`app.js`)
+
+**Reactive State:**
+```javascript
+{
+    lanes: [],           // Array of swimlane objects
+    tasks: [],           // Array of all task objects
+    showSaved: false,    // Success toast visibility
+    showErrorToast: false, // Error toast visibility
+    errorMessage: '',    // Current error message
+    columns: ['TODO', 'IN_PROGRESS', 'DONE', 'BLOCKED', 'DEFERRED'],
+    hideDone: false,     // Filter: hide DONE tasks
+    showOnlyBlocked: false, // Filter: show only BLOCKED tasks
+    selectedTags: [],    // Tag filter: active tag filters
+    taskSizes: {},       // Task resize: {taskId: {height: px}}
+    ...Store             // Spread Store methods
+}
+```
+
+**Key Methods:**
+- `init()` - Lifecycle hook: loads lanes, fetches tasks per lane async, sets up SSE
+- `getTasks(laneId, status)` - Filters tasks with filter support
+- `getTags(tagsRaw)` - Parses JSON tags
+- `reinitSortableForLane(laneId)` - Reinitializes Sortable after async task load
+- `getAllUniqueTags()` - Returns array of all unique tags across tasks
+- `toggleTag(tag)` - Toggles tag in selectedTags filter
+- `isTagSelected(tag)` - Returns boolean if tag is active
+- `clearSelectedTags()` - Clears all tag filters
+- `laneHasMatchingTasks(laneId)` - Returns true if lane has tasks matching filter
+- `startResize(event, taskId, laneId, status)` - Initiates resize drag
+- `getTaskStyle(taskId)` - Returns height style for resized task
+- `resetTaskSize(taskId)` - Double-click to reset task height
+
+### State Management (`store.js`)
+
+**Modal State:**
+```javascript
+modal: {
+    open: false,
+    title: '',
+    message: '',
+    type: 'info',
+    confirmText: 'Confirm',
+    action: null,
+    payload: null
+}
+
+inputModal: {
+    open: false,
+    mode: 'SWIMLANE' | 'TASK',
+    title: '',
+    value: '',
+    laneId: null,
+    laneName: '',
+    status: 'TODO',
+    tags: [],
+    tagInput: ''
+}
+```
+
+**Key Methods:**
+- `loadData()` - Fetches lanes from API
+- `fetchLaneTasks(laneId)` - Fetches tasks for specific lane
+- `moveTaskOptimistic(...)` - Optimistic task move with rollback
+- `reorderLanesOptimistic(newIds)` - Optimistic lane reorder
+- `triggerSave()` - Shows success toast for 1.5s
+- `triggerError(msg)` / `showError(msg)` - Shows error toast for 3s
+- `getLaneStats(laneId)` - Calculates task statistics for status pills
 
 ## Frontend Performance Optimizations
 
@@ -281,53 +424,122 @@ The application employs viewport-aware loading strategies to maintain responsive
   - All swimlanes start in `collapsed: true` and `tasksLoaded: false` state.
   - **Async Fetch**: Expanding a lane triggers `fetchLaneTasks(laneId)` via `toggleLaneCollapse` override.
   - **Sortable Re-init**: `reinitSortableForLane` is called after tasks DOM renders to enable drag-and-drop on lazy-loaded items.
-  - **Master Toggle**: `toggleAllLanes` override triggers concurrent lazy loading for all visible, un-loaded lanes.
 
 ### View Mode Management
 - **States**: `ACTIVE` vs `COMPLETED`.
 - **Sync Protocol**:
   - Switching `viewMode` via `setViewMode` triggers a full backend refresh for the target mode.
-  - `tasks` array is cleared to prevent cross-view data leakage and duplicate key errors in Alpine.
-  - Frontend re-syncs state immediately, then pulls fresh data to guarantee consistency after archival/restoration.
-
----
+  - `tasks` array is cleared to prevent cross-view data leakage.
 
 ## Architectural Patterns
 
 ### AOP-Based Idempotency
 - **Annotation**: `@Idempotent`  
-- **Logic**: Uses Spring AOP to intercept mutating operations. Generates a unique key via SpEL expressions (e.g., `'createTask:' + #task.name`).  
+- **Logic**: Uses Spring AOP to intercept mutating operations. Generates a unique key via SpEL expressions.
 - **Storage**: `IdempotencyService` manages a time-windowed cache of operation keys (default 5s).  
-- **Error Handling**: Throws `DuplicateOperationException` (409 Conflict) if a duplicate is detected.
+- **Error Handling**: Throws `DuplicateOperationException` (409 Conflict).
 
 ### Global Exception Handling
 - **Component**: `GlobalExceptionHandler`  
-- **Purpose**: Centralized handling of business and runtime exceptions (e.g., `DuplicateOperationException`, `IllegalArgumentException`) to return consistent JSON error responses.
+- **Purpose**: Centralized handling of business and runtime exceptions to return consistent JSON error responses.
 
 ### Session Management & Security
-- **SSE Session Verification**: On reconnection, `api.js` calls `getUser()` (GET `/api/user`) to verify session validity. If 401 is returned (e.g., after server restart), user is auto-redirected to login.
-- **HTML Response Handling**: Frontend API interceptors detect if 200 OK responses return HTML content (indicative of a masked auth redirect) and force a login redirect to prevent state corruption.
-- **Anonymous SSE**: `/api/sse/**` permits anonymous access to allow the "Connection Lost" overlay behavior, while data endpoints remain secured.
+- **SSE Session Verification**: On reconnection, `api.js` calls `getUser()` to verify session validity.
+- **HTML Response Handling**: Frontend API interceptors detect masked auth redirects and force login.
 
----
+## UI Systems
+
+### Notification System
+#### Success Toast (`.notification-toast.success`)
+- **Position**: Fixed, top center (`top: 0`, `left: 50%`, `transform: translateX(-50%)`)
+- **Animation**: Slide-down from top using Alpine.js x-transition
+- **Trigger**: `triggerSave()` sets `showSaved = true` for 1.5 seconds
+
+#### Error Toast (`.notification-toast.error`)
+- **Color**: Red border and icon
+- **Trigger**: `showError(msg)` sets `showErrorToast = true` for 3 seconds
+
+### Real-Time Updates (SSE Architecture)
+1.  **SseService**: Manages client connections with `CopyOnWriteArrayList<SseEmitter>`.
+2.  **SseController**: Exposes `/api/sse/stream` endpoint.
+3.  **AsyncWriteService**: After async DB writes, broadcasts updates via SSE.
+4.  **Heartbeat**: Every 30 seconds to keep connections alive.
+
+### Drag-and-Drop System
+#### Architecture Overview
+```
+index.html
+├── .board-container     (Lane Sortable - reorder lanes)
+│   └── .swimlane-row    (Lane wrapper)
+│       └── .lane-column (Task Sortable - reorder tasks)
+│           └── .task-card (Draggable item)
+```
+
+#### Critical Initialization Timing
+- `x-init="initColumn($el)"` fires when column is CREATED.
+- Tasks load asynchronously; use `reinitSortableForLane(laneId)` after DOM update.
+
+> [!CAUTION]
+> CSS properties like `perspective` or `transform-style: preserve-3d` break drag events.
+
+### Status Pills UI
+Swimlane headers display proportional status pills using `flex-grow` based on task count:
+```html
+<template x-if="getLaneStats(lane.id).todo > 0">
+    <div class="badge status-pill-lg"
+         :style="'flex-grow: ' + getLaneStats(lane.id).todo"
+         x-text="getLaneStats(lane.id).todoPct + '% (' + getLaneStats(lane.id).todo + ')'">
+    </div>
+</template>
+```
+
+### Tag Filter Bar
+- Sticky bar below navbar toggles `selectedTags`.
+- Uses faceted logic to only show tags present on tasks matching current selection.
+- Desktop: Automatically sorts/collapses lanes based on matches.
+
+### Task Card Resize
+- Resize handle appears on hover.
+- Double-click to reset height.
+- Sizes stored in `taskSizes` object: `{taskId: {height: px, initialHeight: px}}`.
+- Horizontal drag (>50px) triggers column expansion via `.has-expanded-column` and `.col-expanded` classes.
 
 ## Building and Running
 
 ### Prerequisites
-- Java 21  
-- Maven  
-- PostgreSQL (running on `localhost:5432`, db: `todo_db`, user: `postgres`, pass: `Database@123`)
+- Java 21
+- Maven
+- PostgreSQL (localhost:5432, db: todo_db)
 
 ### Running the Application
-```
+```bash
 mvn spring-boot:run
 ```
 The application will be available at [**http://localhost:8080**](http://localhost:8080).
 
 ### Running Tests
-```
+```bash
 mvn test
 ```
+
+---
+
+## CHANGELOG MANAGEMENT
+
+> [!IMPORTANT]
+> **Update `CHANGELOG.md` at every significant milestone!**
+
+### Changelog Location
+- **File**: `todo-app/CHANGELOG.md`
+
+### When to Update
+- New feature implementation completed
+- Major bug fix deployed
+- API/Database schema changes
+- Frontend architecture/performance improvements
+
+### Changelog Format
+Follows [Keep a Changelog](https://keepachangelog.com/) format with sections: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`.
 
 ---
 
