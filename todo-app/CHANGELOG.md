@@ -8,11 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [Unreleased] - 2025-12-26
+## [Unreleased] - 2025-12-29
 
-### Added
+### Changed
+- **Documentation Consolidation**: Merged all core architectural, UI, and project-specific documentation from `.gemini/GEMINI.md` and `todo-app/GEMINI.md` into a single, unified source of truth.
+- **Documentation Audit**: Verified `GEMINI.md` against codebase for precision (SSE heartbeats, resize logic, and internal data structures).
 - **Balanced Liquid Mobile UI**:
-  - **Balanced Liquid Mobile UI**:
   - **Small Screen Optimizations (iPhone SE)**: 
     - **Sidebar**: Fixed full-width display on small screens.
     - **Auto-Close**: Sidebar automatically closes when a lane is selected.
